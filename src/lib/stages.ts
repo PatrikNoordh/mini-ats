@@ -1,4 +1,4 @@
-import type { Stage } from "@/types";
+import type { Job, Stage } from "@/types";
 
 export const STAGES: Stage[] = ["new", "screening", "interview", "offer", "hired", "rejected"];
 
@@ -26,6 +26,19 @@ const LINKEDIN_URL_PATTERN = /^https?:\/\/([a-z]+\.)?linkedin\.com\//i;
 
 export function isLinkedInUrl(value: string): boolean {
   return LINKEDIN_URL_PATTERN.test(value);
+}
+
+/**
+ * The `?job=` filter only applies to a job of the active customer. After a
+ * customer switch it points at the previous customer's job, so it is dropped.
+ * While the jobs are still loading the filter is kept as it is.
+ */
+export function resolveJobFilter(
+  job: string | undefined,
+  jobs: readonly Pick<Job, "id">[] | undefined,
+): string | undefined {
+  if (!job || !jobs) return job;
+  return jobs.some((j) => j.id === job) ? job : undefined;
 }
 
 export const queryKeys = {

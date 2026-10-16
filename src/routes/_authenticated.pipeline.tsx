@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { CandidateDialog } from "@/components/candidates/CandidateDialog";
 import { useApplications, useMoveApplication } from "@/hooks/useApplications";
 import { useCandidates } from "@/hooks/useCandidates";
 import { useJobs } from "@/hooks/useJobs";
+import { resolveJobFilter } from "@/lib/stages";
 
 const searchSchema = z.object({
   job: z.string().optional().catch(undefined),
@@ -39,11 +40,20 @@ export const Route = createFileRoute("/_authenticated/pipeline")({
 });
 
 function Pipeline({ customerId }: { customerId: string }) {
-  const { job, q } = Route.useSearch();
+  const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const apps = useApplications(customerId);
   const cands = useCandidates(customerId);
   const jobs = useJobs(customerId);
+  const { q } = search;
+  const job = resolveJobFilter(search.job, jobs.data);
+
+  // Switching customer leaves the previous customer's job in the URL: clear it.
+  useEffect(() => {
+    if (search.job && !job) {
+      navigate({ to: ".", search: (prev) => ({ ...prev, job: undefined }), replace: true });
+    }
+  }, [search.job, job, navigate]);
   const move = useMoveApplication(customerId);
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
