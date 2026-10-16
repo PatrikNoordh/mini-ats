@@ -17,16 +17,15 @@ export function daysSince(iso: string, now: Date = new Date()): number {
   return Math.max(0, Math.floor(diff / 86_400_000));
 }
 
-/** Accepts only http(s) URLs on linkedin.com or its subdomains. */
+/**
+ * Same rule as the `candidates.linkedin_url` check in the database
+ * (`~* '^https?://([a-z]+\.)?linkedin\.com/'`), so the form never accepts
+ * a URL that the database would reject.
+ */
+const LINKEDIN_URL_PATTERN = /^https?:\/\/([a-z]+\.)?linkedin\.com\//i;
+
 export function isLinkedInUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return false;
-    const host = url.hostname.toLowerCase();
-    return host === "linkedin.com" || host.endsWith(".linkedin.com");
-  } catch {
-    return false;
-  }
+  return LINKEDIN_URL_PATTERN.test(value);
 }
 
 export const queryKeys = {
