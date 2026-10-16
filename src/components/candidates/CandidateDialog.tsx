@@ -43,6 +43,8 @@ export function CandidateDialog({
   const save = useSaveCandidate(customerId);
   const [form, setForm] = useState(empty);
   const [jobIds, setJobIds] = useState<string[]>([]);
+  // Jobs the candidate was linked to when the dialog opened. They can't be unlinked here.
+  const [linkedJobIds, setLinkedJobIds] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
@@ -51,12 +53,15 @@ export function CandidateDialog({
     if (candidate) {
       const { full_name, email, phone, linkedin_url, notes } = candidate;
       setForm({ full_name, email, phone, linkedin_url, notes });
-      setJobIds(
-        (apps.data ?? []).filter((a) => a.candidate_id === candidate.id).map((a) => a.job_id),
-      );
+      const linked = (apps.data ?? [])
+        .filter((a) => a.candidate_id === candidate.id)
+        .map((a) => a.job_id);
+      setJobIds(linked);
+      setLinkedJobIds(linked);
     } else {
       setForm(empty);
       setJobIds([]);
+      setLinkedJobIds([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, candidate?.id]);
@@ -127,6 +132,7 @@ export function CandidateDialog({
                 <label key={j.id} className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={jobIds.includes(j.id)}
+                    disabled={linkedJobIds.includes(j.id)}
                     onCheckedChange={(c) =>
                       setJobIds((ids) => (c ? [...ids, j.id] : ids.filter((x) => x !== j.id)))
                     }
@@ -135,7 +141,10 @@ export function CandidateDialog({
                 </label>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">Nya kopplingar hamnar i steget Ny.</p>
+            <p className="text-xs text-muted-foreground">
+              Nya kopplingar hamnar i steget Ny.
+              {linkedJobIds.length > 0 && " Befintliga kopplingar kan inte tas bort här."}
+            </p>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

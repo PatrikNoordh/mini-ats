@@ -11,13 +11,11 @@ export async function listCandidates(customerId: string): Promise<Candidate[]> {
   return clone(db().candidates.filter((c) => c.customer_id === customerId));
 }
 
-function syncLinks(customerId: string, candidateId: string, jobIds: string[]) {
+/** Adds the missing job links. Existing links are never removed here. */
+function addLinks(customerId: string, candidateId: string, jobIds: string[]) {
   const s = db();
   const validJobs = new Set(s.jobs.filter((j) => j.customer_id === customerId).map((j) => j.id));
   const wanted = new Set(jobIds.filter((id) => validJobs.has(id)));
-  s.applications = s.applications.filter(
-    (a) => a.candidate_id !== candidateId || wanted.has(a.job_id),
-  );
   const existing = new Set(
     s.applications.filter((a) => a.candidate_id === candidateId).map((a) => a.job_id),
   );
@@ -58,7 +56,7 @@ export async function createCandidate(
     ...input,
   };
   db().candidates.push(cand);
-  syncLinks(customerId, cand.id, jobIds);
+  addLinks(customerId, cand.id, jobIds);
   return clone(cand);
 }
 
@@ -72,6 +70,6 @@ export async function updateCandidate(
   const cand = db().candidates.find((c) => c.id === id && c.customer_id === customerId);
   if (!cand) throw new Error("Kandidaten hittades inte.");
   Object.assign(cand, input);
-  syncLinks(customerId, id, jobIds);
+  addLinks(customerId, id, jobIds);
   return clone(cand);
 }
