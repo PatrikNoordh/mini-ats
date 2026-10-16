@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -78,11 +77,6 @@ function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
-        <p className="px-2 pb-2 text-xs text-muted-foreground">
-          Prototyp med låtsasdata. Inget sparas.
-        </p>
-      </SidebarFooter>
     </Sidebar>
   );
 }
