@@ -102,6 +102,13 @@ function CustomerPicker() {
   );
 }
 
+/** Customers see their own company where admins see the customer picker. */
+function CompanyName() {
+  const { profile } = useAuth();
+  if (!profile?.company_name) return null;
+  return <span className="min-w-0 truncate text-sm font-semibold">{profile.company_name}</span>;
+}
+
 function UserMenu() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
@@ -172,7 +179,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-card px-3 md:px-6">
             <SidebarTrigger />
-            {role === "admin" && <CustomerPicker />}
+            {role === "admin" ? <CustomerPicker /> : <CompanyName />}
             <div className="ml-auto">
               <UserMenu />
             </div>
