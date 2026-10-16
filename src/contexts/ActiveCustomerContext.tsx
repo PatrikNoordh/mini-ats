@@ -26,10 +26,30 @@ export function ActiveCustomerProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ActiveCustomerValue>(() => {
     const customers = profiles.filter((p) => p.role === "customer");
-    if (!profile) return { customerId: null, customer: null, customers: [], isActingAs: false, setCustomerId: setSelected };
-    if (!isAdmin) return { customerId: profile.id, customer: profile, customers: [profile], isActingAs: false, setCustomerId: () => {} };
+    if (!profile)
+      return {
+        customerId: null,
+        customer: null,
+        customers: [],
+        isActingAs: false,
+        setCustomerId: setSelected,
+      };
+    if (!isAdmin)
+      return {
+        customerId: profile.id,
+        customer: profile,
+        customers: [profile],
+        isActingAs: false,
+        setCustomerId: () => {},
+      };
     const customer = customers.find((c) => c.id === selected) ?? null;
-    return { customerId: customer?.id ?? null, customer, customers, isActingAs: !!customer, setCustomerId: setSelected };
+    return {
+      customerId: customer?.id ?? null,
+      customer,
+      customers,
+      isActingAs: !!customer,
+      setCustomerId: setSelected,
+    };
   }, [profile, isAdmin, profiles, selected]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

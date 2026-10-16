@@ -16,14 +16,23 @@ export function useMoveApplication(customerId: string | null) {
   const qc = useQueryClient();
   const key = queryKeys.applications(customerId);
   return useMutation({
-    mutationFn: ({ id, stage }: { id: string; stage: Stage }) => moveApplication(customerId!, id, stage),
+    mutationFn: ({ id, stage }: { id: string; stage: Stage }) =>
+      moveApplication(customerId!, id, stage),
     onMutate: async ({ id, stage }) => {
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<Application[]>(key);
       const now = new Date().toISOString();
       qc.setQueryData<Application[]>(key, (old) =>
         old?.map((a) =>
-          a.id === id ? { ...a, stage, position: Number.MAX_SAFE_INTEGER, stage_changed_at: now, updated_at: now } : a,
+          a.id === id
+            ? {
+                ...a,
+                stage,
+                position: Number.MAX_SAFE_INTEGER,
+                stage_changed_at: now,
+                updated_at: now,
+              }
+            : a,
         ),
       );
       return { previous };

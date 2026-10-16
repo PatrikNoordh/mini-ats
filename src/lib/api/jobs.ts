@@ -10,12 +10,21 @@ export async function listJobs(customerId: string): Promise<Job[]> {
 
 export async function createJob(customerId: string, input: JobInput): Promise<Job> {
   await delay();
-  const job: Job = { id: uid("job"), customer_id: customerId, created_at: new Date().toISOString(), ...input };
+  const job: Job = {
+    id: uid("job"),
+    customer_id: customerId,
+    created_at: new Date().toISOString(),
+    ...input,
+  };
   db().jobs.push(job);
   return clone(job);
 }
 
-export async function updateJob(customerId: string, id: string, patch: Partial<JobInput>): Promise<Job> {
+export async function updateJob(
+  customerId: string,
+  id: string,
+  patch: Partial<JobInput>,
+): Promise<Job> {
   await delay();
   const job = db().jobs.find((j) => j.id === id && j.customer_id === customerId);
   if (!job) throw new Error("Jobbet hittades inte.");

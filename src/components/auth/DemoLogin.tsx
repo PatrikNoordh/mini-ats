@@ -15,7 +15,9 @@ export function DemoLogin({ onSignedIn }: { onSignedIn: () => void }) {
 
   return (
     <div className="mt-6 border-t pt-5">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Demo</p>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Demo
+      </p>
       <div className="space-y-2">
         {DEMO.map((d) => (
           <button
@@ -35,7 +37,9 @@ export function DemoLogin({ onSignedIn }: { onSignedIn: () => void }) {
             }}
             className="flex w-full items-center justify-between rounded-md border bg-card px-3 py-2 text-left transition-colors hover:bg-accent disabled:opacity-60"
           >
-            <span className="text-sm font-semibold">{busy === d.email ? "Loggar in…" : d.label}</span>
+            <span className="text-sm font-semibold">
+              {busy === d.email ? "Loggar in…" : d.label}
+            </span>
             <span className="text-xs text-muted-foreground">{d.sub}</span>
           </button>
         ))}

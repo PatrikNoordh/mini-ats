@@ -4,7 +4,13 @@ import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CustomerGate } from "@/components/layout/CustomerGate";
 import { EmptyState, ErrorState, PageHeader } from "@/components/States";
 import { Board, type BoardCard } from "@/components/pipeline/Board";
@@ -62,32 +68,69 @@ function Pipeline({ customerId }: { customerId: string }) {
 
   return (
     <div>
-      <PageHeader title="Pipeline" meta={isLoading ? undefined : `${cards.length} kort`} action={<Button onClick={() => setCreating(true)}>+ Ny kandidat</Button>} />
+      <PageHeader
+        title="Pipeline"
+        meta={isLoading ? undefined : `${cards.length} kort`}
+        action={<Button onClick={() => setCreating(true)}>+ Ny kandidat</Button>}
+      />
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">
-        <Select value={job ?? "all"} onValueChange={(v) => setSearch({ job: v === "all" ? undefined : v })}>
-          <SelectTrigger className="h-9 sm:w-[220px]" aria-label="Filtrera på jobb"><SelectValue /></SelectTrigger>
+        <Select
+          value={job ?? "all"}
+          onValueChange={(v) => setSearch({ job: v === "all" ? undefined : v })}
+        >
+          <SelectTrigger className="h-9 sm:w-[220px]" aria-label="Filtrera på jobb">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alla jobb</SelectItem>
-            {jobs.data?.map((j) => <SelectItem key={j.id} value={j.id}>{j.title}{j.status === "closed" ? " (stängt)" : ""}</SelectItem>)}
+            {jobs.data?.map((j) => (
+              <SelectItem key={j.id} value={j.id}>
+                {j.title}
+                {j.status === "closed" ? " (stängt)" : ""}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
-        <Input className="h-9 sm:w-[280px]" placeholder="Sök kandidatnamn" value={q ?? ""} onChange={(e) => setSearch({ q: e.target.value || undefined })} />
+        <Input
+          className="h-9 sm:w-[280px]"
+          placeholder="Sök kandidatnamn"
+          value={q ?? ""}
+          onChange={(e) => setSearch({ q: e.target.value || undefined })}
+        />
       </div>
 
       {isError ? (
-        <ErrorState onRetry={() => { apps.refetch(); cands.refetch(); jobs.refetch(); }} />
+        <ErrorState
+          onRetry={() => {
+            apps.refetch();
+            cands.refetch();
+            jobs.refetch();
+          }}
+        />
       ) : isLoading ? (
         <div className="flex gap-3 overflow-hidden">
-          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-80 w-[230px] shrink-0" />)}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-80 w-[230px] shrink-0" />
+          ))}
         </div>
       ) : cards.length === 0 ? (
-        <EmptyState title={job || q ? "Inga kort matchar filtret" : "Inga kandidater i pipelinen än"}>
+        <EmptyState
+          title={job || q ? "Inga kort matchar filtret" : "Inga kandidater i pipelinen än"}
+        >
           {job || q ? (
-            <Button variant="link" onClick={() => setSearch({ job: undefined, q: undefined })}>Rensa filter</Button>
-          ) : "Lägg till en kandidat och koppla hen till ett jobb."}
+            <Button variant="link" onClick={() => setSearch({ job: undefined, q: undefined })}>
+              Rensa filter
+            </Button>
+          ) : (
+            "Lägg till en kandidat och koppla hen till ett jobb."
+          )}
         </EmptyState>
       ) : (
-        <Board cards={cards} onMove={(id, stage) => move.mutate({ id, stage })} onOpen={(c) => setOpenId(c.app.candidate_id)} />
+        <Board
+          cards={cards}
+          onMove={(id, stage) => move.mutate({ id, stage })}
+          onOpen={(c) => setOpenId(c.app.candidate_id)}
+        />
       )}
 
       <CandidateSheet
@@ -96,7 +139,12 @@ function Pipeline({ customerId }: { customerId: string }) {
         jobs={jobs.data ?? []}
         onClose={() => setOpenId(null)}
       />
-      <CandidateDialog customerId={customerId} open={creating} onOpenChange={setCreating} candidate={null} />
+      <CandidateDialog
+        customerId={customerId}
+        open={creating}
+        onOpenChange={setCreating}
+        candidate={null}
+      />
     </div>
   );
 }
