@@ -45,6 +45,9 @@ function Pipeline({ customerId }: { customerId: string }) {
   const apps = useApplications(customerId);
   const cands = useCandidates(customerId);
   const jobs = useJobs(customerId);
+  const move = useMoveApplication(customerId);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const { q } = search;
   const job = resolveJobFilter(search.job, jobs.data);
 
@@ -54,9 +57,6 @@ function Pipeline({ customerId }: { customerId: string }) {
       navigate({ to: ".", search: (prev) => ({ ...prev, job: undefined }), replace: true });
     }
   }, [search.job, job, navigate]);
-  const move = useMoveApplication(customerId);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
 
   const cards = useMemo<BoardCard[]>(() => {
     if (!apps.data || !cands.data || !jobs.data) return [];
