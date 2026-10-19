@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -15,35 +16,29 @@ import { EmptyState, ErrorState, LoadingRows, PageHeader } from "@/components/St
 import { CandidateDialog } from "@/components/candidates/CandidateDialog";
 import { useCandidates } from "@/hooks/useCandidates";
 import { useApplications } from "@/hooks/useApplications";
+import { useFormat } from "@/lib/format";
+import { pageHead } from "@/lib/i18n";
 import type { Candidate } from "@/types";
 
 export const Route = createFileRoute("/_authenticated/candidates")({
-  head: () => ({
-    meta: [
-      { title: "Kandidater — Mini-ATS" },
-      { name: "description", content: "Alla kandidater med kontaktuppgifter och kopplade jobb." },
-      { property: "og:title", content: "Kandidater — Mini-ATS" },
-      {
-        property: "og:description",
-        content: "Alla kandidater med kontaktuppgifter och kopplade jobb.",
-      },
-    ],
-  }),
+  head: ({ match }) => pageHead(match.context.language, "candidates"),
   component: () => <CustomerGate>{(id) => <Candidates customerId={id} />}</CustomerGate>,
 });
 
 function Candidates({ customerId }: { customerId: string }) {
+  const { t } = useTranslation();
+  const format = useFormat();
   const cands = useCandidates(customerId);
   const apps = useApplications(customerId);
   const [editing, setEditing] = useState<Candidate | null>(null);
   const [open, setOpen] = useState(false);
-  const list = [...(cands.data ?? [])].sort((a, b) => a.full_name.localeCompare(b.full_name, "sv"));
+  const list = [...(cands.data ?? [])].sort((a, b) => format.compare(a.full_name, b.full_name));
 
   return (
     <div>
       <PageHeader
-        title="Kandidater"
-        meta={cands.data ? `${cands.data.length} st` : undefined}
+        title={t("candidates.title")}
+        meta={cands.data ? t("candidates.count", { count: cands.data.length }) : undefined}
         action={
           <Button
             onClick={() => {
@@ -51,7 +46,7 @@ function Candidates({ customerId }: { customerId: string }) {
               setOpen(true);
             }}
           >
-            + Ny kandidat
+            {t("candidates.new")}
           </Button>
         }
       />
@@ -64,16 +59,16 @@ function Candidates({ customerId }: { customerId: string }) {
           </div>
         ) : list.length === 0 ? (
           <div className="p-4">
-            <EmptyState title="Inga kandidater än">Lägg till den första kandidaten.</EmptyState>
+            <EmptyState title={t("candidates.empty")}>{t("candidates.emptyHint")}</EmptyState>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Namn</TableHead>
-                <TableHead className="hidden sm:table-cell">E-post</TableHead>
-                <TableHead>LinkedIn</TableHead>
-                <TableHead className="text-right">Jobb</TableHead>
+                <TableHead>{t("candidates.name")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("candidates.email")}</TableHead>
+                <TableHead>{t("candidates.linkedin")}</TableHead>
+                <TableHead className="text-right">{t("candidates.jobs")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -100,7 +95,7 @@ function Candidates({ customerId }: { customerId: string }) {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-primary hover:underline"
                       >
-                        Profil <ExternalLink className="h-3.5 w-3.5" />
+                        {t("candidates.profile")} <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     ) : (
                       "—"
