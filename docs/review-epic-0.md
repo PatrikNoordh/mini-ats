@@ -19,7 +19,7 @@ The first verdict was NO-GO for one reason only: the CI run on `main` for the PR
 | Acceptance criteria | 26 of 26 met, each checked in the code |
 | Deployment | Production on Vercel answers in Swedish and English (`<html lang>` follows the cookie), `/pipeline` reloads, unknown paths return 404. The route tree has no diff after a build |
 
-Not verified in the review: a click-through as admin and as customer on the production URL. The PRs record those runs against `npm run dev` and the preview builds.
+The review itself checked production with `curl` only. The developer has clicked through the production site as admin and as customer throughout the epic, and the PRs record the same runs against `npm run dev` and the preview builds.
 
 ## Warnings and what was done
 
