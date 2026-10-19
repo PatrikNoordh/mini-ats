@@ -1,4 +1,5 @@
 import type { Profile, Role } from "@/types";
+import { AppError } from "@/lib/errors";
 import { clone, db, delay, uid } from "./mockStore";
 
 export async function listProfiles(): Promise<Profile[]> {
@@ -33,7 +34,7 @@ export async function createProfile(input: CreateProfileInput): Promise<Profile>
   await delay();
   const s = db();
   if (s.profiles.some((p) => p.email.toLowerCase() === input.email.toLowerCase())) {
-    throw new Error("Det finns redan ett konto med den e-postadressen.");
+    throw new AppError("email_exists");
   }
   const profile: Profile = {
     id: uid("p"),

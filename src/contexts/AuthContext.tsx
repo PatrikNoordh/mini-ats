@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getProfile, verifyCredentials } from "@/lib/api/profiles";
+import { AppError } from "@/lib/errors";
 import type { Profile, Role } from "@/types";
 
 // Mock auth. Replaced by Supabase Auth later — keep the useAuth() contract stable.
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(
     async (email: string, password: string) => {
       const p = await verifyCredentials(email, password);
-      if (!p) throw new Error("Fel e-post eller lösenord.");
+      if (!p) throw new AppError("invalid_credentials");
       qc.clear();
       window.localStorage.setItem(SESSION_KEY, p.id);
       setProfile(p);

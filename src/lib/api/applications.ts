@@ -1,4 +1,5 @@
 import type { Application, Stage } from "@/types";
+import { AppError } from "@/lib/errors";
 import { clone, db, delay } from "./mockStore";
 
 export async function listApplications(customerId: string): Promise<Application[]> {
@@ -15,7 +16,7 @@ export async function moveApplication(
   await delay();
   const s = db();
   const app = s.applications.find((a) => a.id === id && a.customer_id === customerId);
-  if (!app) throw new Error("Kortet hittades inte.");
+  if (!app) throw new AppError("card_not_found");
   const now = new Date().toISOString();
   if (app.stage !== stage) {
     const maxPos = Math.max(

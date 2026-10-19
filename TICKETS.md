@@ -280,8 +280,21 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
-- [ ] The LinkedIn error "Länken måste gå till linkedin.com." is misleading when the URL is on linkedin.com but has no path, like `https://linkedin.com`. Say that a full profile link is needed. Fits ATS-3, when the text moves to the locale files — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2)
+- [x] The LinkedIn error "Länken måste gå till linkedin.com." is misleading when the URL is on linkedin.com but has no path, like `https://linkedin.com`. Say that a full profile link is needed. Fits ATS-3, when the text moves to the locale files — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2). Fixed in ATS-3: `validation.linkedin_invalid` asks for a profile link with an example
 - [ ] If the candidate dialog opens before the applications have loaded, existing job links show as unchecked and enabled. Nothing is lost, because saving only adds links and skips duplicates, but the dialog should wait for the links or update when they arrive — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2)
 - [ ] A hand-typed `?q=123` is parsed as a number by the router and dropped by the zod schema. Search terms typed in the search box round-trip fine. Coerce numbers to strings in the schema — `src/routes/_authenticated.pipeline.tsx` (found in ATS-2)
 - [ ] Disabled job checkboxes in the candidate dialog are dimmed, but their job titles are not, so it is not obvious why they cannot be clicked — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2)
 - [ ] 8 lint warnings from `react-refresh/only-export-components`: the contexts export hooks next to their providers, and some shadcn/ui files export variants. Decide whether to split the files or turn the rule off for those paths — `src/contexts/`, `src/components/ui/` (found in ATS-2)
+- [ ] The jobs table's last column (the close and reopen buttons) has an empty header, so screen readers announce a column without a name. Give it a visually hidden header — `src/routes/_authenticated.jobs.tsx` (found in ATS-3)
+- [ ] The account dialog casts the role with `v as Role`. Parse it with zod like the other input instead — `src/routes/_authenticated.admin.accounts.tsx` (found in ATS-3)
+- [ ] Database triggers still raise Swedish text. Already planned in ATS-5 AC4b; listed here so the error code table in `docs/error-codes.md` gets the two new codes then — `supabase/migrations/20261006000000_init.sql` (found in ATS-3)
+
+## Found while reviewing PRs
+
+Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they become tickets later instead of being forgotten.
+
+Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
+
+- [ ] `LANGUAGE_COOKIE_MAX_AGE_SECONDS` and `MIN_PASSWORD_LENGTH` are named constants but live outside `src/lib/constants.ts`. Move them there when ATS-4 creates the file — `src/lib/language.ts`, `src/lib/validation.ts` (PR #21, ATS-3)
+- [ ] The server error page puts translations into HTML without escaping. Safe while the text comes only from our locale files; escape it so a `<` or `&` in a future translation cannot break the page — `src/lib/error-page.ts` (PR #21, ATS-3)
+- [ ] The `lang` cookie has no `Secure` flag. Not sensitive, but add `secure` when served over HTTPS — `src/lib/language.ts` (PR #21, ATS-3)

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,17 +31,14 @@ import { RequireAdmin } from "@/components/auth/Guards";
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from "@/components/States";
 import { Field, type FormErrors } from "@/components/candidates/CandidateDialog";
 import { useCreateProfile, useProfiles } from "@/hooks/useProfiles";
+import { errorCode } from "@/lib/errors";
+import { useFormat } from "@/lib/format";
+import { pageHead } from "@/lib/i18n";
+import { isEmail, MIN_PASSWORD_LENGTH } from "@/lib/validation";
 import type { Role } from "@/types";
 
 export const Route = createFileRoute("/_authenticated/admin/accounts")({
-  head: () => ({
-    meta: [
-      { title: "Konton — Mini-ATS" },
-      { name: "description", content: "Hantera admin- och kundkonton på plattformen." },
-      { property: "og:title", content: "Konton — Mini-ATS" },
-      { property: "og:description", content: "Hantera admin- och kundkonton på plattformen." },
-    ],
-  }),
+  head: ({ match }) => pageHead(match.context.language, "accounts"),
   component: () => (
     <RequireAdmin>
       <Accounts />
@@ -49,14 +47,16 @@ export const Route = createFileRoute("/_authenticated/admin/accounts")({
 });
 
 function Accounts() {
+  const { t } = useTranslation();
+  const format = useFormat();
   const profiles = useProfiles();
   const [open, setOpen] = useState(false);
   return (
     <div>
       <PageHeader
-        title="Konton"
-        meta="Bara admin ser den här sidan"
-        action={<Button onClick={() => setOpen(true)}>+ Nytt konto</Button>}
+        title={t("accounts.title")}
+        meta={t("accounts.adminOnly")}
+        action={<Button onClick={() => setOpen(true)}>{t("accounts.new")}</Button>}
       />
       <div className="rounded-lg border bg-card">
         {profiles.isLoading ? (
@@ -67,17 +67,17 @@ function Accounts() {
           </div>
         ) : !profiles.data?.length ? (
           <div className="p-4">
-            <EmptyState title="Inga konton" />
+            <EmptyState title={t("accounts.empty")} />
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Namn</TableHead>
-                <TableHead className="hidden md:table-cell">Företag</TableHead>
-                <TableHead className="hidden sm:table-cell">E-post</TableHead>
-                <TableHead>Roll</TableHead>
-                <TableHead className="hidden md:table-cell">Skapad</TableHead>
+                <TableHead>{t("accounts.name")}</TableHead>
+                <TableHead className="hidden md:table-cell">{t("accounts.company")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("accounts.email")}</TableHead>
+                <TableHead>{t("accounts.role")}</TableHead>
+                <TableHead className="hidden md:table-cell">{t("accounts.created")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -91,11 +91,11 @@ function Accounts() {
                   <TableCell className="hidden sm:table-cell">{p.email}</TableCell>
                   <TableCell>
                     <Badge variant={p.role === "admin" ? "default" : "outline"}>
-                      {p.role === "admin" ? "Admin" : "Kund"}
+                      {t(`roles.${p.role}`)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden font-mono text-sm md:table-cell">
-                    {p.created_at.slice(0, 10)}
+                  <TableCell className="hidden text-sm md:table-cell">
+                    {format.date(p.created_at)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -117,6 +117,7 @@ function AccountDialog({
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const create = useCreateProfile();
   const [role, setRole] = useState<Role>("customer");
   const [form, setForm] = useState(empty);
@@ -134,18 +135,18 @@ function AccountDialog({
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const errs: FormErrors = {};
-    if (!form.full_name.trim()) errs.full_name = "Ange namn.";
-    if (!form.company_name.trim()) errs.company_name = "Ange företag.";
-    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) errs.email = "Ange en giltig e-postadress.";
-    if (form.password.length < 8) errs.password = "Lösenordet måste ha minst 8 tecken.";
+    if (!form.full_name.trim()) errs.full_name = "name_required";
+    if (!form.company_name.trim()) errs.company_name = "company_required";
+    if (!isEmail(form.email)) errs.email = "email_invalid";
+    if (form.password.length < MIN_PASSWORD_LENGTH) errs.password = "password_too_short";
     setErrors(errs);
     if (Object.keys(errs).length) return;
     try {
       await create.mutateAsync({ ...form, email: form.email.trim(), role });
-      toast.success("Kontot är skapat.");
+      toast.success(t("accountDialog.created"));
       onOpenChange(false);
     } catch (err) {
-      toast.error((err as Error).message);
+      toast.error(t(`errors.${errorCode(err)}`));
     }
   };
 
@@ -153,38 +154,38 @@ function AccountDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Nytt konto</DialogTitle>
+          <DialogTitle>{t("accountDialog.title")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <Field id="a-role" label="Roll">
+          <Field id="a-role" label={t("accountDialog.role")}>
             <Select value={role} onValueChange={(v) => setRole(v as Role)}>
               <SelectTrigger id="a-role">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="customer">Kund</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="customer">{t("roles.customer")}</SelectItem>
+                <SelectItem value="admin">{t("roles.admin")}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
-          <Field id="a-name" label="Namn" error={errors.full_name}>
+          <Field id="a-name" label={t("accountDialog.name")} error={errors.full_name}>
             <Input id="a-name" value={form.full_name} onChange={set("full_name")} />
           </Field>
-          <Field id="a-co" label="Företag" error={errors.company_name}>
+          <Field id="a-co" label={t("accountDialog.company")} error={errors.company_name}>
             <Input id="a-co" value={form.company_name} onChange={set("company_name")} />
           </Field>
-          <Field id="a-email" label="E-post" error={errors.email}>
+          <Field id="a-email" label={t("accountDialog.email")} error={errors.email}>
             <Input id="a-email" type="email" value={form.email} onChange={set("email")} />
           </Field>
-          <Field id="a-pw" label="Tillfälligt lösenord" error={errors.password}>
+          <Field id="a-pw" label={t("accountDialog.password")} error={errors.password}>
             <Input id="a-pw" type="text" value={form.password} onChange={set("password")} />
           </Field>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Avbryt
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={create.isPending}>
-              {create.isPending ? "Skapar…" : "Skapa konto"}
+              {create.isPending ? t("accountDialog.submitting") : t("accountDialog.submit")}
             </Button>
           </DialogFooter>
         </form>

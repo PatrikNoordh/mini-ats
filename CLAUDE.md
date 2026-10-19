@@ -39,7 +39,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 - **Accessible:** a label on every input, controls reachable by keyboard, visible focus and enough contrast.
 - **Consistent:** reuse existing components, tokens and patterns. UI text that is clear in both languages and uses the same words for the same things.
 - **Clean:** clear names, small functions, no dead code, no leftover `console.log`, and no `TODO` without an issue.
-- **Within scope:** quality means doing the ticket well, not doing more. Problems and ideas outside the ticket go in `TICKETS.md` § Found while building, one line each, and become issues with `/ats-create-ticket` later.
+- **Within scope:** quality means doing the ticket well, not doing more. Problems and ideas outside the ticket go in `TICKETS.md` § Found while building, one line each, and become issues with `/ats-create-ticket` later. PR reviews work the same way: blockers and real bugs are fixed on the branch before merging, and small findings go in `TICKETS.md` § Found while reviewing PRs.
 - **Self-reviewed:** before the summary, read the whole diff (`git diff origin/main...HEAD`) as a strict reviewer and fix what you find.
 
 ## Stack
@@ -92,7 +92,7 @@ Nothing in app code is hardcoded. Every value has one named source:
 | Spacing, sizes, radii, fonts | The Tailwind scale and the tokens in `src/styles.css`. No arbitrary values like `w-[230px]`; add a named token instead |
 | Magic numbers | Named constants in `src/lib/constants.ts` (delays, thresholds, limits) |
 | Config and URLs | `import.meta.env.VITE_*` for the frontend, `Deno.env.get` in Edge Functions |
-| Errors from the server | Codes (for example `email_exists`) that the UI translates. Never user-facing text from Edge Functions or the database |
+| Errors from the server | Codes (for example `email_exists`) that the UI translates, as described in `docs/error-codes.md`. Never user-facing text from Edge Functions or the database |
 
 Allowed exceptions: `src/components/ui/` (vendored shadcn/ui code), dynamic values computed at runtime (a drag transform), token definitions in `src/styles.css`, mock data and test fixtures. User data (job titles, names, notes) is never translated.
 

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { CandidateDialog } from "@/components/candidates/CandidateDialog";
 import { useApplications, useMoveApplication } from "@/hooks/useApplications";
 import { useCandidates } from "@/hooks/useCandidates";
 import { useJobs } from "@/hooks/useJobs";
+import { pageHead } from "@/lib/i18n";
 import { resolveJobFilter } from "@/lib/stages";
 
 const searchSchema = z.object({
@@ -28,18 +30,12 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/pipeline")({
   validateSearch: (s) => searchSchema.parse(s),
-  head: () => ({
-    meta: [
-      { title: "Pipeline — Mini-ATS" },
-      { name: "description", content: "Flytta kandidater mellan stegen i din rekrytering." },
-      { property: "og:title", content: "Pipeline — Mini-ATS" },
-      { property: "og:description", content: "Flytta kandidater mellan stegen i din rekrytering." },
-    ],
-  }),
+  head: ({ match }) => pageHead(match.context.language, "pipeline"),
   component: () => <CustomerGate>{(id) => <Pipeline customerId={id} />}</CustomerGate>,
 });
 
 function Pipeline({ customerId }: { customerId: string }) {
+  const { t } = useTranslation();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const apps = useApplications(customerId);
@@ -65,11 +61,13 @@ function Pipeline({ customerId }: { customerId: string }) {
       .filter((a) => !job || a.job_id === job)
       .map((a) => ({
         app: a,
-        candidateName: cands.data.find((c) => c.id === a.candidate_id)?.full_name ?? "Okänd",
-        jobTitle: jobs.data.find((j) => j.id === a.job_id)?.title ?? "Okänt jobb",
+        candidateName:
+          cands.data.find((c) => c.id === a.candidate_id)?.full_name ??
+          t("pipeline.unknownCandidate"),
+        jobTitle: jobs.data.find((j) => j.id === a.job_id)?.title ?? t("pipeline.unknownJob"),
       }))
       .filter((c) => !term || c.candidateName.toLowerCase().includes(term));
-  }, [apps.data, cands.data, jobs.data, job, q]);
+  }, [apps.data, cands.data, jobs.data, job, q, t]);
 
   const isLoading = apps.isLoading || cands.isLoading || jobs.isLoading;
   const isError = apps.isError || cands.isError || jobs.isError;
@@ -79,31 +77,31 @@ function Pipeline({ customerId }: { customerId: string }) {
   return (
     <div>
       <PageHeader
-        title="Pipeline"
-        meta={isLoading ? undefined : `${cards.length} kort`}
-        action={<Button onClick={() => setCreating(true)}>+ Ny kandidat</Button>}
+        title={t("pipeline.title")}
+        meta={isLoading ? undefined : t("pipeline.cardCount", { count: cards.length })}
+        action={<Button onClick={() => setCreating(true)}>{t("pipeline.newCandidate")}</Button>}
       />
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">
         <Select
           value={job ?? "all"}
           onValueChange={(v) => setSearch({ job: v === "all" ? undefined : v })}
         >
-          <SelectTrigger className="h-9 sm:w-[220px]" aria-label="Filtrera på jobb">
+          <SelectTrigger className="h-9 sm:w-[220px]" aria-label={t("pipeline.filterByJob")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Alla jobb</SelectItem>
+            <SelectItem value="all">{t("pipeline.allJobs")}</SelectItem>
             {jobs.data?.map((j) => (
               <SelectItem key={j.id} value={j.id}>
-                {j.title}
-                {j.status === "closed" ? " (stängt)" : ""}
+                {j.status === "closed" ? t("pipeline.closedJob", { title: j.title }) : j.title}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Input
           className="h-9 sm:w-[280px]"
-          placeholder="Sök kandidatnamn"
+          placeholder={t("pipeline.search")}
+          aria-label={t("pipeline.search")}
           value={q ?? ""}
           onChange={(e) => setSearch({ q: e.target.value || undefined })}
         />
@@ -124,15 +122,13 @@ function Pipeline({ customerId }: { customerId: string }) {
           ))}
         </div>
       ) : cards.length === 0 ? (
-        <EmptyState
-          title={job || q ? "Inga kort matchar filtret" : "Inga kandidater i pipelinen än"}
-        >
+        <EmptyState title={job || q ? t("pipeline.noMatch") : t("pipeline.empty")}>
           {job || q ? (
             <Button variant="link" onClick={() => setSearch({ job: undefined, q: undefined })}>
-              Rensa filter
+              {t("pipeline.clearFilters")}
             </Button>
           ) : (
-            "Lägg till en kandidat och koppla hen till ett jobb."
+            t("pipeline.emptyHint")
           )}
         </EmptyState>
       ) : (

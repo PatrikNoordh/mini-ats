@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -15,13 +16,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useJobs } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
 import { useSaveCandidate } from "@/hooks/useCandidates";
+import { errorCode } from "@/lib/errors";
 import { isLinkedInUrl } from "@/lib/stages";
+import { isEmail, MIN_PASSWORD_LENGTH, type ValidationKey } from "@/lib/validation";
 import type { Candidate } from "@/types";
 
 export type FormErrors = Partial<
   Record<
     "full_name" | "email" | "linkedin_url" | "company_name" | "password" | "title" | "location",
-    string
+    ValidationKey
   >
 >;
 
@@ -38,6 +41,7 @@ export function CandidateDialog({
   onOpenChange: (o: boolean) => void;
   candidate: Candidate | null;
 }) {
+  const { t } = useTranslation();
   const jobs = useJobs(customerId);
   const apps = useApplications(customerId);
   const save = useSaveCandidate(customerId);
@@ -72,10 +76,10 @@ export function CandidateDialog({
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const errs: FormErrors = {};
-    if (!form.full_name.trim()) errs.full_name = "Ange namn.";
-    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) errs.email = "Ange en giltig e-postadress.";
+    if (!form.full_name.trim()) errs.full_name = "name_required";
+    if (!isEmail(form.email)) errs.email = "email_invalid";
     if (form.linkedin_url.trim() && !isLinkedInUrl(form.linkedin_url.trim()))
-      errs.linkedin_url = "Länken måste gå till linkedin.com.";
+      errs.linkedin_url = "linkedin_invalid";
     setErrors(errs);
     if (Object.keys(errs).length) return;
     try {
@@ -84,10 +88,10 @@ export function CandidateDialog({
         input: { ...form, linkedin_url: form.linkedin_url.trim() },
         jobIds,
       });
-      toast.success(candidate ? "Kandidaten är uppdaterad." : "Kandidaten är tillagd.");
+      toast.success(candidate ? t("candidateDialog.updated") : t("candidateDialog.created"));
       onOpenChange(false);
     } catch (err) {
-      toast.error((err as Error).message || "Kunde inte spara.");
+      toast.error(t(`errors.${errorCode(err)}`));
     }
   };
 
@@ -97,35 +101,37 @@ export function CandidateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{candidate ? "Redigera kandidat" : "Ny kandidat"}</DialogTitle>
+          <DialogTitle>
+            {candidate ? t("candidateDialog.titleEdit") : t("candidateDialog.titleNew")}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <Field id="c-name" label="Namn" error={errors.full_name}>
+          <Field id="c-name" label={t("candidateDialog.name")} error={errors.full_name}>
             <Input id="c-name" value={form.full_name} onChange={set("full_name")} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="c-email" label="E-post" error={errors.email}>
+            <Field id="c-email" label={t("candidateDialog.email")} error={errors.email}>
               <Input id="c-email" type="email" value={form.email} onChange={set("email")} />
             </Field>
-            <Field id="c-phone" label="Telefon">
+            <Field id="c-phone" label={t("candidateDialog.phone")}>
               <Input id="c-phone" value={form.phone} onChange={set("phone")} />
             </Field>
           </div>
-          <Field id="c-li" label="LinkedIn-länk" error={errors.linkedin_url}>
+          <Field id="c-li" label={t("candidateDialog.linkedin")} error={errors.linkedin_url}>
             <Input
               id="c-li"
-              placeholder="https://www.linkedin.com/in/…"
+              placeholder={t("candidateDialog.linkedinPlaceholder")}
               value={form.linkedin_url}
               onChange={set("linkedin_url")}
             />
           </Field>
-          <Field id="c-notes" label="Anteckningar">
+          <Field id="c-notes" label={t("candidateDialog.notes")}>
             <Textarea id="c-notes" rows={3} value={form.notes} onChange={set("notes")} />
           </Field>
           <div className="space-y-2">
-            <Label>Koppla till jobb</Label>
+            <Label>{t("candidateDialog.linkJobs")}</Label>
             {visibleJobs.length === 0 && (
-              <p className="text-sm text-muted-foreground">Inga öppna jobb.</p>
+              <p className="text-sm text-muted-foreground">{t("candidateDialog.noOpenJobs")}</p>
             )}
             <div className="space-y-1.5">
               {visibleJobs.map((j) => (
@@ -142,16 +148,16 @@ export function CandidateDialog({
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Nya kopplingar hamnar i steget Ny.
-              {linkedJobIds.length > 0 && " Befintliga kopplingar kan inte tas bort här."}
+              {t("candidateDialog.newLinksHint")}
+              {linkedJobIds.length > 0 && ` ${t("candidateDialog.existingLinksHint")}`}
             </p>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Avbryt
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={save.isPending}>
-              {save.isPending ? "Sparar…" : "Spara"}
+              {save.isPending ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>
@@ -168,14 +174,19 @@ export function Field({
 }: {
   id: string;
   label: string;
-  error?: string | undefined;
+  error?: ValidationKey | undefined;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{label}</Label>
       {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && (
+        <p className="text-xs text-destructive">
+          {t(`validation.${error}`, { min: MIN_PASSWORD_LENGTH })}
+        </p>
+      )}
     </div>
   );
 }
