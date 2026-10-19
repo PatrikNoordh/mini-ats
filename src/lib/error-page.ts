@@ -1,9 +1,15 @@
-export function renderErrorPage(): string {
+import { getT } from "./i18n";
+import { languageFromCookies } from "./language";
+
+/** Plain HTML error page for server failures, in the language from the request's cookie. */
+export function renderErrorPage(request?: Request): string {
+  const language = languageFromCookies(request?.headers.get("cookie"));
+  const t = getT(language);
   return `<!doctype html>
-<html lang="en">
+<html lang="${language}">
   <head>
     <meta charset="utf-8" />
-    <title>This page didn't load</title>
+    <title>${t("errorPage.title")}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa; color: #111; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }
@@ -18,11 +24,11 @@ export function renderErrorPage(): string {
   </head>
   <body>
     <div class="card">
-      <h1>This page didn't load</h1>
-      <p>Something went wrong on our end. You can try refreshing or head back home.</p>
+      <h1>${t("errorPage.title")}</h1>
+      <p>${t("errorPage.description")}</p>
       <div class="actions">
-        <button class="primary" onclick="location.reload()">Try again</button>
-        <a class="secondary" href="/">Go home</a>
+        <button class="primary" onclick="location.reload()">${t("errorPage.retry")}</button>
+        <a class="secondary" href="/">${t("errorPage.home")}</a>
       </div>
     </div>
   </body>
