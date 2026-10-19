@@ -65,7 +65,7 @@ The slug is 2–5 lowercase words describing what changes. If the branch already
 
 ## Step 3 — Plan
 
-Read the existing code in the area before changing anything. Where things live:
+Read the existing code in the area before changing anything. Where things live (how to split code into files is in `CLAUDE.md` § Code structure):
 
 | What | Where |
 |---|---|
@@ -76,7 +76,8 @@ Read the existing code in the area before changing anything. Where things live:
 | Auth | `src/contexts/AuthContext.tsx` (`useAuth()`) |
 | Active customer | `src/contexts/ActiveCustomerContext.tsx`, `src/components/layout/CustomerGate.tsx` |
 | Pages (file-based routes) | `src/routes/_authenticated.<page>.tsx`, `src/routes/login.tsx` |
-| Layout | `src/components/layout/AppShell.tsx` |
+| Dialogs and page parts | `src/components/<feature>/`, one component per file (`CLAUDE.md` § Code structure) |
+| Layout | `src/components/layout/AppShell.tsx` and one file per shell part in the same folder |
 | Shared states | `src/components/States.tsx` (`LoadingRows`, `EmptyState`, `ErrorState`, `PageHeader`) |
 | shadcn/ui components | `src/components/ui/` |
 | Theme tokens | `src/styles.css` |

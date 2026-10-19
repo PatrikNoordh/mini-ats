@@ -70,6 +70,7 @@ Read each file completely before forming an opinion. Do not review code you have
 
 ### UI
 - Code, comments and identifiers in English
+- Files follow `CLAUDE.md` § Code structure. A dialog or page part in a route file, or several components in one file outside that section's exception, is a 🟡 warning
 
 ### No hardcoded values
 - Every user-facing string goes through `t()` and exists in both `src/locales/sv.json` and `src/locales/en.json`. A string in only one language is a 🟡 warning; hardcoded text in a component is a 🟡 warning
