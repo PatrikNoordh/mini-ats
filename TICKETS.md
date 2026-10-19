@@ -280,7 +280,7 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
-- [ ] The LinkedIn error "Länken måste gå till linkedin.com." is misleading when the URL is on linkedin.com but has no path, like `https://linkedin.com`. Say that a full profile link is needed. Fits ATS-3, when the text moves to the locale files — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2)
+- [x] The LinkedIn error "Länken måste gå till linkedin.com." is misleading when the URL is on linkedin.com but has no path, like `https://linkedin.com`. Say that a full profile link is needed. Fits ATS-3, when the text moves to the locale files — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2). Fixed in ATS-3: `validation.linkedin_invalid` asks for a profile link with an example
 - [ ] If the candidate dialog opens before the applications have loaded, existing job links show as unchecked and enabled. Nothing is lost, because saving only adds links and skips duplicates, but the dialog should wait for the links or update when they arrive — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2)
 - [ ] A hand-typed `?q=123` is parsed as a number by the router and dropped by the zod schema. Search terms typed in the search box round-trip fine. Coerce numbers to strings in the schema — `src/routes/_authenticated.pipeline.tsx` (found in ATS-2)
 - [ ] Disabled job checkboxes in the candidate dialog are dimmed, but their job titles are not, so it is not obvious why they cannot be clicked — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2)

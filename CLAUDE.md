@@ -92,7 +92,7 @@ Nothing in app code is hardcoded. Every value has one named source:
 | Spacing, sizes, radii, fonts | The Tailwind scale and the tokens in `src/styles.css`. No arbitrary values like `w-[230px]`; add a named token instead |
 | Magic numbers | Named constants in `src/lib/constants.ts` (delays, thresholds, limits) |
 | Config and URLs | `import.meta.env.VITE_*` for the frontend, `Deno.env.get` in Edge Functions |
-| Errors from the server | Codes (for example `email_exists`) that the UI translates. Never user-facing text from Edge Functions or the database |
+| Errors from the server | Codes (for example `email_exists`) that the UI translates, as described in `docs/error-codes.md`. Never user-facing text from Edge Functions or the database |
 
 Allowed exceptions: `src/components/ui/` (vendored shadcn/ui code), dynamic values computed at runtime (a drag transform), token definitions in `src/styles.css`, mock data and test fixtures. User data (job titles, names, notes) is never translated.
 
