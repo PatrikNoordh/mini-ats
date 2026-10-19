@@ -13,21 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Field, type FormErrors } from "@/components/Field";
 import { useJobs } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
 import { useSaveCandidate } from "@/hooks/useCandidates";
 import { errorCode } from "@/lib/errors";
 import { isLinkedInUrl } from "@/lib/stages";
-import { MIN_PASSWORD_LENGTH } from "@/lib/constants";
-import { isEmail, type ValidationKey } from "@/lib/validation";
+import { isEmail } from "@/lib/validation";
 import type { Candidate } from "@/types";
-
-export type FormErrors = Partial<
-  Record<
-    "full_name" | "email" | "linkedin_url" | "company_name" | "password" | "title" | "location",
-    ValidationKey
-  >
->;
 
 const empty = { full_name: "", email: "", phone: "", linkedin_url: "", notes: "" };
 
@@ -164,30 +157,5 @@ export function CandidateDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-export function Field({
-  id,
-  label,
-  error,
-  children,
-}: {
-  id: string;
-  label: string;
-  error?: ValidationKey | undefined;
-  children: React.ReactNode;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-      {error && (
-        <p className="text-xs text-destructive">
-          {t(`validation.${error}`, { min: MIN_PASSWORD_LENGTH })}
-        </p>
-      )}
-    </div>
   );
 }

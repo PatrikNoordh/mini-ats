@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Field, type FormErrors } from "@/components/candidates/CandidateDialog";
+import { Field, type FormErrors } from "@/components/Field";
 import { useCreateProfile } from "@/hooks/useProfiles";
 import { MIN_PASSWORD_LENGTH } from "@/lib/constants";
 import { errorCode } from "@/lib/errors";

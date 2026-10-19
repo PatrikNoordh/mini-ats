@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, type FormErrors } from "@/components/candidates/CandidateDialog";
+import { Field, type FormErrors } from "@/components/Field";
 import { useCreateJob, useUpdateJob } from "@/hooks/useJobs";
 import type { Job } from "@/types";
 
