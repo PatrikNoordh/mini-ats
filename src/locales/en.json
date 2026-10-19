@@ -94,8 +94,8 @@
   "gate": {
     "title": "Choose a customer to work as",
     "description": "Jobs, candidates and the pipeline are always shown for one customer at a time.",
-    "openJobs_one": "{{count}} open job",
-    "openJobs_other": "{{count}} open jobs"
+    "openJobs_one": "{{count, number}} open job",
+    "openJobs_other": "{{count, number}} open jobs"
   },
   "login": {
     "title": "Sign in",
@@ -110,8 +110,8 @@
   },
   "pipeline": {
     "title": "Pipeline",
-    "cardCount_one": "{{count}} card",
-    "cardCount_other": "{{count}} cards",
+    "cardCount_one": "{{count, number}} card",
+    "cardCount_other": "{{count, number}} cards",
     "newCandidate": "+ New candidate",
     "filterByJob": "Filter by job",
     "allJobs": "All jobs",
@@ -125,8 +125,8 @@
     "unknownJob": "Unknown job",
     "moveFailed": "Could not move the card. The change has been undone.",
     "daysInStage": "Days in stage",
-    "days_one": "{{count}} d",
-    "days_other": "{{count}} d"
+    "days_one": "{{count, number}} d",
+    "days_other": "{{count, number}} d"
   },
   "candidateSheet": {
     "added": "Added {{date}}",
@@ -141,8 +141,8 @@
   },
   "candidates": {
     "title": "Candidates",
-    "count_one": "{{count}} candidate",
-    "count_other": "{{count}} candidates",
+    "count_one": "{{count, number}} candidate",
+    "count_other": "{{count, number}} candidates",
     "new": "+ New candidate",
     "empty": "No candidates yet",
     "emptyHint": "Add the first candidate.",
@@ -170,8 +170,8 @@
   },
   "jobs": {
     "title": "Jobs",
-    "openCount_one": "{{count}} open",
-    "openCount_other": "{{count}} open",
+    "openCount_one": "{{count, number}} open",
+    "openCount_other": "{{count, number}} open",
     "new": "+ New job",
     "empty": "No jobs yet",
     "emptyHint": "Create your first job to start receiving candidates.",

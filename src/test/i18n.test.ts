@@ -89,3 +89,12 @@ describe("error codes", () => {
     }
   });
 });
+
+describe("numbers inside translations", () => {
+  it("formats counts with the shared Intl helper", () => {
+    expect(getT("en")("pipeline.cardCount", { count: 1200 })).toBe("1,200 cards");
+    expect(getT("sv")("pipeline.cardCount", { count: 1200 }).replace(/\s/g, " ")).toBe(
+      "1 200 kort",
+    );
+  });
+});

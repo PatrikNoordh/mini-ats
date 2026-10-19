@@ -80,26 +80,29 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // The language comes from the cookie, so the server renders the right one without a flash.
   beforeLoad: () => ({ language: detectLanguage() }),
-  head: ({ match }) => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: getT(match.context.language)("app.name") },
-      { name: "description", content: getT(match.context.language)("app.description") },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
-      },
-    ],
-  }),
+  head: ({ match }) => {
+    const t = getT(match.context.language);
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: t("app.name") },
+        { name: "description", content: t("app.description") },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+      links: [
+        { rel: "stylesheet", href: appCss },
+        { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+        },
+      ],
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

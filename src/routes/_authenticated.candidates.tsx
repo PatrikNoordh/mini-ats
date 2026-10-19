@@ -102,7 +102,9 @@ function Candidates({ customerId }: { customerId: string }) {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {apps.data?.filter((a) => a.candidate_id === c.id).length ?? "…"}
+                    {apps.data
+                      ? format.number(apps.data.filter((a) => a.candidate_id === c.id).length)
+                      : "…"}
                   </TableCell>
                 </TableRow>
               ))}

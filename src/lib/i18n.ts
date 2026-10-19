@@ -1,7 +1,8 @@
 import { createInstance, type i18n, type TFunction } from "i18next";
 import en from "@/locales/en.json";
 import sv from "@/locales/sv.json";
-import { DEFAULT_LANGUAGE, LANGUAGES, type Language } from "./language";
+import { formatNumber } from "./format";
+import { DEFAULT_LANGUAGE, LANGUAGES, parseLanguage, type Language } from "./language";
 
 // en must have every key that sv has. src/test/locales.test.ts also checks the reverse.
 const english: typeof sv = en;
@@ -22,6 +23,10 @@ function createI18n(language: Language): i18n {
     interpolation: { escapeValue: false }, // React already escapes output
     returnEmptyString: false,
   });
+  // `{{count, number}}` in the locale files goes through the same Intl helper as the rest of the app.
+  instance.services.formatter?.add("number", (value, lng) =>
+    formatNumber(Number(value), parseLanguage(lng)),
+  );
   return instance;
 }
 

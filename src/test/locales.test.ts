@@ -16,8 +16,9 @@ function flatten(tree: Tree, prefix = ""): Map<string, string> {
   return out;
 }
 
+// The variable name only: "{{count, number}}" and "{{count}}" both give "count".
 const placeholders = (text: string) =>
-  [...text.matchAll(/{{\s*(\w+)\s*}}/g)].map((m) => m[1]).sort();
+  [...text.matchAll(/{{\s*(\w+)[^}]*}}/g)].map((m) => m[1]).sort();
 
 const svKeys = flatten(sv);
 const enKeys = flatten(en);

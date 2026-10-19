@@ -27,6 +27,7 @@ import { Field, type FormErrors } from "@/components/candidates/CandidateDialog"
 import { useCreateJob, useJobs, useUpdateJob } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
 import { pageHead } from "@/lib/i18n";
+import { useFormat } from "@/lib/format";
 import type { Job } from "@/types";
 
 export const Route = createFileRoute("/_authenticated/jobs")({
@@ -36,6 +37,7 @@ export const Route = createFileRoute("/_authenticated/jobs")({
 
 function Jobs({ customerId }: { customerId: string }) {
   const { t } = useTranslation();
+  const format = useFormat();
   const jobs = useJobs(customerId);
   const apps = useApplications(customerId);
   const update = useUpdateJob(customerId);
@@ -116,7 +118,9 @@ function Jobs({ customerId }: { customerId: string }) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {apps.data?.filter((a) => a.job_id === j.id).length ?? "…"}
+                    {apps.data
+                      ? format.number(apps.data.filter((a) => a.job_id === j.id).length)
+                      : "…"}
                   </TableCell>
                   <TableCell>
                     <Button

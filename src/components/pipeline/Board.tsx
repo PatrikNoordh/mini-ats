@@ -13,6 +13,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { useFormat } from "@/lib/format";
 import { daysSince, STAGES } from "@/lib/stages";
 import type { Application, Stage } from "@/types";
 
@@ -83,6 +84,7 @@ function Column({
   onOpen: (c: BoardCard) => void;
 }) {
   const { t } = useTranslation();
+  const format = useFormat();
   const { setNodeRef, isOver } = useDroppable({ id: stage });
   return (
     <div
@@ -97,7 +99,7 @@ function Column({
           <span className={cn("h-2 w-2 rounded-full", DOT[stage])} />
           {t(`stages.${stage}`)}
         </div>
-        <span className="text-xs text-muted-foreground">{cards.length}</span>
+        <span className="text-xs text-muted-foreground">{format.number(cards.length)}</span>
       </div>
       <div className="flex min-h-24 flex-1 flex-col gap-1.5 px-2 pb-2">
         {cards.map((c) => (

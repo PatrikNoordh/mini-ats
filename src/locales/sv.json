@@ -94,8 +94,8 @@
   "gate": {
     "title": "Välj en kund att arbeta som",
     "description": "Jobb, kandidater och pipeline visas alltid för en kund i taget.",
-    "openJobs_one": "{{count}} öppet jobb",
-    "openJobs_other": "{{count}} öppna jobb"
+    "openJobs_one": "{{count, number}} öppet jobb",
+    "openJobs_other": "{{count, number}} öppna jobb"
   },
   "login": {
     "title": "Logga in",
@@ -110,8 +110,8 @@
   },
   "pipeline": {
     "title": "Pipeline",
-    "cardCount_one": "{{count}} kort",
-    "cardCount_other": "{{count}} kort",
+    "cardCount_one": "{{count, number}} kort",
+    "cardCount_other": "{{count, number}} kort",
     "newCandidate": "+ Ny kandidat",
     "filterByJob": "Filtrera på jobb",
     "allJobs": "Alla jobb",
@@ -125,8 +125,8 @@
     "unknownJob": "Okänt jobb",
     "moveFailed": "Kunde inte flytta kortet. Ändringen har ångrats.",
     "daysInStage": "Dagar i steget",
-    "days_one": "{{count}} d",
-    "days_other": "{{count}} d"
+    "days_one": "{{count, number}} d",
+    "days_other": "{{count, number}} d"
   },
   "candidateSheet": {
     "added": "Tillagd {{date}}",
@@ -141,8 +141,8 @@
   },
   "candidates": {
     "title": "Kandidater",
-    "count_one": "{{count}} st",
-    "count_other": "{{count}} st",
+    "count_one": "{{count, number}} st",
+    "count_other": "{{count, number}} st",
     "new": "+ Ny kandidat",
     "empty": "Inga kandidater än",
     "emptyHint": "Lägg till den första kandidaten.",
@@ -170,8 +170,8 @@
   },
   "jobs": {
     "title": "Jobb",
-    "openCount_one": "{{count}} öppet",
-    "openCount_other": "{{count}} öppna",
+    "openCount_one": "{{count, number}} öppet",
+    "openCount_other": "{{count, number}} öppna",
     "new": "+ Nytt jobb",
     "empty": "Inga jobb än",
     "emptyHint": "Skapa ditt första jobb för att börja ta emot kandidater.",
