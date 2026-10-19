@@ -12,7 +12,10 @@ export const Route = createFileRoute("/login")({
       { title: "Logga in — Mini-ATS" },
       { name: "description", content: "Logga in på Mini-ATS för att hantera jobb och kandidater." },
       { property: "og:title", content: "Logga in — Mini-ATS" },
-      { property: "og:description", content: "Logga in på Mini-ATS för att hantera jobb och kandidater." },
+      {
+        property: "og:description",
+        content: "Logga in på Mini-ATS för att hantera jobb och kandidater.",
+      },
     ],
   }),
   component: LoginPage,
@@ -48,7 +51,9 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-sm md:p-8">
         <div className="mb-6 flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">A</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
+            A
+          </span>
           <span className="text-lg font-bold">Mini-ATS</span>
         </div>
         <h1 className="text-2xl font-bold tracking-tight">Logga in</h1>
@@ -56,14 +61,33 @@ function LoginPage() {
         <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
           <div className="space-y-1.5">
             <Label htmlFor="email">E-post</Label>
-            <Input id="email" type="email" autoComplete="email" placeholder="namn@foretag.se" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="namn@foretag.se"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">Lösenord</Label>
-            <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
-          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" size="lg" disabled={busy}>{busy ? "Loggar in…" : "Logga in"}</Button>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <Button type="submit" className="w-full" size="lg" disabled={busy}>
+            {busy ? "Loggar in…" : "Logga in"}
+          </Button>
         </form>
         <DemoLogin onSignedIn={() => navigate({ to: "/pipeline" })} />
       </div>

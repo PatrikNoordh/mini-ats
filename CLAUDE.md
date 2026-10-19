@@ -39,7 +39,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 - **Accessible:** a label on every input, controls reachable by keyboard, visible focus and enough contrast.
 - **Consistent:** reuse existing components, tokens and patterns. UI text that is clear in both languages and uses the same words for the same things.
 - **Clean:** clear names, small functions, no dead code, no leftover `console.log`, and no `TODO` without an issue.
-- **Within scope:** quality means doing the ticket well, not doing more. Ideas outside the ticket become new issues with `/ats-create-ticket`.
+- **Within scope:** quality means doing the ticket well, not doing more. Problems and ideas outside the ticket go in `TICKETS.md` § Found while building, one line each, and become issues with `/ats-create-ticket` later.
 - **Self-reviewed:** before the summary, read the whole diff (`git diff origin/main...HEAD`) as a strict reviewer and fix what you find.
 
 ## Stack

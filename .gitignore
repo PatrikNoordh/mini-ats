@@ -15,6 +15,10 @@ dist-ssr
 .tanstack/**
 .nitro
 *.local
+.env*.local
+
+# Vercel
+.vercel
 
 # Wrangler / Cloudflare
 .wrangler/

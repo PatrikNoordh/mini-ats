@@ -271,3 +271,17 @@ Gives the recruiter a quick first read of a CV against a job. A suggestion, neve
 - [ ] AC3: Clearly labelled as an AI suggestion
 
 **Checkpoint — ship version 2 to the reviewers:** Loom demo (5 min) and the assumptions email, updated to match what was built. If the AI feature is not done, explain the approach in the demo instead.
+
+---
+
+## Found while building
+
+Small problems and improvements noticed while working on a ticket but outside its scope. Add one line per finding as soon as it is found, with the ticket where it was found. When there are enough, or before an epic checkpoint, turn them into tickets with `/ats-create-ticket` and replace the line with the issue link.
+
+Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
+
+- [ ] The LinkedIn error "Länken måste gå till linkedin.com." is misleading when the URL is on linkedin.com but has no path, like `https://linkedin.com`. Say that a full profile link is needed. Fits ATS-3, when the text moves to the locale files — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2)
+- [ ] If the candidate dialog opens before the applications have loaded, existing job links show as unchecked and enabled. Nothing is lost, because saving only adds links and skips duplicates, but the dialog should wait for the links or update when they arrive — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2)
+- [ ] A hand-typed `?q=123` is parsed as a number by the router and dropped by the zod schema. Search terms typed in the search box round-trip fine. Coerce numbers to strings in the schema — `src/routes/_authenticated.pipeline.tsx` (found in ATS-2)
+- [ ] Disabled job checkboxes in the candidate dialog are dimmed, but their job titles are not, so it is not obvious why they cannot be clicked — `src/components/candidates/CandidateDialog.tsx` (found in ATS-2)
+- [ ] 8 lint warnings from `react-refresh/only-export-components`: the contexts export hooks next to their providers, and some shadcn/ui files export variants. Decide whether to split the files or turn the rule off for those paths — `src/contexts/`, `src/components/ui/` (found in ATS-2)

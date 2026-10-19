@@ -1,4 +1,4 @@
-import type { Stage } from "@/types";
+import type { Job, Stage } from "@/types";
 
 export const STAGES: Stage[] = ["new", "screening", "interview", "offer", "hired", "rejected"];
 
@@ -17,16 +17,28 @@ export function daysSince(iso: string, now: Date = new Date()): number {
   return Math.max(0, Math.floor(diff / 86_400_000));
 }
 
-/** Accepts only http(s) URLs on linkedin.com or its subdomains. */
+/**
+ * Same rule as the `candidates.linkedin_url` check in the database
+ * (`~* '^https?://([a-z]+\.)?linkedin\.com/'`), so the form never accepts
+ * a URL that the database would reject.
+ */
+const LINKEDIN_URL_PATTERN = /^https?:\/\/([a-z]+\.)?linkedin\.com\//i;
+
 export function isLinkedInUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return false;
-    const host = url.hostname.toLowerCase();
-    return host === "linkedin.com" || host.endsWith(".linkedin.com");
-  } catch {
-    return false;
-  }
+  return LINKEDIN_URL_PATTERN.test(value);
+}
+
+/**
+ * The `?job=` filter only applies to a job of the active customer. After a
+ * customer switch it points at the previous customer's job, so it is dropped.
+ * While the jobs are still loading the filter is kept as it is.
+ */
+export function resolveJobFilter(
+  job: string | undefined,
+  jobs: readonly Pick<Job, "id">[] | undefined,
+): string | undefined {
+  if (!job || !jobs) return job;
+  return jobs.some((j) => j.id === job) ? job : undefined;
 }
 
 export const queryKeys = {

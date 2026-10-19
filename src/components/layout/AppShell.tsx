@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -13,7 +12,13 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +41,9 @@ const NAV = [
 function Logo() {
   return (
     <div className="flex items-center gap-2.5 px-2 py-1.5">
-      <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">A</span>
+      <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
+        A
+      </span>
       <span className="text-lg font-bold tracking-tight">Mini-ATS</span>
     </div>
   );
@@ -55,7 +62,12 @@ function AppSidebar() {
         <SidebarMenu>
           {NAV.filter((n) => !n.admin || role === "admin").map((n) => (
             <SidebarMenuItem key={n.to}>
-              <SidebarMenuButton asChild isActive={path.startsWith(n.to)} size="lg" className="data-[active=true]:text-primary">
+              <SidebarMenuButton
+                asChild
+                isActive={path.startsWith(n.to)}
+                size="lg"
+                className="data-[active=true]:text-primary"
+              >
                 <Link to={n.to} onClick={() => setOpenMobile(false)}>
                   <n.icon className="h-4 w-4" />
                   <span className="text-[15px]">{n.title}</span>
@@ -65,9 +77,6 @@ function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
-        <p className="px-2 pb-2 text-xs text-muted-foreground">Prototyp med låtsasdata. Inget sparas.</p>
-      </SidebarFooter>
     </Sidebar>
   );
 }
@@ -83,7 +92,9 @@ function CustomerPicker() {
         </SelectTrigger>
         <SelectContent>
           {customers.map((c) => (
-            <SelectItem key={c.id} value={c.id}>{c.company_name}</SelectItem>
+            <SelectItem key={c.id} value={c.id}>
+              {c.company_name}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -91,20 +102,37 @@ function CustomerPicker() {
   );
 }
 
+/** Customers see their own company where admins see the customer picker. */
+function CompanyName() {
+  const { profile } = useAuth();
+  if (!profile?.company_name) return null;
+  return <span className="min-w-0 truncate text-sm font-semibold">{profile.company_name}</span>;
+}
+
 function UserMenu() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   if (!profile) return null;
-  const initials = profile.full_name.split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
+  const initials = profile.full_name
+    .split(" ")
+    .map((s) => s[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-accent" aria-label="Användarmeny">
+        <button
+          className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-accent"
+          aria-label="Användarmeny"
+        >
           <span className="hidden rounded-full border px-2 py-0.5 text-xs text-muted-foreground md:inline">
             {profile.role === "admin" ? "Admin" : "Kund"}
           </span>
           <span className="hidden text-sm font-medium md:inline">{profile.full_name}</span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-bold">{initials}</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-bold">
+            {initials}
+          </span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -132,9 +160,12 @@ function ActingBanner() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-warning/40 bg-warning-muted px-4 py-2.5 text-sm text-warning-foreground md:px-6">
       <span>
-        Du arbetar som <strong className="font-bold">{customer.company_name}</strong>. Allt du skapar hamnar hos kunden.
+        Du arbetar som <strong className="font-bold">{customer.company_name}</strong>. Allt du
+        skapar hamnar hos kunden.
       </span>
-      <Button variant="warning" size="sm" onClick={() => setCustomerId(null)}>Lämna kundläge</Button>
+      <Button variant="warning" size="sm" onClick={() => setCustomerId(null)}>
+        Lämna kundläge
+      </Button>
     </div>
   );
 }
@@ -148,7 +179,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-card px-3 md:px-6">
             <SidebarTrigger />
-            {role === "admin" && <CustomerPicker />}
+            {role === "admin" ? <CustomerPicker /> : <CompanyName />}
             <div className="ml-auto">
               <UserMenu />
             </div>

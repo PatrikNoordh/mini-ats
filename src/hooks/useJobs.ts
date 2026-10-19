@@ -21,7 +21,8 @@ export function useCreateJob(customerId: string | null) {
 export function useUpdateJob(customerId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Partial<JobInput> }) => updateJob(customerId!, id, patch),
+    mutationFn: ({ id, patch }: { id: string; patch: Partial<JobInput> }) =>
+      updateJob(customerId!, id, patch),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) }),
   });
 }

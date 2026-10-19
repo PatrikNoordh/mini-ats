@@ -45,9 +45,30 @@ function slug(name: string) {
 
 function seed(): Store {
   const profiles: Profile[] = [
-    { id: "p_admin", role: "admin", full_name: "Demo Admin", company_name: "Plattformen", email: "admin@demo.test", created_at: "2026-10-01T08:00:00.000Z" },
-    { id: "p_nordkust", role: "customer", full_name: "Karin Exempel", company_name: "Nordkust Bygg AB", email: "karin@nordkust.test", created_at: "2026-10-02T08:00:00.000Z" },
-    { id: "p_lumen", role: "customer", full_name: "Oskar Testsson", company_name: "Studio Lumen", email: "oskar@lumen.test", created_at: "2026-10-03T08:00:00.000Z" },
+    {
+      id: "p_admin",
+      role: "admin",
+      full_name: "Demo Admin",
+      company_name: "Plattformen",
+      email: "admin@demo.test",
+      created_at: "2026-10-01T08:00:00.000Z",
+    },
+    {
+      id: "p_nordkust",
+      role: "customer",
+      full_name: "Karin Exempel",
+      company_name: "Nordkust Bygg AB",
+      email: "karin@nordkust.test",
+      created_at: "2026-10-02T08:00:00.000Z",
+    },
+    {
+      id: "p_lumen",
+      role: "customer",
+      full_name: "Oskar Testsson",
+      company_name: "Studio Lumen",
+      email: "oskar@lumen.test",
+      created_at: "2026-10-03T08:00:00.000Z",
+    },
   ];
   const passwords = Object.fromEntries(profiles.map((p) => [p.id, DEMO_PASSWORD]));
 
@@ -66,8 +87,40 @@ function seed(): Store {
     ],
   };
   const names: Record<string, string[]> = {
-    p_nordkust: ["Alva Provsson", "Bertil Demosson", "Cecilia Låtsas", "David Fiktiv", "Elin Exempelsdotter", "Filip Prototyp", "Greta Testberg", "Hugo Mockström", "Ida Påhittad", "Jonny Dummy", "Klara Skissén", "Lars Utkast", "Maja Placeholder", "Nils Fejkman", "Olivia Provberg"],
-    p_lumen: ["Petra Påhitt", "Quentin Testare", "Rut Mocksson", "Sven Skenbar", "Tove Exempel", "Ulf Utkastsson", "Vera Låtsasdotter", "Wilma Fiktivsson", "Axel Dummysson", "Bodil Prov", "Carl Placeholder", "Disa Demo", "Einar Fejk", "Frida Skiss", "Gustav Testlund"],
+    p_nordkust: [
+      "Alva Provsson",
+      "Bertil Demosson",
+      "Cecilia Låtsas",
+      "David Fiktiv",
+      "Elin Exempelsdotter",
+      "Filip Prototyp",
+      "Greta Testberg",
+      "Hugo Mockström",
+      "Ida Påhittad",
+      "Jonny Dummy",
+      "Klara Skissén",
+      "Lars Utkast",
+      "Maja Placeholder",
+      "Nils Fejkman",
+      "Olivia Provberg",
+    ],
+    p_lumen: [
+      "Petra Påhitt",
+      "Quentin Testare",
+      "Rut Mocksson",
+      "Sven Skenbar",
+      "Tove Exempel",
+      "Ulf Utkastsson",
+      "Vera Låtsasdotter",
+      "Wilma Fiktivsson",
+      "Axel Dummysson",
+      "Bodil Prov",
+      "Carl Placeholder",
+      "Disa Demo",
+      "Einar Fejk",
+      "Frida Skiss",
+      "Gustav Testlund",
+    ],
   };
 
   const jobs: Job[] = [];
@@ -97,7 +150,10 @@ function seed(): Store {
         email: `${slug(full_name)}@exempel.test`,
         phone: `070-000 00 ${String(i + 10).padStart(2, "0")}`,
         linkedin_url: `https://www.linkedin.com/in/${slug(full_name)}-exempel`,
-        notes: i % 3 === 0 ? "Påhittad kandidat för demo. Stark referens från tidigare arbetsgivare." : "",
+        notes:
+          i % 3 === 0
+            ? "Påhittad kandidat för demo. Stark referens från tidigare arbetsgivare."
+            : "",
         created_at: daysAgo(30 - i),
       };
       candidates.push(cand);

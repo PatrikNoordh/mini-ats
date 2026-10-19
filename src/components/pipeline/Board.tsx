@@ -1,7 +1,7 @@
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useDraggable,
   useDroppable,
@@ -33,18 +33,30 @@ const DOT: Record<Stage, string> = {
 function CardBody({ card, dragging }: { card: BoardCard; dragging?: boolean }) {
   const days = daysSince(card.app.stage_changed_at);
   return (
-    <div className={cn("rounded-md border bg-card px-3 py-2 shadow-xs", dragging && "shadow-lg ring-2 ring-primary")}>
+    <div
+      className={cn(
+        "rounded-md border bg-card px-3 py-2 shadow-xs",
+        dragging && "shadow-lg ring-2 ring-primary",
+      )}
+    >
       <div className="truncate text-sm font-semibold">{card.candidateName}</div>
       <div className="mt-0.5 flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span className="truncate">{card.jobTitle}</span>
-        <span className={cn("shrink-0 font-mono", days >= 14 && "text-destructive")} title="Dagar i steget">{days} d</span>
+        <span
+          className={cn("shrink-0 font-mono", days >= 14 && "text-destructive")}
+          title="Dagar i steget"
+        >
+          {days} d
+        </span>
       </div>
     </div>
   );
 }
 
 function DraggableCard({ card, onOpen }: { card: BoardCard; onOpen: (c: BoardCard) => void }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: card.app.id });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: card.app.id,
+  });
   return (
     <div
       ref={setNodeRef}
@@ -59,12 +71,23 @@ function DraggableCard({ card, onOpen }: { card: BoardCard; onOpen: (c: BoardCar
   );
 }
 
-function Column({ stage, cards, onOpen }: { stage: Stage; cards: BoardCard[]; onOpen: (c: BoardCard) => void }) {
+function Column({
+  stage,
+  cards,
+  onOpen,
+}: {
+  stage: Stage;
+  cards: BoardCard[];
+  onOpen: (c: BoardCard) => void;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
   return (
     <div
       ref={setNodeRef}
-      className={cn("flex w-[230px] shrink-0 flex-col rounded-lg border bg-column transition-colors", isOver && "border-primary bg-accent")}
+      className={cn(
+        "flex w-[230px] shrink-0 flex-col rounded-lg border bg-column transition-colors",
+        isOver && "border-primary bg-accent",
+      )}
     >
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2 text-sm font-semibold">
@@ -82,9 +105,17 @@ function Column({ stage, cards, onOpen }: { stage: Stage; cards: BoardCard[]; on
   );
 }
 
-export function Board({ cards, onMove, onOpen }: { cards: BoardCard[]; onMove: (id: string, stage: Stage) => void; onOpen: (c: BoardCard) => void }) {
+export function Board({
+  cards,
+  onMove,
+  onOpen,
+}: {
+  cards: BoardCard[];
+  onMove: (id: string, stage: Stage) => void;
+  onOpen: (c: BoardCard) => void;
+}) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
   );
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -99,14 +130,21 @@ export function Board({ cards, onMove, onOpen }: { cards: BoardCard[]; onMove: (
   };
 
   return (
-    <DndContext sensors={sensors} onDragStart={(e) => setActiveId(String(e.active.id))} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={(e) => setActiveId(String(e.active.id))}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
       <div className="-mx-4 overflow-x-auto px-4 pb-3 md:mx-0 md:px-0">
         <div className="flex gap-3">
           {STAGES.map((s) => (
             <Column
               key={s}
               stage={s}
-              cards={cards.filter((c) => c.app.stage === s).sort((a, b) => a.app.position - b.app.position)}
+              cards={cards
+                .filter((c) => c.app.stage === s)
+                .sort((a, b) => a.app.position - b.app.position)}
               onOpen={onOpen}
             />
           ))}
