@@ -1,4 +1,5 @@
 import type { Application, Candidate } from "@/types";
+import { AppError } from "@/lib/errors";
 import { clone, db, delay, uid } from "./mockStore";
 
 export type CandidateInput = Pick<
@@ -68,7 +69,7 @@ export async function updateCandidate(
 ): Promise<Candidate> {
   await delay();
   const cand = db().candidates.find((c) => c.id === id && c.customer_id === customerId);
-  if (!cand) throw new Error("Kandidaten hittades inte.");
+  if (!cand) throw new AppError("candidate_not_found");
   Object.assign(cand, input);
   addLinks(customerId, id, jobIds);
   return clone(cand);

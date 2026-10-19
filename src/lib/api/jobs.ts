@@ -1,4 +1,5 @@
 import type { Job } from "@/types";
+import { AppError } from "@/lib/errors";
 import { clone, db, delay, uid } from "./mockStore";
 
 export type JobInput = Pick<Job, "title" | "description" | "location" | "status">;
@@ -27,7 +28,7 @@ export async function updateJob(
 ): Promise<Job> {
   await delay();
   const job = db().jobs.find((j) => j.id === id && j.customer_id === customerId);
-  if (!job) throw new Error("Jobbet hittades inte.");
+  if (!job) throw new AppError("job_not_found");
   Object.assign(job, patch);
   return clone(job);
 }
