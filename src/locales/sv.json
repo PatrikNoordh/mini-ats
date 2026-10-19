@@ -1,0 +1,233 @@
+{
+  "app": {
+    "name": "Mini-ATS",
+    "description": "Enkel rekrytering för små svenska företag."
+  },
+  "meta": {
+    "home": {
+      "title": "Mini-ATS — rekrytering för små företag",
+      "description": "Håll koll på jobb, kandidater och pipeline på ett ställe."
+    },
+    "login": {
+      "title": "Logga in — Mini-ATS",
+      "description": "Logga in på Mini-ATS för att hantera jobb och kandidater."
+    },
+    "pipeline": {
+      "title": "Pipeline — Mini-ATS",
+      "description": "Flytta kandidater mellan stegen i din rekrytering."
+    },
+    "jobs": {
+      "title": "Jobb — Mini-ATS",
+      "description": "Skapa, redigera och stäng jobbannonser."
+    },
+    "candidates": {
+      "title": "Kandidater — Mini-ATS",
+      "description": "Alla kandidater med kontaktuppgifter och kopplade jobb."
+    },
+    "accounts": {
+      "title": "Konton — Mini-ATS",
+      "description": "Hantera admin- och kundkonton på plattformen."
+    }
+  },
+  "common": {
+    "loading": "Laddar",
+    "retry": "Försök igen",
+    "cancel": "Avbryt",
+    "save": "Spara",
+    "saving": "Sparar…",
+    "close": "Stäng",
+    "loadError": "Något gick fel när data hämtades."
+  },
+  "language": {
+    "label": "Språk",
+    "sv": "Svenska",
+    "en": "English"
+  },
+  "roles": {
+    "admin": "Admin",
+    "customer": "Kund"
+  },
+  "stages": {
+    "new": "Ny",
+    "screening": "Screening",
+    "interview": "Intervju",
+    "offer": "Erbjudande",
+    "hired": "Anställd",
+    "rejected": "Avböjd"
+  },
+  "errors": {
+    "card_not_found": "Kortet hittades inte.",
+    "job_not_found": "Jobbet hittades inte.",
+    "candidate_not_found": "Kandidaten hittades inte.",
+    "email_exists": "Det finns redan ett konto med den e-postadressen.",
+    "invalid_credentials": "Fel e-post eller lösenord.",
+    "unknown": "Något gick fel. Försök igen."
+  },
+  "validation": {
+    "name_required": "Ange namn.",
+    "company_required": "Ange företag.",
+    "email_invalid": "Ange en giltig e-postadress.",
+    "password_too_short": "Lösenordet måste ha minst {{min}} tecken.",
+    "title_required": "Ange en titel.",
+    "location_required": "Ange en ort.",
+    "linkedin_invalid": "Ange en länk till en LinkedIn-profil, till exempel https://www.linkedin.com/in/namn.",
+    "login_required": "Fyll i både e-post och lösenord."
+  },
+  "shell": {
+    "toggleSidebar": "Visa eller dölj menyn",
+    "sidebarTitle": "Meny",
+    "sidebarDescription": "Navigering mellan sidorna.",
+    "userMenu": "Användarmeny",
+    "signOut": "Logga ut",
+    "customerLabel": "Kund",
+    "chooseCustomer": "Välj kund",
+    "chooseCustomerPlaceholder": "Välj kund…",
+    "actingAs": "Du arbetar som <bold>{{company}}</bold>. Allt du skapar hamnar hos kunden.",
+    "leaveCustomer": "Lämna kundläge"
+  },
+  "nav": {
+    "pipeline": "Pipeline",
+    "jobs": "Jobb",
+    "candidates": "Kandidater",
+    "accounts": "Konton"
+  },
+  "gate": {
+    "title": "Välj en kund att arbeta som",
+    "description": "Jobb, kandidater och pipeline visas alltid för en kund i taget.",
+    "openJobs_one": "{{count}} öppet jobb",
+    "openJobs_other": "{{count}} öppna jobb"
+  },
+  "login": {
+    "title": "Logga in",
+    "subtitle": "Konton skapas av en administratör.",
+    "email": "E-post",
+    "emailPlaceholder": "namn@foretag.se",
+    "password": "Lösenord",
+    "submit": "Logga in",
+    "submitting": "Loggar in…",
+    "demo": "Demo",
+    "demoPlatform": "Plattformen"
+  },
+  "pipeline": {
+    "title": "Pipeline",
+    "cardCount_one": "{{count}} kort",
+    "cardCount_other": "{{count}} kort",
+    "newCandidate": "+ Ny kandidat",
+    "filterByJob": "Filtrera på jobb",
+    "allJobs": "Alla jobb",
+    "closedJob": "{{title}} (stängt)",
+    "search": "Sök kandidatnamn",
+    "noMatch": "Inga kort matchar filtret",
+    "clearFilters": "Rensa filter",
+    "empty": "Inga kandidater i pipelinen än",
+    "emptyHint": "Lägg till en kandidat och koppla hen till ett jobb.",
+    "unknownCandidate": "Okänd",
+    "unknownJob": "Okänt jobb",
+    "moveFailed": "Kunde inte flytta kortet. Ändringen har ångrats.",
+    "daysInStage": "Dagar i steget",
+    "days_one": "{{count}} d",
+    "days_other": "{{count}} d"
+  },
+  "candidateSheet": {
+    "added": "Tillagd {{date}}",
+    "email": "E-post",
+    "phone": "Telefon",
+    "linkedin": "LinkedIn",
+    "openProfile": "Öppna profil",
+    "notes": "Anteckningar",
+    "noNotes": "Inga anteckningar.",
+    "linkedJobs": "Kopplade jobb",
+    "noLinkedJobs": "Inte kopplad till något jobb."
+  },
+  "candidates": {
+    "title": "Kandidater",
+    "count_one": "{{count}} st",
+    "count_other": "{{count}} st",
+    "new": "+ Ny kandidat",
+    "empty": "Inga kandidater än",
+    "emptyHint": "Lägg till den första kandidaten.",
+    "name": "Namn",
+    "email": "E-post",
+    "linkedin": "LinkedIn",
+    "jobs": "Jobb",
+    "profile": "Profil"
+  },
+  "candidateDialog": {
+    "titleNew": "Ny kandidat",
+    "titleEdit": "Redigera kandidat",
+    "name": "Namn",
+    "email": "E-post",
+    "phone": "Telefon",
+    "linkedin": "LinkedIn-länk",
+    "linkedinPlaceholder": "https://www.linkedin.com/in/…",
+    "notes": "Anteckningar",
+    "linkJobs": "Koppla till jobb",
+    "noOpenJobs": "Inga öppna jobb.",
+    "newLinksHint": "Nya kopplingar hamnar i steget Ny.",
+    "existingLinksHint": "Befintliga kopplingar kan inte tas bort här.",
+    "created": "Kandidaten är tillagd.",
+    "updated": "Kandidaten är uppdaterad."
+  },
+  "jobs": {
+    "title": "Jobb",
+    "openCount_one": "{{count}} öppet",
+    "openCount_other": "{{count}} öppna",
+    "new": "+ Nytt jobb",
+    "empty": "Inga jobb än",
+    "emptyHint": "Skapa ditt första jobb för att börja ta emot kandidater.",
+    "jobTitle": "Titel",
+    "location": "Ort",
+    "status": "Status",
+    "candidates": "Kandidater",
+    "open": "Öppet",
+    "closed": "Stängt",
+    "close": "Stäng",
+    "reopen": "Öppna igen",
+    "reopened": "Jobbet är öppnat igen.",
+    "closedToast": "Jobbet är stängt.",
+    "statusFailed": "Kunde inte ändra status."
+  },
+  "jobDialog": {
+    "titleNew": "Nytt jobb",
+    "titleEdit": "Redigera jobb",
+    "jobTitle": "Titel",
+    "location": "Ort",
+    "description": "Beskrivning",
+    "created": "Jobbet är skapat.",
+    "updated": "Jobbet är uppdaterat.",
+    "saveFailed": "Kunde inte spara jobbet."
+  },
+  "accounts": {
+    "title": "Konton",
+    "adminOnly": "Bara admin ser den här sidan",
+    "new": "+ Nytt konto",
+    "empty": "Inga konton",
+    "name": "Namn",
+    "company": "Företag",
+    "email": "E-post",
+    "role": "Roll",
+    "created": "Skapad"
+  },
+  "accountDialog": {
+    "title": "Nytt konto",
+    "role": "Roll",
+    "name": "Namn",
+    "company": "Företag",
+    "email": "E-post",
+    "password": "Tillfälligt lösenord",
+    "submit": "Skapa konto",
+    "submitting": "Skapar…",
+    "created": "Kontot är skapat."
+  },
+  "notFound": {
+    "title": "Sidan hittades inte",
+    "description": "Sidan du letar efter finns inte eller har flyttats.",
+    "home": "Till startsidan"
+  },
+  "errorPage": {
+    "title": "Sidan kunde inte laddas",
+    "description": "Något gick fel. Försök igen eller gå till startsidan.",
+    "retry": "Försök igen",
+    "home": "Till startsidan"
+  }
+}

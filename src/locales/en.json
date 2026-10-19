@@ -1,0 +1,233 @@
+{
+  "app": {
+    "name": "Mini-ATS",
+    "description": "Simple recruiting for small companies."
+  },
+  "meta": {
+    "home": {
+      "title": "Mini-ATS — recruiting for small companies",
+      "description": "Keep track of jobs, candidates and the pipeline in one place."
+    },
+    "login": {
+      "title": "Sign in — Mini-ATS",
+      "description": "Sign in to Mini-ATS to manage jobs and candidates."
+    },
+    "pipeline": {
+      "title": "Pipeline — Mini-ATS",
+      "description": "Move candidates between the stages of your recruitment."
+    },
+    "jobs": {
+      "title": "Jobs — Mini-ATS",
+      "description": "Create, edit and close job openings."
+    },
+    "candidates": {
+      "title": "Candidates — Mini-ATS",
+      "description": "All candidates with contact details and linked jobs."
+    },
+    "accounts": {
+      "title": "Accounts — Mini-ATS",
+      "description": "Manage admin and customer accounts on the platform."
+    }
+  },
+  "common": {
+    "loading": "Loading",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "close": "Close",
+    "loadError": "Something went wrong while loading the data."
+  },
+  "language": {
+    "label": "Language",
+    "sv": "Svenska",
+    "en": "English"
+  },
+  "roles": {
+    "admin": "Admin",
+    "customer": "Customer"
+  },
+  "stages": {
+    "new": "New",
+    "screening": "Screening",
+    "interview": "Interview",
+    "offer": "Offer",
+    "hired": "Hired",
+    "rejected": "Rejected"
+  },
+  "errors": {
+    "card_not_found": "The card could not be found.",
+    "job_not_found": "The job could not be found.",
+    "candidate_not_found": "The candidate could not be found.",
+    "email_exists": "An account with that email address already exists.",
+    "invalid_credentials": "Wrong email or password.",
+    "unknown": "Something went wrong. Please try again."
+  },
+  "validation": {
+    "name_required": "Enter a name.",
+    "company_required": "Enter a company.",
+    "email_invalid": "Enter a valid email address.",
+    "password_too_short": "The password must be at least {{min}} characters.",
+    "title_required": "Enter a title.",
+    "location_required": "Enter a location.",
+    "linkedin_invalid": "Enter a link to a LinkedIn profile, for example https://www.linkedin.com/in/name.",
+    "login_required": "Enter both email and password."
+  },
+  "shell": {
+    "toggleSidebar": "Show or hide the menu",
+    "sidebarTitle": "Menu",
+    "sidebarDescription": "Navigation between the pages.",
+    "userMenu": "User menu",
+    "signOut": "Sign out",
+    "customerLabel": "Customer",
+    "chooseCustomer": "Choose customer",
+    "chooseCustomerPlaceholder": "Choose customer…",
+    "actingAs": "You are working as <bold>{{company}}</bold>. Everything you create belongs to the customer.",
+    "leaveCustomer": "Leave customer mode"
+  },
+  "nav": {
+    "pipeline": "Pipeline",
+    "jobs": "Jobs",
+    "candidates": "Candidates",
+    "accounts": "Accounts"
+  },
+  "gate": {
+    "title": "Choose a customer to work as",
+    "description": "Jobs, candidates and the pipeline are always shown for one customer at a time.",
+    "openJobs_one": "{{count}} open job",
+    "openJobs_other": "{{count}} open jobs"
+  },
+  "login": {
+    "title": "Sign in",
+    "subtitle": "Accounts are created by an administrator.",
+    "email": "Email",
+    "emailPlaceholder": "name@company.com",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "demo": "Demo",
+    "demoPlatform": "The platform"
+  },
+  "pipeline": {
+    "title": "Pipeline",
+    "cardCount_one": "{{count}} card",
+    "cardCount_other": "{{count}} cards",
+    "newCandidate": "+ New candidate",
+    "filterByJob": "Filter by job",
+    "allJobs": "All jobs",
+    "closedJob": "{{title}} (closed)",
+    "search": "Search candidate name",
+    "noMatch": "No cards match the filter",
+    "clearFilters": "Clear filters",
+    "empty": "No candidates in the pipeline yet",
+    "emptyHint": "Add a candidate and link them to a job.",
+    "unknownCandidate": "Unknown",
+    "unknownJob": "Unknown job",
+    "moveFailed": "Could not move the card. The change has been undone.",
+    "daysInStage": "Days in stage",
+    "days_one": "{{count}} d",
+    "days_other": "{{count}} d"
+  },
+  "candidateSheet": {
+    "added": "Added {{date}}",
+    "email": "Email",
+    "phone": "Phone",
+    "linkedin": "LinkedIn",
+    "openProfile": "Open profile",
+    "notes": "Notes",
+    "noNotes": "No notes.",
+    "linkedJobs": "Linked jobs",
+    "noLinkedJobs": "Not linked to any job."
+  },
+  "candidates": {
+    "title": "Candidates",
+    "count_one": "{{count}} candidate",
+    "count_other": "{{count}} candidates",
+    "new": "+ New candidate",
+    "empty": "No candidates yet",
+    "emptyHint": "Add the first candidate.",
+    "name": "Name",
+    "email": "Email",
+    "linkedin": "LinkedIn",
+    "jobs": "Jobs",
+    "profile": "Profile"
+  },
+  "candidateDialog": {
+    "titleNew": "New candidate",
+    "titleEdit": "Edit candidate",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "linkedin": "LinkedIn link",
+    "linkedinPlaceholder": "https://www.linkedin.com/in/…",
+    "notes": "Notes",
+    "linkJobs": "Link to jobs",
+    "noOpenJobs": "No open jobs.",
+    "newLinksHint": "New links start in the New stage.",
+    "existingLinksHint": "Existing links cannot be removed here.",
+    "created": "The candidate has been added.",
+    "updated": "The candidate has been updated."
+  },
+  "jobs": {
+    "title": "Jobs",
+    "openCount_one": "{{count}} open",
+    "openCount_other": "{{count}} open",
+    "new": "+ New job",
+    "empty": "No jobs yet",
+    "emptyHint": "Create your first job to start receiving candidates.",
+    "jobTitle": "Title",
+    "location": "Location",
+    "status": "Status",
+    "candidates": "Candidates",
+    "open": "Open",
+    "closed": "Closed",
+    "close": "Close",
+    "reopen": "Reopen",
+    "reopened": "The job has been reopened.",
+    "closedToast": "The job has been closed.",
+    "statusFailed": "Could not change the status."
+  },
+  "jobDialog": {
+    "titleNew": "New job",
+    "titleEdit": "Edit job",
+    "jobTitle": "Title",
+    "location": "Location",
+    "description": "Description",
+    "created": "The job has been created.",
+    "updated": "The job has been updated.",
+    "saveFailed": "Could not save the job."
+  },
+  "accounts": {
+    "title": "Accounts",
+    "adminOnly": "Only admins see this page",
+    "new": "+ New account",
+    "empty": "No accounts",
+    "name": "Name",
+    "company": "Company",
+    "email": "Email",
+    "role": "Role",
+    "created": "Created"
+  },
+  "accountDialog": {
+    "title": "New account",
+    "role": "Role",
+    "name": "Name",
+    "company": "Company",
+    "email": "Email",
+    "password": "Temporary password",
+    "submit": "Create account",
+    "submitting": "Creating…",
+    "created": "The account has been created."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist or has moved.",
+    "home": "Go to the start page"
+  },
+  "errorPage": {
+    "title": "The page could not be loaded",
+    "description": "Something went wrong. Try again or go to the start page.",
+    "retry": "Try again",
+    "home": "Go to the start page"
+  }
+}
