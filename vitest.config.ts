@@ -9,6 +9,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // The server error page inlines the theme from styles.css?raw; load it instead of an empty stub.
+    css: { include: [/styles\.css/] },
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },

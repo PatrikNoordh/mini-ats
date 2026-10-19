@@ -1,11 +1,12 @@
 import type { Job, Stage } from "@/types";
+import { MS_PER_DAY } from "./constants";
 
 export const STAGES: Stage[] = ["new", "screening", "interview", "offer", "hired", "rejected"];
 
 /** Whole days since the given ISO date (never negative). */
 export function daysSince(iso: string, now: Date = new Date()): number {
   const diff = now.getTime() - new Date(iso).getTime();
-  return Math.max(0, Math.floor(diff / 86_400_000));
+  return Math.max(0, Math.floor(diff / MS_PER_DAY));
 }
 
 /**

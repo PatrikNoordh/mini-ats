@@ -18,7 +18,8 @@ import { useApplications } from "@/hooks/useApplications";
 import { useSaveCandidate } from "@/hooks/useCandidates";
 import { errorCode } from "@/lib/errors";
 import { isLinkedInUrl } from "@/lib/stages";
-import { isEmail, MIN_PASSWORD_LENGTH, type ValidationKey } from "@/lib/validation";
+import { MIN_PASSWORD_LENGTH } from "@/lib/constants";
+import { isEmail, type ValidationKey } from "@/lib/validation";
 import type { Candidate } from "@/types";
 
 export type FormErrors = Partial<
@@ -99,7 +100,7 @@ export function CandidateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-dialog overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {candidate ? t("candidateDialog.titleEdit") : t("candidateDialog.titleNew")}

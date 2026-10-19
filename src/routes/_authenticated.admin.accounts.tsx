@@ -34,7 +34,8 @@ import { useCreateProfile, useProfiles } from "@/hooks/useProfiles";
 import { errorCode } from "@/lib/errors";
 import { useFormat } from "@/lib/format";
 import { pageHead } from "@/lib/i18n";
-import { isEmail, MIN_PASSWORD_LENGTH } from "@/lib/validation";
+import { MIN_PASSWORD_LENGTH } from "@/lib/constants";
+import { isEmail } from "@/lib/validation";
 import type { Role } from "@/types";
 
 export const Route = createFileRoute("/_authenticated/admin/accounts")({

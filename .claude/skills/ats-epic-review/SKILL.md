@@ -88,7 +88,8 @@ grep -rnoE "\b[a-z:-]+-\[[0-9.]+(px|rem|vh|vw|%)\]" src/ --include="*.tsx" | gre
 
 # Hardcoded UI text: Swedish characters or JSX text outside the locale files
 grep -rnE "[åäöÅÄÖ]" src/ --include="*.tsx" --include="*.ts" | grep -v "src/locales/\|mockStore\|src/test/"
-grep -rnE ">[[:space:]]*[A-Za-zÅÄÖåäö][^<>{}]{2,}<" src/ --include="*.tsx" | grep -v "src/components/ui/"
+# (^|[^=]) skips "=>" in TypeScript types such as "=> Promise<Profile>"
+grep -rnE "(^|[^=])>[[:space:]]*[A-Za-zÅÄÖåäö][^<>{}]{2,}<" src/ --include="*.tsx" | grep -v "src/components/ui/"
 
 # Locale files have the same keys (the Vitest parity test must pass)
 npx vitest run --reporter=dot 2>&1 | tail -3

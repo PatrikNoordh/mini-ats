@@ -1,3 +1,4 @@
+import { MOCK_DELAY_MS } from "@/lib/constants";
 import type { Application, Candidate, Job, Profile, Stage } from "@/types";
 
 // In-memory mock store. Replaced by Supabase later; only src/lib/api/* may import this.
@@ -19,7 +20,7 @@ export function db(): Store {
   return store;
 }
 
-export const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms));
+export const delay = (ms = MOCK_DELAY_MS) => new Promise((r) => setTimeout(r, ms));
 
 export function uid(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;

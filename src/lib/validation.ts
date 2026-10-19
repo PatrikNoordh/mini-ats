@@ -3,8 +3,6 @@ import type sv from "@/locales/sv.json";
 /** The same loose email check the forms used before: something@something.something. */
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
-export const MIN_PASSWORD_LENGTH = 8;
-
 export function isEmail(value: string): boolean {
   return EMAIL_PATTERN.test(value.trim());
 }

@@ -13,6 +13,12 @@ import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import {
+  DRAG_MOUSE_DISTANCE_PX,
+  DRAG_TOUCH_DELAY_MS,
+  DRAG_TOUCH_TOLERANCE_PX,
+  STALE_CARD_DAYS,
+} from "@/lib/constants";
 import { useFormat } from "@/lib/format";
 import { daysSince, STAGES } from "@/lib/stages";
 import type { Application, Stage } from "@/types";
@@ -46,7 +52,7 @@ function CardBody({ card, dragging }: { card: BoardCard; dragging?: boolean }) {
       <div className="mt-0.5 flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span className="truncate">{card.jobTitle}</span>
         <span
-          className={cn("shrink-0 font-mono", days >= 14 && "text-destructive")}
+          className={cn("shrink-0 font-mono", days >= STALE_CARD_DAYS && "text-destructive")}
           title={t("pipeline.daysInStage")}
         >
           {t("pipeline.days", { count: days })}
@@ -90,7 +96,7 @@ function Column({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex w-[230px] shrink-0 flex-col rounded-lg border bg-column transition-colors",
+        "flex w-kanban-column shrink-0 flex-col rounded-lg border bg-column transition-colors",
         isOver && "border-primary bg-accent",
       )}
     >
@@ -120,8 +126,10 @@ export function Board({
   onOpen: (c: BoardCard) => void;
 }) {
   const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: DRAG_MOUSE_DISTANCE_PX } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: DRAG_TOUCH_DELAY_MS, tolerance: DRAG_TOUCH_TOLERANCE_PX },
+    }),
   );
   const [activeId, setActiveId] = useState<string | null>(null);
   const active = cards.find((c) => c.app.id === activeId);
