@@ -295,6 +295,6 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
-- [ ] `LANGUAGE_COOKIE_MAX_AGE_SECONDS` and `MIN_PASSWORD_LENGTH` are named constants but live outside `src/lib/constants.ts`. Move them there when ATS-4 creates the file — `src/lib/language.ts`, `src/lib/validation.ts` (PR #21, ATS-3)
+- [x] `LANGUAGE_COOKIE_MAX_AGE_SECONDS` and `MIN_PASSWORD_LENGTH` are named constants but live outside `src/lib/constants.ts`. Move them there when ATS-4 creates the file — `src/lib/language.ts`, `src/lib/validation.ts` (PR #21, ATS-3). Done in ATS-4
 - [ ] The server error page puts translations into HTML without escaping. Safe while the text comes only from our locale files; escape it so a `<` or `&` in a future translation cannot break the page — `src/lib/error-page.ts` (PR #21, ATS-3)
 - [ ] The `lang` cookie has no `Secure` flag. Not sensitive, but add `secure` when served over HTTPS — `src/lib/language.ts` (PR #21, ATS-3)
