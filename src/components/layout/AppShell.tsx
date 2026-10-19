@@ -74,7 +74,7 @@ function AppSidebar() {
               >
                 <Link to={n.to} onClick={() => setOpenMobile(false)}>
                   <n.icon className="h-4 w-4" />
-                  <span className="text-[15px]">{t(`nav.${n.key}`)}</span>
+                  <span className="text-nav">{t(`nav.${n.key}`)}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -95,7 +95,7 @@ function CustomerPicker() {
       </span>
       <Select value={customerId ?? ""} onValueChange={(v) => setCustomerId(v)}>
         <SelectTrigger
-          className="h-9 w-[170px] sm:w-[220px]"
+          className="h-9 w-filter-compact sm:w-filter"
           aria-label={t("shell.chooseCustomer")}
         >
           <SelectValue placeholder={t("shell.chooseCustomerPlaceholder")} />

@@ -86,7 +86,7 @@ function Pipeline({ customerId }: { customerId: string }) {
           value={job ?? "all"}
           onValueChange={(v) => setSearch({ job: v === "all" ? undefined : v })}
         >
-          <SelectTrigger className="h-9 sm:w-[220px]" aria-label={t("pipeline.filterByJob")}>
+          <SelectTrigger className="h-9 sm:w-filter" aria-label={t("pipeline.filterByJob")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -99,7 +99,7 @@ function Pipeline({ customerId }: { customerId: string }) {
           </SelectContent>
         </Select>
         <Input
-          className="h-9 sm:w-[280px]"
+          className="h-9 sm:w-search"
           placeholder={t("pipeline.search")}
           aria-label={t("pipeline.search")}
           value={q ?? ""}
@@ -118,7 +118,7 @@ function Pipeline({ customerId }: { customerId: string }) {
       ) : isLoading ? (
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-80 w-[230px] shrink-0" />
+            <Skeleton key={i} className="h-80 w-kanban-column shrink-0" />
           ))}
         </div>
       ) : cards.length === 0 ? (

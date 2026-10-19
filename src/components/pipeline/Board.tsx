@@ -90,7 +90,7 @@ function Column({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex w-[230px] shrink-0 flex-col rounded-lg border bg-column transition-colors",
+        "flex w-kanban-column shrink-0 flex-col rounded-lg border bg-column transition-colors",
         isOver && "border-primary bg-accent",
       )}
     >
