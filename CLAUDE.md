@@ -81,6 +81,14 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 - **Every query key that returns customer data includes the active customer id**, for example `["jobs", customerId]`. Switching customer must never show cached data from the previous customer.
 - Auth lives in `AuthContext` (`useAuth()`). Logout clears the TanStack Query cache.
 
+## Code structure
+
+- **Route files** in `src/routes/` define the route (path, search param schema, guards) and the page component. Dialogs and page parts live in `src/components/<feature>/`, for example `src/components/jobs/JobDialog.tsx`.
+- **One component per file**, named after the component.
+- **Exception:** a small set of closely related components of the same kind may share one file named after the set, the way shadcn/ui does it: `States.tsx`, `Guards.tsx`, `LanguageSwitcher.tsx`.
+- **A small helper** used only inside its own file may stay there.
+- `src/components/ui/` is vendored shadcn/ui code and is exempt.
+
 ## No hardcoded values
 
 Nothing in app code is hardcoded. Every value has one named source:
