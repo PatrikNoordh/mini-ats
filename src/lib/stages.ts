@@ -2,15 +2,6 @@ import type { Job, Stage } from "@/types";
 
 export const STAGES: Stage[] = ["new", "screening", "interview", "offer", "hired", "rejected"];
 
-export const STAGE_LABELS: Record<Stage, string> = {
-  new: "Ny",
-  screening: "Screening",
-  interview: "Intervju",
-  offer: "Erbjudande",
-  hired: "Anställd",
-  rejected: "Avböjd",
-};
-
 /** Whole days since the given ISO date (never negative). */
 export function daysSince(iso: string, now: Date = new Date()): number {
   const diff = now.getTime() - new Date(iso).getTime();

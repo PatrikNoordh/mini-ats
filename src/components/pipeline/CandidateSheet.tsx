@@ -1,4 +1,5 @@
 import { ExternalLink } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Sheet,
   SheetContent,
@@ -7,7 +8,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { daysSince, STAGE_LABELS } from "@/lib/stages";
+import { useFormat } from "@/lib/format";
+import { daysSince } from "@/lib/stages";
 import type { Application, Candidate, Job } from "@/types";
 
 export function CandidateSheet({
@@ -21,6 +23,8 @@ export function CandidateSheet({
   jobs: Job[];
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
+  const format = useFormat();
   const links = candidate ? applications.filter((a) => a.candidate_id === candidate.id) : [];
   return (
     <Sheet open={!!candidate} onOpenChange={(o) => !o && onClose()}>
@@ -29,12 +33,14 @@ export function CandidateSheet({
           <>
             <SheetHeader>
               <SheetTitle className="text-xl">{candidate.full_name}</SheetTitle>
-              <SheetDescription>Tillagd {candidate.created_at.slice(0, 10)}</SheetDescription>
+              <SheetDescription>
+                {t("candidateSheet.added", { date: format.date(candidate.created_at) })}
+              </SheetDescription>
             </SheetHeader>
             <dl className="mt-6 space-y-4 px-4 text-sm">
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  E-post
+                  {t("candidateSheet.email")}
                 </dt>
                 <dd>
                   <a className="text-primary hover:underline" href={`mailto:${candidate.email}`}>
@@ -44,13 +50,13 @@ export function CandidateSheet({
               </div>
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Telefon
+                  {t("candidateSheet.phone")}
                 </dt>
                 <dd>{candidate.phone || "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  LinkedIn
+                  {t("candidateSheet.linkedin")}
                 </dt>
                 <dd>
                   {candidate.linkedin_url ? (
@@ -60,7 +66,7 @@ export function CandidateSheet({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Öppna profil <ExternalLink className="h-3.5 w-3.5" />
+                      {t("candidateSheet.openProfile")} <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                   ) : (
                     "—"
@@ -69,21 +75,23 @@ export function CandidateSheet({
               </div>
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Anteckningar
+                  {t("candidateSheet.notes")}
                 </dt>
                 <dd className="whitespace-pre-wrap">
                   {candidate.notes || (
-                    <span className="text-muted-foreground">Inga anteckningar.</span>
+                    <span className="text-muted-foreground">{t("candidateSheet.noNotes")}</span>
                   )}
                 </dd>
               </div>
               <div>
                 <dt className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Kopplade jobb
+                  {t("candidateSheet.linkedJobs")}
                 </dt>
                 <dd className="space-y-2">
                   {links.length === 0 && (
-                    <span className="text-muted-foreground">Inte kopplad till något jobb.</span>
+                    <span className="text-muted-foreground">
+                      {t("candidateSheet.noLinkedJobs")}
+                    </span>
                   )}
                   {links.map((a) => (
                     <div
@@ -91,12 +99,12 @@ export function CandidateSheet({
                       className="flex items-center justify-between rounded-md border px-3 py-2"
                     >
                       <span className="font-medium">
-                        {jobs.find((j) => j.id === a.job_id)?.title ?? "Okänt jobb"}
+                        {jobs.find((j) => j.id === a.job_id)?.title ?? t("pipeline.unknownJob")}
                       </span>
                       <span className="flex items-center gap-2">
-                        <Badge variant="secondary">{STAGE_LABELS[a.stage]}</Badge>
+                        <Badge variant="secondary">{t(`stages.${a.stage}`)}</Badge>
                         <span className="font-mono text-xs text-muted-foreground">
-                          {daysSince(a.stage_changed_at)} d
+                          {t("pipeline.days", { count: daysSince(a.stage_changed_at) })}
                         </span>
                       </span>
                     </div>

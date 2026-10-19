@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { listApplications, moveApplication } from "@/lib/api/applications";
 import { queryKeys } from "@/lib/stages";
@@ -13,6 +14,7 @@ export function useApplications(customerId: string | null) {
 }
 
 export function useMoveApplication(customerId: string | null) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const key = queryKeys.applications(customerId);
   return useMutation({
@@ -39,7 +41,7 @@ export function useMoveApplication(customerId: string | null) {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) qc.setQueryData(key, ctx.previous);
-      toast.error("Kunde inte flytta kortet. Ändringen har ångrats.");
+      toast.error(t("pipeline.moveFailed"));
     },
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });

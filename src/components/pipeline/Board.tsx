@@ -11,8 +11,9 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { daysSince, STAGE_LABELS, STAGES } from "@/lib/stages";
+import { daysSince, STAGES } from "@/lib/stages";
 import type { Application, Stage } from "@/types";
 
 export interface BoardCard {
@@ -31,6 +32,7 @@ const DOT: Record<Stage, string> = {
 };
 
 function CardBody({ card, dragging }: { card: BoardCard; dragging?: boolean }) {
+  const { t } = useTranslation();
   const days = daysSince(card.app.stage_changed_at);
   return (
     <div
@@ -44,9 +46,9 @@ function CardBody({ card, dragging }: { card: BoardCard; dragging?: boolean }) {
         <span className="truncate">{card.jobTitle}</span>
         <span
           className={cn("shrink-0 font-mono", days >= 14 && "text-destructive")}
-          title="Dagar i steget"
+          title={t("pipeline.daysInStage")}
         >
-          {days} d
+          {t("pipeline.days", { count: days })}
         </span>
       </div>
     </div>
@@ -80,6 +82,7 @@ function Column({
   cards: BoardCard[];
   onOpen: (c: BoardCard) => void;
 }) {
+  const { t } = useTranslation();
   const { setNodeRef, isOver } = useDroppable({ id: stage });
   return (
     <div
@@ -92,7 +95,7 @@ function Column({
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <span className={cn("h-2 w-2 rounded-full", DOT[stage])} />
-          {STAGE_LABELS[stage]}
+          {t(`stages.${stage}`)}
         </div>
         <span className="text-xs text-muted-foreground">{cards.length}</span>
       </div>
