@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function LoadingRows({ rows = 6 }: { rows?: number }) {
+  const { t } = useTranslation();
   return (
-    <div className="space-y-2 p-4" aria-label="Laddar">
+    <div className="space-y-2 p-4" aria-label={t("common.loading")}>
       {Array.from({ length: rows }).map((_, i) => (
         <Skeleton key={i} className="h-9 w-full" />
       ))}
@@ -12,22 +14,17 @@ export function LoadingRows({ rows = 6 }: { rows?: number }) {
   );
 }
 
-export function ErrorState({
-  onRetry,
-  message = "Något gick fel när data hämtades.",
-}: {
-  onRetry?: () => void;
-  message?: string;
-}) {
+export function ErrorState({ onRetry, message }: { onRetry?: () => void; message?: string }) {
+  const { t } = useTranslation();
   return (
     <div
       role="alert"
       className="flex flex-col items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-8 text-center"
     >
-      <p className="text-sm text-destructive">{message}</p>
+      <p className="text-sm text-destructive">{message ?? t("common.loadError")}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
-          Försök igen
+          {t("common.retry")}
         </Button>
       )}
     </div>

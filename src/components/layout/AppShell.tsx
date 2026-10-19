@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Briefcase, KanbanSquare, LogOut, User, Users } from "lucide-react";
 import type { ReactNode } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import {
   Sidebar,
   SidebarContent,
@@ -30,26 +31,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveCustomer } from "@/contexts/ActiveCustomerContext";
+import { LanguageMenuItems } from "@/components/LanguageSwitcher";
 
 const NAV = [
-  { title: "Pipeline", to: "/pipeline", icon: KanbanSquare, admin: false },
-  { title: "Jobb", to: "/jobs", icon: Briefcase, admin: false },
-  { title: "Kandidater", to: "/candidates", icon: User, admin: false },
-  { title: "Konton", to: "/admin/accounts", icon: Users, admin: true },
+  { key: "pipeline", to: "/pipeline", icon: KanbanSquare, admin: false },
+  { key: "jobs", to: "/jobs", icon: Briefcase, admin: false },
+  { key: "candidates", to: "/candidates", icon: User, admin: false },
+  { key: "accounts", to: "/admin/accounts", icon: Users, admin: true },
 ] as const;
 
 function Logo() {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2.5 px-2 py-1.5">
       <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
         A
       </span>
-      <span className="text-lg font-bold tracking-tight">Mini-ATS</span>
+      <span className="text-lg font-bold tracking-tight">{t("app.name")}</span>
     </div>
   );
 }
 
 function AppSidebar() {
+  const { t } = useTranslation();
   const { role } = useAuth();
   const { setOpenMobile } = useSidebar();
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -70,7 +74,7 @@ function AppSidebar() {
               >
                 <Link to={n.to} onClick={() => setOpenMobile(false)}>
                   <n.icon className="h-4 w-4" />
-                  <span className="text-[15px]">{n.title}</span>
+                  <span className="text-[15px]">{t(`nav.${n.key}`)}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -82,13 +86,19 @@ function AppSidebar() {
 }
 
 function CustomerPicker() {
+  const { t } = useTranslation();
   const { customers, customerId, setCustomerId } = useActiveCustomer();
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <span className="hidden text-sm text-muted-foreground sm:inline">Kund</span>
+      <span className="hidden text-sm text-muted-foreground sm:inline">
+        {t("shell.customerLabel")}
+      </span>
       <Select value={customerId ?? ""} onValueChange={(v) => setCustomerId(v)}>
-        <SelectTrigger className="h-9 w-[170px] sm:w-[220px]" aria-label="Välj kund">
-          <SelectValue placeholder="Välj kund…" />
+        <SelectTrigger
+          className="h-9 w-[170px] sm:w-[220px]"
+          aria-label={t("shell.chooseCustomer")}
+        >
+          <SelectValue placeholder={t("shell.chooseCustomerPlaceholder")} />
         </SelectTrigger>
         <SelectContent>
           {customers.map((c) => (
@@ -110,6 +120,7 @@ function CompanyName() {
 }
 
 function UserMenu() {
+  const { t } = useTranslation();
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   if (!profile) return null;
@@ -124,10 +135,10 @@ function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           className="flex items-center gap-2 rounded-md px-1.5 py-1 hover:bg-accent"
-          aria-label="Användarmeny"
+          aria-label={t("shell.userMenu")}
         >
           <span className="hidden rounded-full border px-2 py-0.5 text-xs text-muted-foreground md:inline">
-            {profile.role === "admin" ? "Admin" : "Kund"}
+            {t(`roles.${profile.role}`)}
           </span>
           <span className="hidden text-sm font-medium md:inline">{profile.full_name}</span>
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-bold">
@@ -141,13 +152,15 @@ function UserMenu() {
           <div className="text-xs font-normal text-muted-foreground">{profile.email}</div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <LanguageMenuItems />
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {
             await signOut();
             navigate({ to: "/login" });
           }}
         >
-          <LogOut className="mr-2 h-4 w-4" /> Logga ut
+          <LogOut className="mr-2 h-4 w-4" /> {t("shell.signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -155,16 +168,20 @@ function UserMenu() {
 }
 
 function ActingBanner() {
+  const { t } = useTranslation();
   const { isActingAs, customer, setCustomerId } = useActiveCustomer();
   if (!isActingAs || !customer) return null;
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-warning/40 bg-warning-muted px-4 py-2.5 text-sm text-warning-foreground md:px-6">
       <span>
-        Du arbetar som <strong className="font-bold">{customer.company_name}</strong>. Allt du
-        skapar hamnar hos kunden.
+        <Trans
+          i18nKey="shell.actingAs"
+          values={{ company: customer.company_name }}
+          components={{ bold: <strong className="font-bold" /> }}
+        />
       </span>
       <Button variant="warning" size="sm" onClick={() => setCustomerId(null)}>
-        Lämna kundläge
+        {t("shell.leaveCustomer")}
       </Button>
     </div>
   );
