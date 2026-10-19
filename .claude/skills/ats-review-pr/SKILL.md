@@ -145,3 +145,4 @@ gh pr comment <number> --repo "$REPO" --body "<review>"
 - Do not suggest refactors outside the PR's scope
 - Never approve a PR with a 🔴 blocker
 - Never approve or merge on the developer's behalf. The review is advice
+- Fix 🔴 blockers and real bugs on the branch before the merge. Log 🟢 suggestions, and 🟡 warnings that are not quick to fix, as one line each in `TICKETS.md` § Found while reviewing PRs, with the PR number
