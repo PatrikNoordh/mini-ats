@@ -85,6 +85,10 @@ Nothing in the app code should be hardcoded: colours, sizes, spacing, text and m
 In scope: existing code outside `src/components/ui/` (shadcn/ui is vendored code and keeps its own classes).
 Out of scope: visual redesign.
 
+### ATS-20 · refactor · Move Lovable page parts into feature folders and add a code structure rule
+
+Tracked in #22. Run after ATS-4 and before the epic 0 review.
+
 **Checkpoint:** the app is live on Vercel with mock data in Swedish and English, the repo is public and CI is green.
 
 ---
