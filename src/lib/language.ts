@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { LANGUAGE_COOKIE_MAX_AGE_SECONDS } from "./constants";
 
 export const LANGUAGES = ["sv", "en"] as const;
 export type Language = (typeof LANGUAGES)[number];
@@ -6,7 +7,6 @@ export type Language = (typeof LANGUAGES)[number];
 /** Swedish is the default because the first customers are Swedish companies. */
 export const DEFAULT_LANGUAGE: Language = "sv";
 export const LANGUAGE_COOKIE = "lang";
-export const LANGUAGE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 /** Locale passed to Intl for each language. */
 export const LOCALES: Record<Language, string> = { sv: "sv-SE", en: "en-GB" };

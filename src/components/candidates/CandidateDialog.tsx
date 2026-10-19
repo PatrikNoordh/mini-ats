@@ -18,7 +18,8 @@ import { useApplications } from "@/hooks/useApplications";
 import { useSaveCandidate } from "@/hooks/useCandidates";
 import { errorCode } from "@/lib/errors";
 import { isLinkedInUrl } from "@/lib/stages";
-import { isEmail, MIN_PASSWORD_LENGTH, type ValidationKey } from "@/lib/validation";
+import { MIN_PASSWORD_LENGTH } from "@/lib/constants";
+import { isEmail, type ValidationKey } from "@/lib/validation";
 import type { Candidate } from "@/types";
 
 export type FormErrors = Partial<

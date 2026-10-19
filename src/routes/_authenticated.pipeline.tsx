@@ -21,7 +21,7 @@ import { useApplications, useMoveApplication } from "@/hooks/useApplications";
 import { useCandidates } from "@/hooks/useCandidates";
 import { useJobs } from "@/hooks/useJobs";
 import { pageHead } from "@/lib/i18n";
-import { resolveJobFilter } from "@/lib/stages";
+import { resolveJobFilter, STAGES } from "@/lib/stages";
 
 const searchSchema = z.object({
   job: z.string().optional().catch(undefined),
@@ -117,8 +117,8 @@ function Pipeline({ customerId }: { customerId: string }) {
         />
       ) : isLoading ? (
         <div className="flex gap-3 overflow-hidden">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-80 w-kanban-column shrink-0" />
+          {STAGES.map((stage) => (
+            <Skeleton key={stage} className="h-80 w-kanban-column shrink-0" />
           ))}
         </div>
       ) : cards.length === 0 ? (

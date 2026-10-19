@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveCustomer } from "@/contexts/ActiveCustomerContext";
 import { LanguageMenuItems } from "@/components/LanguageSwitcher";
+import { AVATAR_INITIALS } from "@/lib/constants";
 
 const NAV = [
   { key: "pipeline", to: "/pipeline", icon: KanbanSquare, admin: false },
@@ -128,7 +129,7 @@ function UserMenu() {
     .split(" ")
     .map((s) => s[0])
     .join("")
-    .slice(0, 2)
+    .slice(0, AVATAR_INITIALS)
     .toUpperCase();
   return (
     <DropdownMenu>
