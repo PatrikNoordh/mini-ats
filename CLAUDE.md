@@ -123,7 +123,7 @@ Allowed exceptions: `src/components/ui/` (vendored shadcn/ui code), dynamic valu
 ## Workflow
 
 - **Tickets:** GitHub issues titled `[ATS-<N>] ...`. One ticket per branch. PRs close their issue with `Closes #<n>`.
-- **Skills:** the project skills in `.claude/skills/` run the workflow: `ats-create-ticket`, `ats-implement-ticket`, `ats-git-commit`, `ats-git-ship`, `ats-git-branch-and-ship`, `ats-review-pr`, `ats-epic-review`, `ats-audit-to-issues`. Use them instead of the personal skills with similar names.
+- **Skills:** the project skills in `.claude/skills/` run the workflow: `ats-create-ticket`, `ats-implement-ticket`, `ats-git-commit`, `ats-git-ship`, `ats-git-branch-and-ship`, `ats-review-pr`, `ats-epic-review`, `ats-epic-close`, `ats-audit-to-issues`. Use them instead of the personal skills with similar names.
 - **Branch:** `ats/ATS-<N>-short-description`
 - **Commit:** `(MODEL_NAME) <type> [ATS-<N>] description`. Types: feat, fix, style, refactor, chore, docs, test.
 - **Commits are small and each one builds.** Order within a feature: database → data layer → UI.

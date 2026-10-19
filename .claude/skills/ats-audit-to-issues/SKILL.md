@@ -1,12 +1,14 @@
 ---
 name: ats-audit-to-issues
-description: "Turn the findings of the latest Mini-ATS review into GitHub issues, one per finding, by calling ats-create-ticket for each. Use when asked to 'create tickets from the review', 'turn findings into issues', 'log the epic review as tickets' or 'send audit results to GitHub'."
+description: "Turn the blockers and real bugs from the latest Mini-ATS review into GitHub issues, one per finding, by calling ats-create-ticket for each. Use when asked to 'create tickets from the review', 'turn findings into issues' or 'send audit results to GitHub'. For the warnings and TICKETS.md findings at an epic checkpoint, use ats-epic-close instead."
 argument-hint: "Optional: 'blockers' to create issues for blockers only"
 ---
 
 # Review Findings → GitHub Issues — Mini-ATS
 
 Reads the most recent review report in this conversation and creates one GitHub issue per finding.
+
+Use it for findings that each need their own ticket: blockers and real bugs. At an epic checkpoint, the warnings and the small `TICKETS.md` findings go through `/ats-epic-close` instead, which adds them to existing tickets rather than creating one issue each.
 
 **Every issue is created by running the `ats-create-ticket` skill.** Never call `gh issue create` directly. That keeps numbering, labels, milestones and templates the same as every other ticket.
 

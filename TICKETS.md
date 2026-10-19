@@ -284,7 +284,7 @@ Gives the recruiter a quick first read of a CV against a job. A suggestion, neve
 
 ## Found while building
 
-Small problems and improvements noticed while working on a ticket but outside its scope. Add one line per finding as soon as it is found, with the ticket where it was found. At each epic checkpoint the list is triaged and emptied: a finding becomes an extra AC on the open ticket that touches the same code, or goes into one hygiene ticket for the epic, or is dropped. The AC says where it came from, for example "(found while building ATS-2)". The epic's review in `docs/` records where each line went.
+Small problems and improvements noticed while working on a ticket but outside its scope. Add one line per finding as soon as it is found, with the ticket where it was found. At each epic checkpoint the list is triaged and emptied: a finding becomes an extra AC on the open ticket that touches the same code, or goes into one hygiene ticket for the epic, or is dropped. The AC says where it came from, for example "(found while building ATS-2)". `/ats-epic-close` does the triage and records where each line went in `docs/review-epic-<N>.md`.
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
