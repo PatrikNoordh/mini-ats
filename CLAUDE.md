@@ -39,7 +39,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 - **Accessible:** a label on every input, controls reachable by keyboard, visible focus and enough contrast.
 - **Consistent:** reuse existing components, tokens and patterns. UI text that is clear in both languages and uses the same words for the same things.
 - **Clean:** clear names, small functions, no dead code, no leftover `console.log`, and no `TODO` without an issue.
-- **Within scope:** quality means doing the ticket well, not doing more. Problems and ideas outside the ticket go in `TICKETS.md` § Found while building, one line each, and become issues with `/ats-create-ticket` later. PR reviews work the same way: blockers and real bugs are fixed on the branch before merging, and small findings go in `TICKETS.md` § Found while reviewing PRs.
+- **Within scope:** quality means doing the ticket well, not doing more. Problems and ideas outside the ticket go in `TICKETS.md` § Found while building, one line each, and are triaged into tickets at the epic checkpoint. PR reviews work the same way: blockers and real bugs are fixed on the branch before merging, and small findings go in `TICKETS.md` § Found while reviewing PRs.
 - **Self-reviewed:** before the summary, read the whole diff (`git diff origin/main...HEAD`) as a strict reviewer and fix what you find.
 
 ## Stack
@@ -58,7 +58,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 
 - GitHub Issues: the live tickets and their status, one milestone per epic. Titles start with `[ATS-<N>]`.
 - `TICKETS.md`: the original plan, imported into GitHub Issues with `/ats-create-ticket import`.
-- `docs/ui-spec.md`: what the UI does. `docs/prototype.html`: how it looks (open it in a browser). `docs/review-ats-1.md`: review of the Lovable code.
+- `docs/ui-spec.md`: what the UI does. `docs/prototype.html`: how it looks (open it in a browser). `docs/review-ats-1.md`: review of the Lovable code. `docs/review-epic-<N>.md`: each epic review and where its findings went.
 - `supabase/migrations/`: the schema. `supabase/tests/rls_test.sql`: the security tests.
 
 ## Security rules — never break these
@@ -123,7 +123,7 @@ Allowed exceptions: `src/components/ui/` (vendored shadcn/ui code), dynamic valu
 ## Workflow
 
 - **Tickets:** GitHub issues titled `[ATS-<N>] ...`. One ticket per branch. PRs close their issue with `Closes #<n>`.
-- **Skills:** the project skills in `.claude/skills/` run the workflow: `ats-create-ticket`, `ats-implement-ticket`, `ats-git-commit`, `ats-git-ship`, `ats-git-branch-and-ship`, `ats-review-pr`, `ats-epic-review`, `ats-audit-to-issues`. Use them instead of the personal skills with similar names.
+- **Skills:** the project skills in `.claude/skills/` run the workflow: `ats-create-ticket`, `ats-implement-ticket`, `ats-git-commit`, `ats-git-ship`, `ats-git-branch-and-ship`, `ats-review-pr`, `ats-epic-review`, `ats-epic-close`, `ats-audit-to-issues`. Use them instead of the personal skills with similar names.
 - **Branch:** `ats/ATS-<N>-short-description`
 - **Commit:** `(MODEL_NAME) <type> [ATS-<N>] description`. Types: feat, fix, style, refactor, chore, docs, test.
 - **Commits are small and each one builds.** Order within a feature: database → data layer → UI.

@@ -29,6 +29,7 @@ git rev-parse --abbrev-ref HEAD
 
 - On `main`: **stop**. Direct pushes to `main` are not allowed. Use `ats-git-branch-and-ship`
 - The branch must follow `ats/ATS-<N>-...`. Extract `ATS-<N>`
+- Exception: an epic close-out branch `ats/epic-<N>-review` from `ats-epic-close`. Use `[Epic <N>]` wherever this skill says `[ATS-<N>]`, skip the issue lookup, and leave out `Closes`. In the PR body, link the issues the close-out changed instead
 - Find the issue:
   ```bash
   gh issue list --repo "$REPO" --state all --search "ATS-<N> in:title" --json number,title,url,body --limit 10
@@ -142,10 +143,10 @@ gh pr create --repo "$REPO" --base main --title "<type> [ATS-<N>] <Title Case Su
 
 ## Completion checks
 
-- [ ] Branch is not `main` and follows `ats/ATS-<N>-...`
+- [ ] Branch is not `main` and follows `ats/ATS-<N>-...` (or `ats/epic-<N>-review`)
 - [ ] lint, tsc, test and build pass. RLS tests passed or noted for CI
 - [ ] Rebased on `origin/main` without conflicts
 - [ ] Files staged by name, commits follow the format, no `--no-verify`
 - [ ] Push succeeded, no force-push
-- [ ] PR to `main` with the template filled in and `Closes #<number>`
+- [ ] PR to `main` with the template filled in and `Closes #<number>` (not for `ats/epic-<N>-review`)
 - [ ] PR URL shown
