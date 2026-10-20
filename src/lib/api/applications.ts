@@ -44,9 +44,8 @@ export async function listApplications(customerId: string): Promise<Application[
  * Links a candidate to jobs. New links start in the `new` stage (the column default). A link that
  * already exists is skipped, so a retry or a second tab never fails on the unique constraint.
  *
- * The trigger sets customer_id from the job and rejects a job and a candidate of different
- * customers. The value sent here is only there because the generated Insert type requires it;
- * the database never trusts it (CLAUDE.md, security rule 7).
+ * customer_id is not sent: the trigger sets it from the job and rejects a job and a candidate of
+ * different customers (CLAUDE.md, security rule 7).
  */
 export async function linkCandidate(
   customerId: string,
@@ -54,11 +53,7 @@ export async function linkCandidate(
   jobIds: readonly string[],
 ): Promise<void> {
   if (jobIds.length === 0) return;
-  const rows = jobIds.map((jobId) => ({
-    customer_id: customerId,
-    job_id: jobId,
-    candidate_id: candidateId,
-  }));
+  const rows = jobIds.map((jobId) => ({ job_id: jobId, candidate_id: candidateId }));
   const { error } = await supabase
     .from("applications")
     .upsert(rows, { onConflict: "job_id,candidate_id", ignoreDuplicates: true });
