@@ -140,6 +140,7 @@ function Pipeline({ customerId }: { customerId: string }) {
       )}
 
       <CandidateSheet
+        customerId={customerId}
         candidate={cands.data?.find((c) => c.id === openId) ?? null}
         applications={apps.data ?? []}
         jobs={jobs.data ?? []}

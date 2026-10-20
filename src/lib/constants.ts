@@ -41,3 +41,6 @@ export const MAX_PHONE_LENGTH = 50;
 export const MAX_URL_LENGTH = 2048;
 /** Longest candidate notes. */
 export const MAX_NOTES_LENGTH = 5000;
+
+/** Postgres error code for a unique constraint violation, for example a candidate linked twice. */
+export const PG_UNIQUE_VIOLATION = "23505";

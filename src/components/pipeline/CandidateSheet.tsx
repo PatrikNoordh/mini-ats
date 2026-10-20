@@ -8,16 +8,19 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { AddToJob } from "@/components/pipeline/AddToJob";
 import { useFormat } from "@/lib/format";
 import { daysSince } from "@/lib/stages";
 import type { Application, Candidate, Job } from "@/types";
 
 export function CandidateSheet({
+  customerId,
   candidate,
   applications,
   jobs,
   onClose,
 }: {
+  customerId: string;
   candidate: Candidate | null;
   applications: Application[];
   jobs: Job[];
@@ -112,6 +115,15 @@ export function CandidateSheet({
                 </dd>
               </div>
             </dl>
+            <div className="mt-4 px-4 pb-4 text-sm">
+              <AddToJob
+                key={candidate.id}
+                customerId={customerId}
+                candidateId={candidate.id}
+                applications={applications}
+                jobs={jobs}
+              />
+            </div>
           </>
         )}
       </SheetContent>

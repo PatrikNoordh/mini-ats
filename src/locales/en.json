@@ -68,6 +68,7 @@
     "profile_not_found": "This account has no profile. Contact an administrator.",
     "job_candidate_customer_mismatch": "The job and the candidate must belong to the same customer.",
     "application_not_found": "The application could not be found.",
+    "already_linked": "The candidate is already linked to this job.",
     "links_failed": "The candidate was saved, but could not be linked to the jobs. Open the candidate and try again.",
     "unknown": "Something went wrong. Please try again."
   },
@@ -145,7 +146,13 @@
     "notes": "Notes",
     "noNotes": "No notes.",
     "linkedJobs": "Linked jobs",
-    "noLinkedJobs": "Not linked to any job."
+    "noLinkedJobs": "Not linked to any job.",
+    "addToJob": "Add to job",
+    "chooseJob": "Choose job…",
+    "add": "Add",
+    "adding": "Adding…",
+    "noJobsToAdd": "No more open jobs to add.",
+    "addedToast": "The candidate has been added to the job."
   },
   "candidates": {
     "title": "Candidates",

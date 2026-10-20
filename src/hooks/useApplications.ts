@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { listApplications, moveApplication } from "@/lib/api/applications";
+import { addApplication, listApplications, moveApplication } from "@/lib/api/applications";
 import { queryKeys } from "@/lib/stages";
 import type { Application, Stage } from "@/types";
 
@@ -44,5 +44,19 @@ export function useMoveApplication(customerId: string | null) {
       toast.error(t("pipeline.moveFailed"));
     },
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
+  });
+}
+
+export function useAddApplication(customerId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ candidateId, jobId }: { candidateId: string; jobId: string }) =>
+      addApplication(candidateId, jobId),
+    // Also after already_linked: the cache missed a link, so the job list must refresh.
+    // The jobs list shows the number of candidates per job.
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.applications(customerId) });
+      qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });
+    },
   });
 }
