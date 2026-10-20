@@ -295,6 +295,8 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 - [ ] CI does not type-check or test the Edge Functions; add a job that runs `deno check` and `deno test` in `supabase/functions/` — `.github/workflows/ci.yml` (found in ATS-7)
 - [ ] ATS-8: the account form must check the same minimum password length as admin-create-user and show it to the admin, from one named constant — `src/components/accounts/AccountDialog.tsx`, `supabase/functions/admin-create-user/handler.ts` (found in ATS-7)
 - [ ] The pipeline search input and job filter have only an `aria-label`: no associated `<label>` and no `id`/`name`, which Chrome DevTools reports as an issue on /pipeline. Give them an `id` and a (visually hidden) label — `src/routes/_authenticated.pipeline.tsx` (found in ATS-7)
+- [ ] Error toasts show bottom-right, outside an open dialog, where they are easy to miss; decide one placement for all toasts (for example top-center) — `src/routes/__root.tsx` (found in ATS-8)
+- [ ] Form field errors are not linked to their input: no `aria-invalid`, no `aria-describedby` and no live region, so a screen reader does not announce them. Link them in the shared `Field` — `src/components/Field.tsx` (found in ATS-8)
 
 ## Found while reviewing PRs
 
