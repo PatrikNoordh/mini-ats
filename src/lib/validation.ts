@@ -1,4 +1,9 @@
+import { z } from "zod";
+
 import type sv from "@/locales/sv.json";
+
+/** The roles an account can have. The same values as the check on `profiles.role`. */
+export const roleSchema = z.enum(["admin", "customer"]);
 
 /** The same loose email check the forms used before: something@something.something. */
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;

@@ -34,7 +34,7 @@ Return the code as JSON with a fitting status, never a message. `json()` in `sup
 return json({ error: "email_exists" }, 409);
 ```
 
-The function's wrapper in `src/lib/api/` reads `error` and throws `new AppError(code)` when the code is in `ERROR_CODES`. Unknown codes become `errors.unknown`.
+The app calls functions through `invokeFunction()` in `src/lib/api/functions.ts`. It reads `error` from the body and throws `new AppError(code)` when the code is in `ERROR_CODES`. Any 401 becomes `not_authenticated`, because the Supabase gateway answers a missing or invalid JWT itself, with a body of its own. Unknown codes become `errors.unknown`.
 
 ## Database (from epic 1)
 

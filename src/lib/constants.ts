@@ -16,8 +16,14 @@ export const DRAG_TOUCH_DELAY_MS = 180;
 /** How far a finger may move during the hold before the drag is cancelled. */
 export const DRAG_TOUCH_TOLERANCE_PX = 8;
 
-/** Minimum length of a password set by an admin. */
+/** Minimum length of a password set by an admin. Same as in the admin-create-user function. */
 export const MIN_PASSWORD_LENGTH = 8;
+/** Supabase Auth hashes passwords with bcrypt, which only reads 72 bytes. Same as admin-create-user. */
+export const MAX_PASSWORD_LENGTH = 72;
+/** The longest email address SMTP allows. Same as admin-create-user. */
+export const MAX_EMAIL_LENGTH = 254;
+/** Longest name or company name for an account. Same as admin-create-user. */
+export const MAX_NAME_LENGTH = 200;
 
 /** How long the language choice is remembered. */
 export const LANGUAGE_COOKIE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;

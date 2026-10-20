@@ -29,6 +29,11 @@ export class AppError extends Error {
   }
 }
 
+/** The code if the app knows it, for codes that come back from the server as text. */
+export function toErrorCode(value: unknown): ErrorCode | null {
+  return ERROR_CODES.find((code) => code === value) ?? null;
+}
+
 /** The code of a known error, or "unknown" for anything else (network, bugs). */
 export function errorCode(error: unknown): ErrorCode | "unknown" {
   return error instanceof AppError ? error.code : "unknown";

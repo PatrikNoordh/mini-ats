@@ -1,17 +1,13 @@
 import { MOCK_DELAY_MS } from "@/lib/constants";
-import type { Application, Candidate, Job, Profile, Stage } from "@/types";
+import type { Application, Candidate, Job, Stage } from "@/types";
 
 // In-memory mock store. Replaced by Supabase later; only src/lib/api/* may import this.
 
 interface Store {
-  profiles: Profile[];
-  passwords: Record<string, string>;
   jobs: Job[];
   candidates: Candidate[];
   applications: Application[];
 }
-
-export const DEMO_PASSWORD = "demo1234";
 
 let store: Store | null = null;
 
@@ -45,34 +41,6 @@ function slug(name: string) {
 }
 
 function seed(): Store {
-  const profiles: Profile[] = [
-    {
-      id: "p_admin",
-      role: "admin",
-      full_name: "Demo Admin",
-      company_name: "Plattformen",
-      email: "admin@demo.test",
-      created_at: "2026-10-01T08:00:00.000Z",
-    },
-    {
-      id: "p_nordkust",
-      role: "customer",
-      full_name: "Karin Exempel",
-      company_name: "Nordkust Bygg AB",
-      email: "karin@nordkust.test",
-      created_at: "2026-10-02T08:00:00.000Z",
-    },
-    {
-      id: "p_lumen",
-      role: "customer",
-      full_name: "Oskar Testsson",
-      company_name: "Studio Lumen",
-      email: "oskar@lumen.test",
-      created_at: "2026-10-03T08:00:00.000Z",
-    },
-  ];
-  const passwords = Object.fromEntries(profiles.map((p) => [p.id, DEMO_PASSWORD]));
-
   const jobDefs: Record<string, [string, string, Job["status"]][]> = {
     p_nordkust: [
       ["Platschef", "Göteborg", "open"],
@@ -178,5 +146,5 @@ function seed(): Store {
     });
   }
 
-  return { profiles, passwords, jobs, candidates, applications };
+  return { jobs, candidates, applications };
 }
