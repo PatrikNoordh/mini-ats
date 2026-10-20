@@ -31,10 +31,16 @@ export async function signInWithPassword(email: string, password: string): Promi
   return toAuthUser(data.user);
 }
 
-/** Signs out on this device only, so a user's other devices stay signed in. */
+/**
+ * Signs out on this device only, so a user's other devices stay signed in. supabase-js removes
+ * the local session even when the request fails (for example offline), so an error only counts
+ * when this device is still signed in.
+ */
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut({ scope: "local" });
-  if (error) throw toAppError(error);
+  if (!error) return;
+  const { data } = await supabase.auth.getSession();
+  if (data.session) throw toAppError(error);
 }
 
 /**
