@@ -295,6 +295,7 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 - [ ] The customer chooser shows "…" forever when a customer's jobs fail to load, with no error or retry — `src/components/layout/CustomerGate.tsx` (found in ATS-9)
 - [ ] An invalid field is only marked with `aria-invalid`; the input itself has no error border, only the text below it — `src/components/Field.tsx` (found in ATS-9)
 - [ ] `@testing-library/react` is installed without its peer `@testing-library/dom`, so component tests cannot use `render` or `screen` — `package.json` (found in ATS-9)
+- [ ] The candidates table's job count shows "…" forever when the applications fail to load, while the rest of the table shows — `src/routes/_authenticated.candidates.tsx` (found in ATS-10)
 
 ## Found while reviewing PRs
 

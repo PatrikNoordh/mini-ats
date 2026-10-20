@@ -44,7 +44,7 @@ Triggers and checks raise the code as the exception message:
 raise exception 'job_candidate_customer_mismatch';
 ```
 
-The data layer maps the message to an `AppError` the same way. The two triggers in the first migration raise `job_candidate_customer_mismatch` and `application_not_found` (ATS-5, AC4b), and `supabase/tests/rls_test.sql` checks both codes.
+The data layer maps the message to an `AppError` with `fromDbError()` in `src/lib/errors.ts`. The two triggers in the first migration raise `job_candidate_customer_mismatch` and `application_not_found` (ATS-5, AC4b), and `supabase/tests/rls_test.sql` checks both codes.
 
 ## Codes
 
@@ -62,4 +62,5 @@ The data layer maps the message to an `AppError` the same way. The two triggers 
 | `profile_not_found`               | auth                          | The account has no `profiles` row                         |
 | `job_candidate_customer_mismatch` | applications (trigger)        | The job and the candidate belong to different customers   |
 | `application_not_found`           | cv_assessments (trigger)      | The application the assessment points at does not exist   |
+| `links_failed`                    | candidates                    | The candidate was saved, but linking it to jobs failed    |
 | `unknown`                         | anywhere                      | Fallback for errors without a known code                  |
