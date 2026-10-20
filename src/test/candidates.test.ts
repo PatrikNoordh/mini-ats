@@ -168,7 +168,7 @@ describe("saving a candidate", () => {
   it("creates the candidate, then links the new candidate to the chosen jobs", async () => {
     await expect(saveCandidate(CUSTOMER, { input, newJobIds: [jobId] })).resolves.toBe(candidate);
     expect(createCandidate).toHaveBeenCalledWith(CUSTOMER, input);
-    expect(linkCandidate).toHaveBeenCalledWith(CUSTOMER, candidate.id, [jobId]);
+    expect(linkCandidate).toHaveBeenCalledWith(candidate.id, [jobId]);
   });
 
   it("updates an existing candidate", async () => {

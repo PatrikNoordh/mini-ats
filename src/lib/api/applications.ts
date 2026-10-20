@@ -47,11 +47,7 @@ export async function listApplications(customerId: string): Promise<Application[
  * customer_id is not sent: the trigger sets it from the job and rejects a job and a candidate of
  * different customers (CLAUDE.md, security rule 7).
  */
-export async function linkCandidate(
-  customerId: string,
-  candidateId: string,
-  jobIds: readonly string[],
-): Promise<void> {
+export async function linkCandidate(candidateId: string, jobIds: readonly string[]): Promise<void> {
   if (jobIds.length === 0) return;
   const rows = jobIds.map((jobId) => ({ job_id: jobId, candidate_id: candidateId }));
   const { error } = await supabase

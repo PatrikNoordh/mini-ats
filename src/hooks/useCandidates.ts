@@ -33,7 +33,7 @@ export async function saveCandidate(
     ? await updateCandidate(customerId, id, input)
     : await createCandidate(customerId, input);
   try {
-    await linkCandidate(customerId, candidate.id, newJobIds);
+    await linkCandidate(candidate.id, newJobIds);
   } catch {
     throw new AppError("links_failed");
   }
