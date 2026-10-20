@@ -61,6 +61,8 @@
     "candidate_not_found": "Kandidaten hittades inte.",
     "email_exists": "Det finns redan ett konto med den e-postadressen.",
     "invalid_credentials": "Fel e-post eller lösenord.",
+    "too_many_attempts": "För många inloggningsförsök. Vänta en stund och försök igen.",
+    "profile_not_found": "Kontot saknar en profil. Kontakta en administratör.",
     "job_candidate_customer_mismatch": "Jobbet och kandidaten måste tillhöra samma kund.",
     "application_not_found": "Ansökan hittades inte.",
     "unknown": "Något gick fel. Försök igen."
