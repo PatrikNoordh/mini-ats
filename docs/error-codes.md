@@ -28,10 +28,10 @@ To add a code: add it to `ERROR_CODES`, then add `errors.<code>` to both locale 
 
 ## Edge Functions (from epic 1)
 
-Return the code as JSON with a fitting status, never a message:
+Return the code as JSON with a fitting status, never a message. `json()` in `supabase/functions/_shared/cors.ts` adds the CORS headers:
 
 ```ts
-return Response.json({ error: "email_exists" }, { status: 409, headers: corsHeaders });
+return json({ error: "email_exists" }, 409);
 ```
 
 The function's wrapper in `src/lib/api/` reads `error` and throws `new AppError(code)` when the code is in `ERROR_CODES`. Unknown codes become `errors.unknown`.
@@ -48,15 +48,18 @@ The data layer maps the message to an `AppError` the same way. The two triggers 
 
 ## Codes
 
-| Code                              | Where                         | Meaning                                                 |
-| --------------------------------- | ----------------------------- | ------------------------------------------------------- |
-| `card_not_found`                  | applications                  | The card does not exist for this customer               |
-| `job_not_found`                   | jobs                          | The job does not exist for this customer                |
-| `candidate_not_found`             | candidates                    | The candidate does not exist for this customer          |
-| `email_exists`                    | profiles, `admin-create-user` | An account with that email already exists               |
-| `invalid_credentials`             | auth                          | Wrong email or password                                 |
-| `too_many_attempts`               | auth                          | Too many sign-in attempts in a short time               |
-| `profile_not_found`               | auth                          | The account has no `profiles` row                       |
-| `job_candidate_customer_mismatch` | applications (trigger)        | The job and the candidate belong to different customers |
-| `application_not_found`           | cv_assessments (trigger)      | The application the assessment points at does not exist |
-| `unknown`                         | anywhere                      | Fallback for errors without a known code                |
+| Code                              | Where                         | Meaning                                                   |
+| --------------------------------- | ----------------------------- | --------------------------------------------------------- |
+| `card_not_found`                  | applications                  | The card does not exist for this customer                 |
+| `job_not_found`                   | jobs                          | The job does not exist for this customer                  |
+| `candidate_not_found`             | candidates                    | The candidate does not exist for this customer            |
+| `email_exists`                    | profiles, `admin-create-user` | An account with that email already exists                 |
+| `invalid_input`                   | `admin-create-user`           | The request body failed validation (`fields` names which) |
+| `not_authenticated`               | Edge Functions                | No valid JWT: signed out or the session expired           |
+| `forbidden`                       | `admin-create-user`           | The caller is signed in but not an admin                  |
+| `invalid_credentials`             | auth                          | Wrong email or password                                   |
+| `too_many_attempts`               | auth                          | Too many sign-in attempts in a short time                 |
+| `profile_not_found`               | auth                          | The account has no `profiles` row                         |
+| `job_candidate_customer_mismatch` | applications (trigger)        | The job and the candidate belong to different customers   |
+| `application_not_found`           | cv_assessments (trigger)      | The application the assessment points at does not exist   |
+| `unknown`                         | anywhere                      | Fallback for errors without a known code                  |
