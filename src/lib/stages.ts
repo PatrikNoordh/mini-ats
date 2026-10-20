@@ -8,6 +8,11 @@ export const stageSchema = z.enum(["new", "screening", "interview", "offer", "hi
 
 export const STAGES: Stage[] = [...stageSchema.options];
 
+/** The stage next to a stage on the board, one step left (-1) or right (1). None past the ends. */
+export function neighbourStage(stage: Stage, step: -1 | 1): Stage | undefined {
+  return STAGES[STAGES.indexOf(stage) + step];
+}
+
 /** Whole days since the given ISO date (never negative). */
 export function daysSince(iso: string, now: Date = new Date()): number {
   const diff = now.getTime() - new Date(iso).getTime();

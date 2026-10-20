@@ -135,7 +135,17 @@
     "moveFailed": "Kunde inte flytta kortet. Ändringen har ångrats.",
     "daysInStage": "Dagar i steget",
     "days_one": "{{count, number}} d",
-    "days_other": "{{count, number}} d"
+    "days_other": "{{count, number}} d",
+    "cardLabel_one": "{{name}}, {{job}}, {{count, number}} dag i steget",
+    "cardLabel_other": "{{name}}, {{job}}, {{count, number}} dagar i steget",
+    "dragInstructions": "Tryck Enter för att öppna kandidaten. Tryck mellanslag för att lyfta kortet, flytta det med vänster- och högerpil och tryck mellanslag igen för att släppa det. Escape avbryter flytten.",
+    "announce": {
+      "pickedUp": "{{name}} lyft från {{stage}}.",
+      "over": "{{name}} är över {{stage}}.",
+      "notOver": "{{name}} är inte över någon kolumn.",
+      "dropped": "{{name}} släppt i {{stage}}.",
+      "cancelled": "Flytten avbröts. {{name}} ligger kvar i {{stage}}."
+    }
   },
   "candidateSheet": {
     "added": "Tillagd {{date}}",
