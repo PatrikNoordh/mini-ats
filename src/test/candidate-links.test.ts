@@ -48,4 +48,12 @@ describe("editing a candidate's job links", () => {
     expect(added?.stage).toBe("new");
     expect(await linkedJobIds()).toEqual(expect.arrayContaining([...before, newJob]));
   });
+
+  it("links a job that only exists in Supabase", async () => {
+    const supabaseJob = "10000000-0000-0000-0000-0000000000a1";
+
+    await updateCandidate(CUSTOMER, CANDIDATE, input, [supabaseJob]);
+
+    expect(await linkedJobIds()).toContain(supabaseJob);
+  });
 });

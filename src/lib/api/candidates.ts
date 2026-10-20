@@ -12,11 +12,13 @@ export async function listCandidates(customerId: string): Promise<Candidate[]> {
   return clone(db().candidates.filter((c) => c.customer_id === customerId));
 }
 
-/** Adds the missing job links. Existing links are never removed here. */
+/**
+ * Adds the missing job links. Existing links are never removed here. The job ids come from the
+ * customer's jobs in Supabase (since ATS-9), so they are not checked against the mock jobs.
+ */
 function addLinks(customerId: string, candidateId: string, jobIds: string[]) {
   const s = db();
-  const validJobs = new Set(s.jobs.filter((j) => j.customer_id === customerId).map((j) => j.id));
-  const wanted = new Set(jobIds.filter((id) => validJobs.has(id)));
+  const wanted = new Set(jobIds);
   const existing = new Set(
     s.applications.filter((a) => a.candidate_id === candidateId).map((a) => a.job_id),
   );
