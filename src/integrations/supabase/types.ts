@@ -238,6 +238,26 @@ export type Database = {
     };
     Functions: {
       is_admin: { Args: never; Returns: boolean };
+      move_application: {
+        Args: { application_id: string; customer_id: string; new_stage: string };
+        Returns: {
+          candidate_id: string;
+          created_at: string;
+          customer_id: string;
+          id: string;
+          job_id: string;
+          position: number;
+          stage: string;
+          stage_changed_at: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "applications";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
     };
     Enums: {
       [_ in never]: never;
