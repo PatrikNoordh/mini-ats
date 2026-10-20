@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -14,12 +14,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, type FormErrors } from "@/components/Field";
+import { ErrorState, LoadingRows } from "@/components/States";
 import { useJobs } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
 import { useSaveCandidate } from "@/hooks/useCandidates";
+import {
+  MAX_EMAIL_LENGTH,
+  MAX_NAME_LENGTH,
+  MAX_NOTES_LENGTH,
+  MAX_PHONE_LENGTH,
+  MAX_URL_LENGTH,
+} from "@/lib/constants";
 import { errorCode } from "@/lib/errors";
-import { isLinkedInUrl } from "@/lib/stages";
-import { isEmail } from "@/lib/validation";
+import { cn } from "@/lib/utils";
+import { candidateInputSchema, fieldErrors } from "@/lib/validation";
 import type { Candidate } from "@/types";
 
 const empty = { full_name: "", email: "", phone: "", linkedin_url: "", notes: "" };
@@ -40,26 +48,29 @@ export function CandidateDialog({
   const apps = useApplications(customerId);
   const save = useSaveCandidate(customerId);
   const [form, setForm] = useState(empty);
-  const [jobIds, setJobIds] = useState<string[]>([]);
-  // Jobs the candidate was linked to when the dialog opened. They can't be unlinked here.
-  const [linkedJobIds, setLinkedJobIds] = useState<string[]>([]);
+  // Jobs picked in this dialog. The existing links come from the applications, not from here.
+  const [newJobIds, setNewJobIds] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Jobs the candidate is already linked to. They can't be unlinked here, so they show as checked
+  // and disabled. Read from the query, so links that arrive after the dialog opened still show.
+  const linkedJobIds = useMemo(
+    () =>
+      candidate
+        ? (apps.data ?? []).filter((a) => a.candidate_id === candidate.id).map((a) => a.job_id)
+        : [],
+    [apps.data, candidate],
+  );
 
   useEffect(() => {
     if (!open) return;
     setErrors({});
+    setNewJobIds([]);
     if (candidate) {
       const { full_name, email, phone, linkedin_url, notes } = candidate;
       setForm({ full_name, email, phone, linkedin_url, notes });
-      const linked = (apps.data ?? [])
-        .filter((a) => a.candidate_id === candidate.id)
-        .map((a) => a.job_id);
-      setJobIds(linked);
-      setLinkedJobIds(linked);
     } else {
       setForm(empty);
-      setJobIds([]);
-      setLinkedJobIds([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, candidate?.id]);
@@ -69,27 +80,31 @@ export function CandidateDialog({
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const errs: FormErrors = {};
-    if (!form.full_name.trim()) errs.full_name = "name_required";
-    if (!isEmail(form.email)) errs.email = "email_invalid";
-    if (form.linkedin_url.trim() && !isLinkedInUrl(form.linkedin_url.trim()))
-      errs.linkedin_url = "linkedin_invalid";
-    setErrors(errs);
-    if (Object.keys(errs).length) return;
+    const parsed = candidateInputSchema.safeParse(form);
+    setErrors(parsed.success ? {} : fieldErrors(parsed.error));
+    if (!parsed.success) return;
     try {
       await save.mutateAsync({
         id: candidate?.id,
-        input: { ...form, linkedin_url: form.linkedin_url.trim() },
-        jobIds,
+        input: parsed.data,
+        newJobIds: newJobIds.filter((id) => !linkedJobIds.includes(id)),
       });
       toast.success(candidate ? t("candidateDialog.updated") : t("candidateDialog.created"));
       onOpenChange(false);
     } catch (err) {
-      toast.error(t(`errors.${errorCode(err)}`));
+      const code = errorCode(err);
+      toast.error(t(`errors.${code}`));
+      // The candidate is saved, so the form closes: saving it again would create a duplicate.
+      if (code === "links_failed") onOpenChange(false);
     }
   };
 
-  const visibleJobs = (jobs.data ?? []).filter((j) => j.status === "open" || jobIds.includes(j.id));
+  // Editing needs the existing links first, or they would show as unchecked and enabled.
+  const linksLoading = jobs.isLoading || (!!candidate && apps.isLoading);
+  const linksError = jobs.isError || (!!candidate && apps.isError);
+  const isLinked = (jobId: string) => linkedJobIds.includes(jobId);
+  const isChecked = (jobId: string) => isLinked(jobId) || newJobIds.includes(jobId);
+  const visibleJobs = (jobs.data ?? []).filter((j) => j.status === "open" || isChecked(j.id));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,62 +116,112 @@ export function CandidateDialog({
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <Field id="c-name" label={t("candidateDialog.name")} error={errors.full_name}>
-            {(control) => <Input {...control} value={form.full_name} onChange={set("full_name")} />}
+            {(control) => (
+              <Input
+                {...control}
+                maxLength={MAX_NAME_LENGTH}
+                value={form.full_name}
+                onChange={set("full_name")}
+              />
+            )}
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="c-email" label={t("candidateDialog.email")} error={errors.email}>
               {(control) => (
-                <Input {...control} type="email" value={form.email} onChange={set("email")} />
+                <Input
+                  {...control}
+                  type="email"
+                  maxLength={MAX_EMAIL_LENGTH}
+                  value={form.email}
+                  onChange={set("email")}
+                />
               )}
             </Field>
-            <Field id="c-phone" label={t("candidateDialog.phone")}>
-              {(control) => <Input {...control} value={form.phone} onChange={set("phone")} />}
+            <Field id="c-phone" label={t("candidateDialog.phone")} error={errors.phone}>
+              {(control) => (
+                <Input
+                  {...control}
+                  type="tel"
+                  maxLength={MAX_PHONE_LENGTH}
+                  value={form.phone}
+                  onChange={set("phone")}
+                />
+              )}
             </Field>
           </div>
           <Field id="c-li" label={t("candidateDialog.linkedin")} error={errors.linkedin_url}>
             {(control) => (
               <Input
                 {...control}
+                type="url"
+                maxLength={MAX_URL_LENGTH}
                 placeholder={t("candidateDialog.linkedinPlaceholder")}
                 value={form.linkedin_url}
                 onChange={set("linkedin_url")}
               />
             )}
           </Field>
-          <Field id="c-notes" label={t("candidateDialog.notes")}>
+          <Field id="c-notes" label={t("candidateDialog.notes")} error={errors.notes}>
             {(control) => (
-              <Textarea {...control} rows={3} value={form.notes} onChange={set("notes")} />
+              <Textarea
+                {...control}
+                rows={3}
+                maxLength={MAX_NOTES_LENGTH}
+                value={form.notes}
+                onChange={set("notes")}
+              />
             )}
           </Field>
           <div className="space-y-2">
             <Label>{t("candidateDialog.linkJobs")}</Label>
-            {visibleJobs.length === 0 && (
-              <p className="text-sm text-muted-foreground">{t("candidateDialog.noOpenJobs")}</p>
+            {linksLoading ? (
+              <LoadingRows rows={2} />
+            ) : linksError ? (
+              <ErrorState
+                onRetry={() => {
+                  jobs.refetch();
+                  apps.refetch();
+                }}
+              />
+            ) : (
+              <>
+                {visibleJobs.length === 0 && (
+                  <p className="text-sm text-muted-foreground">{t("candidateDialog.noOpenJobs")}</p>
+                )}
+                <div className="space-y-1.5">
+                  {visibleJobs.map((j) => (
+                    <label
+                      key={j.id}
+                      className={cn(
+                        "flex items-center gap-2 text-sm",
+                        isLinked(j.id) && "text-muted-foreground",
+                      )}
+                    >
+                      <Checkbox
+                        checked={isChecked(j.id)}
+                        disabled={isLinked(j.id)}
+                        onCheckedChange={(c) =>
+                          setNewJobIds((ids) =>
+                            c ? [...ids, j.id] : ids.filter((x) => x !== j.id),
+                          )
+                        }
+                      />
+                      {j.title} <span className="text-muted-foreground">· {j.location}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("candidateDialog.newLinksHint")}
+                  {linkedJobIds.length > 0 && ` ${t("candidateDialog.existingLinksHint")}`}
+                </p>
+              </>
             )}
-            <div className="space-y-1.5">
-              {visibleJobs.map((j) => (
-                <label key={j.id} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={jobIds.includes(j.id)}
-                    disabled={linkedJobIds.includes(j.id)}
-                    onCheckedChange={(c) =>
-                      setJobIds((ids) => (c ? [...ids, j.id] : ids.filter((x) => x !== j.id)))
-                    }
-                  />
-                  {j.title} <span className="text-muted-foreground">· {j.location}</span>
-                </label>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t("candidateDialog.newLinksHint")}
-              {linkedJobIds.length > 0 && ` ${t("candidateDialog.existingLinksHint")}`}
-            </p>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={save.isPending}>
+            <Button type="submit" disabled={save.isPending || linksLoading}>
               {save.isPending ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>

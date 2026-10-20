@@ -90,6 +90,25 @@ do $$ begin
   raise notice 'OK 7: customer can move own card';
 end $$;
 
+-- The app links a candidate without customer_id (the column default makes it optional). The
+-- trigger sets it from the job, and replaces any value a client sends anyway.
+do $$ declare candidate uuid; spoofed uuid; begin
+  insert into public.candidates (customer_id, full_name)
+  values ('00000000-0000-0000-0000-0000000000b1', 'Cand B2') returning id into candidate;
+  insert into public.candidates (customer_id, full_name)
+  values ('00000000-0000-0000-0000-0000000000b1', 'Cand B3') returning id into spoofed;
+  insert into public.applications (job_id, candidate_id)
+  values ('10000000-0000-0000-0000-0000000000b1', candidate);
+  insert into public.applications (customer_id, job_id, candidate_id)
+  values ('00000000-0000-0000-0000-0000000000a1', '10000000-0000-0000-0000-0000000000b1', spoofed);
+  assert (select customer_id from public.applications where candidate_id = candidate)
+         = '00000000-0000-0000-0000-0000000000b1', 'customer_id set from the job';
+  assert (select customer_id from public.applications where candidate_id = spoofed)
+         = '00000000-0000-0000-0000-0000000000b1', 'client customer_id overwritten';
+  delete from public.candidates where id in (candidate, spoofed); -- the counts below expect the seed data only
+  raise notice 'OK 7b: an application gets customer_id from the job, never from the client';
+end $$;
+
 -- ---------------------------------------------------------------- admin
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
 do $$ begin
@@ -98,6 +117,16 @@ do $$ begin
   assert (select count(*) from public.profiles) = 3, 'admin sees all profiles';
   insert into public.jobs (customer_id, title) values ('00000000-0000-0000-0000-0000000000a1', 'Created by admin for A');
   raise notice 'OK 8: admin sees everything and can act for a customer';
+end $$;
+
+-- The default is the caller's id, the admin's here. The trigger must still use the job's customer.
+do $$ declare job uuid; begin
+  select id into job from public.jobs where title = 'Created by admin for A';
+  insert into public.applications (job_id, candidate_id)
+  values (job, '20000000-0000-0000-0000-0000000000a1');
+  assert (select customer_id from public.applications where job_id = job)
+         = '00000000-0000-0000-0000-0000000000a1', 'admin link belongs to the customer';
+  raise notice 'OK 8b: an application an admin creates for a customer belongs to that customer';
 end $$;
 
 -- ---------------------------------------------------------------- anon

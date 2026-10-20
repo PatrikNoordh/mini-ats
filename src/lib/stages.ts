@@ -1,7 +1,12 @@
+import { z } from "zod";
+
 import type { Job, Stage } from "@/types";
 import { MS_PER_DAY } from "./constants";
 
-export const STAGES: Stage[] = ["new", "screening", "interview", "offer", "hired", "rejected"];
+/** The pipeline stages in board order. The same values as the check on `applications.stage`. */
+export const stageSchema = z.enum(["new", "screening", "interview", "offer", "hired", "rejected"]);
+
+export const STAGES: Stage[] = [...stageSchema.options];
 
 /** Whole days since the given ISO date (never negative). */
 export function daysSince(iso: string, now: Date = new Date()): number {

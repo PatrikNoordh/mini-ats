@@ -68,6 +68,7 @@
     "profile_not_found": "This account has no profile. Contact an administrator.",
     "job_candidate_customer_mismatch": "The job and the candidate must belong to the same customer.",
     "application_not_found": "The application could not be found.",
+    "links_failed": "The candidate was saved, but could not be linked to the jobs. Open the candidate and try again.",
     "unknown": "Something went wrong. Please try again."
   },
   "validation": {

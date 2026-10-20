@@ -8,12 +8,14 @@ export type FormErrors = Partial<
   Record<
     | "full_name"
     | "email"
+    | "phone"
     | "linkedin_url"
     | "company_name"
     | "password"
     | "title"
     | "location"
-    | "description",
+    | "description"
+    | "notes",
     ValidationKey
   >
 >;

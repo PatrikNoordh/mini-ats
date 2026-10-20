@@ -37,11 +37,11 @@ An application links one candidate to one job and is one card on the kanban boar
 ## Data access
 
 - All data functions live in `src/lib/api/`, one file per entity: `profiles.ts`, `jobs.ts`, `candidates.ts`, `applications.ts`. They are async and take `customerId` as an explicit argument where data belongs to a customer.
-- The mock store lives in `src/lib/api/mockStore.ts`. Every mock call waits about 300 ms so loading states are visible.
+- The data functions call Supabase (since epic 2). ATS-1 to ATS-9 used an in-memory mock store, `src/lib/api/mockStore.ts`, removed in ATS-10.
 - TanStack Query hooks in `src/hooks/`: `useJobs`, `useCandidates`, `useApplications`, `useProfiles`, plus mutations.
 - Every query key that returns customer data includes the active customer id, for example `["jobs", customerId]`. Switching customer must never show the previous customer's cached data.
 - Moving a card uses an optimistic update and rolls back with a toast if the call fails.
-- Components never import the mock store.
+- Components never call Supabase directly.
 - Mock data: 1 admin, 2 customers ("Nordkust Bygg AB" and "Studio Lumen"), 3–4 jobs each and about 15 candidates per customer spread across all stages. Only obviously fake people and `.test` email addresses.
 
 ## Auth (Supabase Auth, from ATS-6)

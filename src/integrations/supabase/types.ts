@@ -23,7 +23,7 @@ export type Database = {
         Insert: {
           candidate_id: string;
           created_at?: string;
-          customer_id: string;
+          customer_id?: string;
           id?: string;
           job_id: string;
           position?: number;
