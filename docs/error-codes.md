@@ -63,4 +63,5 @@ The data layer maps the message to an `AppError` with `fromDbError()` in `src/li
 | `job_candidate_customer_mismatch` | applications (trigger)        | The job and the candidate belong to different customers   |
 | `application_not_found`           | cv_assessments (trigger)      | The application the assessment points at does not exist   |
 | `links_failed`                    | candidates                    | The candidate was saved, but linking it to jobs failed    |
+| `already_linked`                  | applications                  | The candidate is already linked to that job               |
 | `unknown`                         | anywhere                      | Fallback for errors without a known code                  |

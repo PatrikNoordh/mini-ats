@@ -68,6 +68,7 @@
     "profile_not_found": "Kontot saknar en profil. Kontakta en administratör.",
     "job_candidate_customer_mismatch": "Jobbet och kandidaten måste tillhöra samma kund.",
     "application_not_found": "Ansökan hittades inte.",
+    "already_linked": "Kandidaten är redan kopplad till det här jobbet.",
     "links_failed": "Kandidaten sparades, men kunde inte kopplas till jobben. Öppna kandidaten och försök igen.",
     "unknown": "Något gick fel. Försök igen."
   },
@@ -145,7 +146,13 @@
     "notes": "Anteckningar",
     "noNotes": "Inga anteckningar.",
     "linkedJobs": "Kopplade jobb",
-    "noLinkedJobs": "Inte kopplad till något jobb."
+    "noLinkedJobs": "Inte kopplad till något jobb.",
+    "addToJob": "Lägg till i jobb",
+    "chooseJob": "Välj jobb…",
+    "add": "Lägg till",
+    "adding": "Lägger till…",
+    "noJobsToAdd": "Inga fler öppna jobb att lägga till.",
+    "addedToast": "Kandidaten har lagts till i jobbet."
   },
   "candidates": {
     "title": "Kandidater",

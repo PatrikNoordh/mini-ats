@@ -16,6 +16,7 @@ export const ERROR_CODES = [
   "job_candidate_customer_mismatch",
   "application_not_found",
   "links_failed",
+  "already_linked",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];

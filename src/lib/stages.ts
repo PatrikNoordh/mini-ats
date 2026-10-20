@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { Job, Stage } from "@/types";
+import type { Application, Job, Stage } from "@/types";
 import { MS_PER_DAY } from "./constants";
 
 /** The pipeline stages in board order. The same values as the check on `applications.stage`. */
@@ -36,6 +36,18 @@ export function resolveJobFilter(
 ): string | undefined {
   if (!job || !jobs) return job;
   return jobs.some((j) => j.id === job) ? job : undefined;
+}
+
+/** The open jobs a candidate can still be added to: every open job they are not linked to. */
+export function jobsToAdd<J extends Pick<Job, "id" | "status">>(
+  jobs: readonly J[],
+  applications: readonly Pick<Application, "job_id" | "candidate_id">[],
+  candidateId: string,
+): J[] {
+  const linked = new Set(
+    applications.filter((a) => a.candidate_id === candidateId).map((a) => a.job_id),
+  );
+  return jobs.filter((j) => j.status === "open" && !linked.has(j.id));
 }
 
 export const queryKeys = {

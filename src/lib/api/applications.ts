@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Application, Stage } from "@/types";
+import { PG_UNIQUE_VIOLATION } from "@/lib/constants";
 import { AppError, fromDbError } from "@/lib/errors";
 import { stageSchema } from "@/lib/stages";
 
@@ -54,6 +55,26 @@ export async function linkCandidate(candidateId: string, jobIds: readonly string
     .from("applications")
     .upsert(rows, { onConflict: "job_id,candidate_id", ignoreDuplicates: true });
   if (error) throw fromDbError(error);
+}
+
+/** A failed link of one candidate to one job. A link that already exists is `already_linked`. */
+export function addApplicationError(error: Error & { code: string }): Error {
+  return error.code === PG_UNIQUE_VIOLATION ? new AppError("already_linked") : fromDbError(error);
+}
+
+/**
+ * Adds a candidate to one more job, in the `new` stage. Unlike linkCandidate, a link that already
+ * exists fails with `already_linked`, so the user is told instead of nothing happening.
+ * customer_id is set by the trigger from the job (CLAUDE.md, security rule 7).
+ */
+export async function addApplication(candidateId: string, jobId: string): Promise<Application> {
+  const { data, error } = await supabase
+    .from("applications")
+    .insert({ job_id: jobId, candidate_id: candidateId })
+    .select(APPLICATION_COLUMNS)
+    .single();
+  if (error) throw addApplicationError(error);
+  return parseApplicationRow(data);
 }
 
 /** The position after the last card in a stage, so a moved card lands last in its column. */
