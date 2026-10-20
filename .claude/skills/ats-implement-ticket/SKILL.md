@@ -154,6 +154,14 @@ dropdb ats_rls_test
 
 Every check must print `OK`. If Postgres is not available locally, say so in the summary. CI runs the same job on the PR.
 
+If the branch adds a migration, it must follow the migration rules in `CLAUDE.md` § Workflow. Run the dry run and show it to the developer:
+
+```bash
+npx supabase db push --dry-run
+```
+
+It must list only the migrations this branch adds. If it lists anything else, stop and tell the developer. Never run `db push` yourself without the developer's yes. When unattended, write in the summary that the migration still has to be applied before the merge.
+
 Manual test, described in the summary: as admin acting for a customer, and as the customer. For data tickets, also as a second customer who must not see the first one's rows.
 
 ---
@@ -232,6 +240,7 @@ When running unattended: print the summary and stop. Do not push, open a PR or p
 - [ ] Query keys with customer data include the customer id
 - [ ] No service role key in `src/`. Edge Functions read with the caller's JWT
 - [ ] New tables have RLS and a check in `rls_test.sql`
+- [ ] New migrations follow `CLAUDE.md` § Workflow, and the dry run lists only this branch's migrations
 - [ ] No `any` or silencing casts
 - [ ] No hardcoded values: text via `t()` in sv and en, theme tokens, no arbitrary sizes, named constants
 - [ ] Loading, empty and error states, 390 px, accessible

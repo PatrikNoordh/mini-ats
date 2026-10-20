@@ -133,8 +133,9 @@ For every ticket, read the code that implements each AC. Do not trust that a clo
 
 - `src/routeTree.gen.ts` matches the files in `src/routes/` (the build regenerates it; a diff after `npm run build` means it was not committed)
 - `.env.example` lists every `VITE_*` variable the code reads: `grep -rn "import.meta.env.VITE_" src/`
-- After a schema change: `src/integrations/supabase/types.ts` was regenerated
-- Edge Functions in `supabase/functions/` are deployed (ask the developer to confirm, or check `supabase functions list` if the CLI is linked)
+- After a schema change: `src/integrations/supabase/types.ts` matches the project (regenerate and compare as in `CLAUDE.md` § Workflow)
+- `npx supabase migration list` shows no local migration missing on Remote (needs the linked CLI; otherwise "Could not verify")
+- Edge Functions in `supabase/functions/` are deployed (ask the developer to confirm, or check `npx supabase functions list` if the CLI is linked)
 - The production deployment on Vercel is green and the checkpoint's manual test was run there
 
 Anything you cannot check, say "Could not verify — <reason>". Never guess.

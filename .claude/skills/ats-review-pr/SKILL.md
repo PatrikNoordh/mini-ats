@@ -52,6 +52,7 @@ Read each file completely before forming an opinion. Do not review code you have
 - The role is read from `profiles.role`, never from `user_metadata`
 - New tables: RLS enabled, policies written, and a matching check added to `supabase/tests/rls_test.sql`
 - Existing RLS policies changed: flag it and explain the effect
+- A new migration follows the migration rules in `CLAUDE.md` § Workflow, and the PR says it was applied or will be before the merge. A migration left to "apply later" is a blocker
 - No client code sends `customer_id` for `applications` or `cv_assessments`
 - No path that allows public sign-up
 - AI output is labelled as a suggestion and is never written from the client
