@@ -61,6 +61,8 @@
     "candidate_not_found": "The candidate could not be found.",
     "email_exists": "An account with that email address already exists.",
     "invalid_credentials": "Wrong email or password.",
+    "too_many_attempts": "Too many sign-in attempts. Wait a moment and try again.",
+    "profile_not_found": "This account has no profile. Contact an administrator.",
     "job_candidate_customer_mismatch": "The job and the candidate must belong to the same customer.",
     "application_not_found": "The application could not be found.",
     "unknown": "Something went wrong. Please try again."
@@ -106,9 +108,7 @@
     "emailPlaceholder": "name@company.com",
     "password": "Password",
     "submit": "Sign in",
-    "submitting": "Signing in…",
-    "demo": "Demo",
-    "demoPlatform": "The platform"
+    "submitting": "Signing in…"
   },
   "pipeline": {
     "title": "Pipeline",

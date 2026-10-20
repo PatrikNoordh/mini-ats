@@ -289,6 +289,9 @@ Small problems and improvements noticed while working on a ticket but outside it
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
 - [ ] Explicit table grants instead of Supabase default privileges: revoke anon, grant only what each table needs, update local_stub.sql to match — `supabase/migrations/`, `supabase/tests/local_stub.sql` (found in ATS-5)
+- [ ] A profile without `full_name` (an account made in the dashboard) shows an empty name and avatar in the user menu; fall back to the email — `src/components/layout/UserMenu.tsx` (found in ATS-6)
+- [ ] After login the app always opens `/pipeline`; return to the page the signed-out user asked for instead — `src/routes/login.tsx`, `src/components/auth/Guards.tsx` (found in ATS-6)
+- [ ] `passwords` and `DEMO_PASSWORD` in the mock store are only written since the mock login is gone; remove them with the mock store — `src/lib/api/mockStore.ts` (found in ATS-6)
 
 ## Found while reviewing PRs
 
@@ -297,3 +300,4 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
 - [ ] The first migration was applied through the SQL Editor, so the CLI migration history is empty. Run `supabase migration repair --status applied 20261006000000` before the first `supabase db push`, or it tries to apply the migration again — `supabase/migrations/` (PR #27, ATS-5)
+- [ ] When the password is right but loading the profile fails (network, server), the sign-in shows the unknown error but leaves the Supabase session in place, so a reload signs the user in. Sign out again, as the missing-profile case already does — `src/contexts/AuthContext.tsx` (PR #28, ATS-6)

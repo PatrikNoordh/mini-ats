@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +13,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { LanguageMenuItems } from "@/components/LanguageSwitcher";
 import { AVATAR_INITIALS } from "@/lib/constants";
+import { errorCode } from "@/lib/errors";
 
 export function UserMenu() {
   const { t } = useTranslation();
@@ -50,8 +52,12 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {
-            await signOut();
-            navigate({ to: "/login" });
+            try {
+              await signOut();
+              navigate({ to: "/login" });
+            } catch (err) {
+              toast.error(t(`errors.${errorCode(err)}`));
+            }
           }}
         >
           <LogOut className="mr-2 h-4 w-4" /> {t("shell.signOut")}

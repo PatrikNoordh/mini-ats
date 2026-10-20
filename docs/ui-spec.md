@@ -44,13 +44,13 @@ An application links one candidate to one job and is one card on the kanban boar
 - Components never import the mock store.
 - Mock data: 1 admin, 2 customers ("Nordkust Bygg AB" and "Studio Lumen"), 3–4 jobs each and about 15 candidates per customer spread across all stages. Only obviously fake people and `.test` email addresses.
 
-## Auth (mock now, Supabase later)
+## Auth (Supabase Auth, from ATS-6)
 
-- `src/contexts/AuthContext.tsx` with `useAuth()` exposing: `user`, `profile`, `role`, `isLoading`, `signIn(email, password)`, `signOut()`.
-- The mock implementation lives only in `AuthContext`.
+- `src/contexts/AuthContext.tsx` with `useAuth()` exposing: `user`, `profile`, `role`, `isLoading`, `signIn(email, password)`, `signOut()`. The Supabase calls live in `src/lib/api/auth.ts`.
+- The role comes from the user's own `profiles` row. A signed-in user without a profile is signed out again.
+- The session is read in the browser only, so the server renders the loading state for protected pages.
 - Route guards: `RequireAuth` redirects signed-out users to `/login`. `RequireAdmin` redirects customers to `/pipeline`.
-- The demo login buttons live in `src/components/auth/DemoLogin.tsx`, so they can be removed in ATS-6.
-- `signOut()` clears the TanStack Query cache.
+- `signOut()` signs out on this device and clears the TanStack Query cache. The cache is also cleared whenever the signed-in user changes, for example after a sign-out in another tab.
 
 ## Active customer
 
@@ -61,7 +61,7 @@ An application links one candidate to one job and is one card on the kanban boar
 
 ## Pages
 
-1. **`/login`:** email and password form with Swedish error messages. Below it, `DemoLogin` with buttons to log in as the admin or either customer.
+1. **`/login`:** email and password form with Swedish error messages.
 2. **`/pipeline`** (start page after login), the kanban board:
    - One column per stage, in order. The column header shows the stage name and the number of cards.
    - Compact cards: candidate name, job title, and days in the current stage computed from `stage_changed_at`. Small enough that many fit on screen.

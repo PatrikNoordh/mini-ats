@@ -8,6 +8,8 @@ export const ERROR_CODES = [
   "candidate_not_found",
   "email_exists",
   "invalid_credentials",
+  "too_many_attempts",
+  "profile_not_found",
   "job_candidate_customer_mismatch",
   "application_not_found",
 ] as const;
