@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createJob, listJobs, updateJob, type JobInput } from "@/lib/api/jobs";
+import { createJob, listJobs, setJobStatus, updateJob } from "@/lib/api/jobs";
 import { queryKeys } from "@/lib/stages";
+import type { JobInput } from "@/lib/validation";
+import type { JobStatus } from "@/types";
 
 export function useJobs(customerId: string | null) {
   return useQuery({
@@ -21,8 +23,17 @@ export function useCreateJob(customerId: string | null) {
 export function useUpdateJob(customerId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Partial<JobInput> }) =>
-      updateJob(customerId!, id, patch),
+    mutationFn: ({ id, input }: { id: string; input: JobInput }) =>
+      updateJob(customerId!, id, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) }),
+  });
+}
+
+export function useSetJobStatus(customerId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: JobStatus }) =>
+      setJobStatus(customerId!, id, status),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) }),
   });
 }

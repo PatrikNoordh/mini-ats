@@ -101,26 +101,32 @@ export function CandidateDialog({
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <Field id="c-name" label={t("candidateDialog.name")} error={errors.full_name}>
-            <Input id="c-name" value={form.full_name} onChange={set("full_name")} />
+            {(control) => <Input {...control} value={form.full_name} onChange={set("full_name")} />}
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="c-email" label={t("candidateDialog.email")} error={errors.email}>
-              <Input id="c-email" type="email" value={form.email} onChange={set("email")} />
+              {(control) => (
+                <Input {...control} type="email" value={form.email} onChange={set("email")} />
+              )}
             </Field>
             <Field id="c-phone" label={t("candidateDialog.phone")}>
-              <Input id="c-phone" value={form.phone} onChange={set("phone")} />
+              {(control) => <Input {...control} value={form.phone} onChange={set("phone")} />}
             </Field>
           </div>
           <Field id="c-li" label={t("candidateDialog.linkedin")} error={errors.linkedin_url}>
-            <Input
-              id="c-li"
-              placeholder={t("candidateDialog.linkedinPlaceholder")}
-              value={form.linkedin_url}
-              onChange={set("linkedin_url")}
-            />
+            {(control) => (
+              <Input
+                {...control}
+                placeholder={t("candidateDialog.linkedinPlaceholder")}
+                value={form.linkedin_url}
+                onChange={set("linkedin_url")}
+              />
+            )}
           </Field>
           <Field id="c-notes" label={t("candidateDialog.notes")}>
-            <Textarea id="c-notes" rows={3} value={form.notes} onChange={set("notes")} />
+            {(control) => (
+              <Textarea {...control} rows={3} value={form.notes} onChange={set("notes")} />
+            )}
           </Field>
           <div className="space-y-2">
             <Label>{t("candidateDialog.linkJobs")}</Label>

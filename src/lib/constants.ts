@@ -30,3 +30,10 @@ export const LANGUAGE_COOKIE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 
 /** Letters shown in the avatar, taken from the start of each name part. */
 export const AVATAR_INITIALS = 2;
+
+/** Longest job title. */
+export const MAX_JOB_TITLE_LENGTH = 200;
+/** Longest job location. */
+export const MAX_JOB_LOCATION_LENGTH = 200;
+/** Longest job description. */
+export const MAX_JOB_DESCRIPTION_LENGTH = 5000;

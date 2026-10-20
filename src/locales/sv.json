@@ -79,7 +79,8 @@
     "title_required": "Ange en titel.",
     "location_required": "Ange en ort.",
     "linkedin_invalid": "Ange en länk till en LinkedIn-profil, till exempel https://www.linkedin.com/in/namn.",
-    "login_required": "Fyll i både e-post och lösenord."
+    "login_required": "Fyll i både e-post och lösenord.",
+    "too_long": "Texten är för lång."
   },
   "shell": {
     "toggleSidebar": "Visa eller dölj menyn",
@@ -185,6 +186,7 @@
     "location": "Ort",
     "status": "Status",
     "candidates": "Kandidater",
+    "actions": "Åtgärder",
     "open": "Öppet",
     "closed": "Stängt",
     "close": "Stäng",
