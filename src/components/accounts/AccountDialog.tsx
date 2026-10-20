@@ -19,9 +19,14 @@ import {
 } from "@/components/ui/select";
 import { Field, type FormErrors } from "@/components/Field";
 import { useCreateProfile } from "@/hooks/useProfiles";
-import { MIN_PASSWORD_LENGTH } from "@/lib/constants";
+import {
+  MAX_EMAIL_LENGTH,
+  MAX_NAME_LENGTH,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+} from "@/lib/constants";
 import { errorCode } from "@/lib/errors";
-import { isEmail } from "@/lib/validation";
+import { isEmail, roleSchema } from "@/lib/validation";
 import type { Role } from "@/types";
 
 const empty = { full_name: "", company_name: "", email: "", password: "" };
@@ -74,7 +79,13 @@ export function AccountDialog({
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <Field id="a-role" label={t("accountDialog.role")}>
-            <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+            <Select
+              value={role}
+              onValueChange={(value) => {
+                const parsed = roleSchema.safeParse(value);
+                if (parsed.success) setRole(parsed.data);
+              }}
+            >
               <SelectTrigger id="a-role">
                 <SelectValue />
               </SelectTrigger>
@@ -85,16 +96,43 @@ export function AccountDialog({
             </Select>
           </Field>
           <Field id="a-name" label={t("accountDialog.name")} error={errors.full_name}>
-            <Input id="a-name" value={form.full_name} onChange={set("full_name")} />
+            <Input
+              id="a-name"
+              maxLength={MAX_NAME_LENGTH}
+              value={form.full_name}
+              onChange={set("full_name")}
+            />
           </Field>
           <Field id="a-co" label={t("accountDialog.company")} error={errors.company_name}>
-            <Input id="a-co" value={form.company_name} onChange={set("company_name")} />
+            <Input
+              id="a-co"
+              maxLength={MAX_NAME_LENGTH}
+              value={form.company_name}
+              onChange={set("company_name")}
+            />
           </Field>
           <Field id="a-email" label={t("accountDialog.email")} error={errors.email}>
-            <Input id="a-email" type="email" value={form.email} onChange={set("email")} />
+            <Input
+              id="a-email"
+              type="email"
+              maxLength={MAX_EMAIL_LENGTH}
+              value={form.email}
+              onChange={set("email")}
+            />
           </Field>
           <Field id="a-pw" label={t("accountDialog.password")} error={errors.password}>
-            <Input id="a-pw" type="text" value={form.password} onChange={set("password")} />
+            <Input
+              id="a-pw"
+              type="text"
+              autoComplete="off"
+              maxLength={MAX_PASSWORD_LENGTH}
+              aria-describedby="a-pw-hint"
+              value={form.password}
+              onChange={set("password")}
+            />
+            <p id="a-pw-hint" className="text-xs text-muted-foreground">
+              {t("accountDialog.passwordHint", { min: MIN_PASSWORD_LENGTH })}
+            </p>
           </Field>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

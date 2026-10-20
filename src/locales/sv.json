@@ -220,6 +220,7 @@
     "company": "Företag",
     "email": "E-post",
     "password": "Tillfälligt lösenord",
+    "passwordHint": "Minst {{min}} tecken.",
     "submit": "Skapa konto",
     "submitting": "Skapar…",
     "created": "Kontot är skapat."

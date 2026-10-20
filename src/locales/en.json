@@ -220,6 +220,7 @@
     "company": "Company",
     "email": "Email",
     "password": "Temporary password",
+    "passwordHint": "At least {{min}} characters.",
     "submit": "Create account",
     "submitting": "Creating…",
     "created": "The account has been created."
