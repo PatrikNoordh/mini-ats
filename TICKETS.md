@@ -293,6 +293,8 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 - [ ] After login the app always opens `/pipeline`; return to the page the signed-out user asked for instead — `src/routes/login.tsx`, `src/components/auth/Guards.tsx` (found in ATS-6)
 - [ ] `passwords` and `DEMO_PASSWORD` in the mock store are only written since the mock login is gone; remove them with the mock store — `src/lib/api/mockStore.ts` (found in ATS-6)
 - [ ] CI does not type-check or test the Edge Functions; add a job that runs `deno check` and `deno test` in `supabase/functions/` — `.github/workflows/ci.yml` (found in ATS-7)
+- [ ] ATS-8: the account form must check the same minimum password length as admin-create-user and show it to the admin, from one named constant — `src/components/accounts/AccountDialog.tsx`, `supabase/functions/admin-create-user/handler.ts` (found in ATS-7)
+- [ ] The pipeline search input and job filter have only an `aria-label`: no associated `<label>` and no `id`/`name`, which Chrome DevTools reports as an issue on /pipeline. Give them an `id` and a (visually hidden) label — `src/routes/_authenticated.pipeline.tsx` (found in ATS-7)
 
 ## Found while reviewing PRs
 
