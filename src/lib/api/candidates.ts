@@ -1,78 +1,92 @@
-import type { Application, Candidate } from "@/types";
+import { z } from "zod";
+
+import { supabase } from "@/integrations/supabase/client";
+import type { Candidate } from "@/types";
 import { AppError } from "@/lib/errors";
-import { clone, db, delay, uid } from "./mockStore";
+import type { CandidateInput } from "@/lib/validation";
 
-export type CandidateInput = Pick<
-  Candidate,
-  "full_name" | "email" | "phone" | "linkedin_url" | "notes"
->;
+const CANDIDATE_COLUMNS =
+  "id, customer_id, full_name, email, phone, linkedin_url, notes, created_at";
 
-export async function listCandidates(customerId: string): Promise<Candidate[]> {
-  await delay();
-  return clone(db().candidates.filter((c) => c.customer_id === customerId));
+const candidateRowSchema = z.object({
+  id: z.string(),
+  customer_id: z.string(),
+  full_name: z.string(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  linkedin_url: z.string().nullable(),
+  notes: z.string().nullable(),
+  created_at: z.string(),
+});
+
+/** A `candidates` row as the app's Candidate. Missing details become empty text. */
+export function parseCandidateRow(row: unknown): Candidate {
+  const c = candidateRowSchema.parse(row);
+  return {
+    ...c,
+    email: c.email ?? "",
+    phone: c.phone ?? "",
+    linkedin_url: c.linkedin_url ?? "",
+    notes: c.notes ?? "",
+  };
+}
+
+/** The columns written from the candidate form. Empty optional details are stored as null. */
+function toRow(input: CandidateInput) {
+  return {
+    full_name: input.full_name,
+    email: input.email || null,
+    phone: input.phone || null,
+    linkedin_url: input.linkedin_url || null,
+    notes: input.notes || null,
+  };
 }
 
 /**
- * Adds the missing job links. Existing links are never removed here. The job ids come from the
- * customer's jobs in Supabase (since ATS-9), so they are not checked against the mock jobs.
+ * The customer's candidates, newest first. The filter on customer_id matters for admins: RLS
+ * returns every customer's candidates to them.
  */
-function addLinks(customerId: string, candidateId: string, jobIds: string[]) {
-  const s = db();
-  const wanted = new Set(jobIds);
-  const existing = new Set(
-    s.applications.filter((a) => a.candidate_id === candidateId).map((a) => a.job_id),
-  );
-  const now = new Date().toISOString();
-  for (const jobId of wanted) {
-    if (existing.has(jobId)) continue;
-    const maxPos = Math.max(
-      -1,
-      ...s.applications
-        .filter((a) => a.customer_id === customerId && a.stage === "new")
-        .map((a) => a.position),
-    );
-    const app: Application = {
-      id: uid("app"),
-      customer_id: customerId,
-      job_id: jobId,
-      candidate_id: candidateId,
-      stage: "new",
-      position: maxPos + 1,
-      stage_changed_at: now,
-      created_at: now,
-      updated_at: now,
-    };
-    s.applications.push(app);
-  }
+export async function listCandidates(customerId: string): Promise<Candidate[]> {
+  const { data, error } = await supabase
+    .from("candidates")
+    .select(CANDIDATE_COLUMNS)
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data.map(parseCandidateRow);
 }
 
+/** Creates a candidate for the customer. An admin acting for the customer passes its id. */
 export async function createCandidate(
   customerId: string,
   input: CandidateInput,
-  jobIds: string[],
 ): Promise<Candidate> {
-  await delay();
-  const cand: Candidate = {
-    id: uid("cand"),
-    customer_id: customerId,
-    created_at: new Date().toISOString(),
-    ...input,
-  };
-  db().candidates.push(cand);
-  addLinks(customerId, cand.id, jobIds);
-  return clone(cand);
+  const { data, error } = await supabase
+    .from("candidates")
+    .insert({ ...toRow(input), customer_id: customerId })
+    .select(CANDIDATE_COLUMNS)
+    .single();
+  if (error) throw error;
+  return parseCandidateRow(data);
 }
 
+/**
+ * Updates one of the customer's candidates. RLS hides other customers' candidates, so an update
+ * that matches no row means the candidate does not exist for this customer.
+ */
 export async function updateCandidate(
   customerId: string,
   id: string,
   input: CandidateInput,
-  jobIds: string[],
 ): Promise<Candidate> {
-  await delay();
-  const cand = db().candidates.find((c) => c.id === id && c.customer_id === customerId);
-  if (!cand) throw new AppError("candidate_not_found");
-  Object.assign(cand, input);
-  addLinks(customerId, id, jobIds);
-  return clone(cand);
+  const { data, error } = await supabase
+    .from("candidates")
+    .update(toRow(input))
+    .eq("id", id)
+    .eq("customer_id", customerId)
+    .select(CANDIDATE_COLUMNS)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new AppError("candidate_not_found");
+  return parseCandidateRow(data);
 }

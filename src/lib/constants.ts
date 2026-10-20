@@ -3,9 +3,6 @@
 /** Milliseconds in one day, for date maths. */
 export const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-/** Delay on every mock API call, so loading states show. Removed with the mock store in epic 1. */
-export const MOCK_DELAY_MS = 300;
-
 /** A card that has been in its stage this many days or more is shown as stale. */
 export const STALE_CARD_DAYS = 14;
 
@@ -37,3 +34,10 @@ export const MAX_JOB_TITLE_LENGTH = 200;
 export const MAX_JOB_LOCATION_LENGTH = 200;
 /** Longest job description. */
 export const MAX_JOB_DESCRIPTION_LENGTH = 5000;
+
+/** Longest candidate phone number. */
+export const MAX_PHONE_LENGTH = 50;
+/** Longest LinkedIn URL. */
+export const MAX_URL_LENGTH = 2048;
+/** Longest candidate notes. */
+export const MAX_NOTES_LENGTH = 5000;

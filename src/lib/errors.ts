@@ -15,6 +15,7 @@ export const ERROR_CODES = [
   "profile_not_found",
   "job_candidate_customer_mismatch",
   "application_not_found",
+  "links_failed",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -37,4 +38,13 @@ export function toErrorCode(value: unknown): ErrorCode | null {
 /** The code of a known error, or "unknown" for anything else (network, bugs). */
 export function errorCode(error: unknown): ErrorCode | "unknown" {
   return error instanceof AppError ? error.code : "unknown";
+}
+
+/**
+ * A database error as an AppError when its message is a known code, as raised by the triggers.
+ * Any other error is returned as it is and shows as unknown.
+ */
+export function fromDbError(error: Error): Error {
+  const code = toErrorCode(error.message);
+  return code ? new AppError(code) : error;
 }

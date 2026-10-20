@@ -2,10 +2,16 @@ import { z } from "zod";
 
 import sv from "@/locales/sv.json";
 import {
+  MAX_EMAIL_LENGTH,
   MAX_JOB_DESCRIPTION_LENGTH,
   MAX_JOB_LOCATION_LENGTH,
   MAX_JOB_TITLE_LENGTH,
+  MAX_NAME_LENGTH,
+  MAX_NOTES_LENGTH,
+  MAX_PHONE_LENGTH,
+  MAX_URL_LENGTH,
 } from "@/lib/constants";
+import { isLinkedInUrl } from "@/lib/stages";
 
 /** The roles an account can have. The same values as the check on `profiles.role`. */
 export const roleSchema = z.enum(["admin", "customer"]);
@@ -49,3 +55,21 @@ export const jobInputSchema = z.object({
 });
 
 export type JobInput = z.infer<typeof jobInputSchema>;
+
+/**
+ * The candidate form. Trims every field. The name and a valid email are required; the LinkedIn
+ * URL is optional but must match the database check when it is given.
+ */
+export const candidateInputSchema = z.object({
+  full_name: z.string().trim().min(1, "name_required").max(MAX_NAME_LENGTH, "too_long"),
+  email: z.string().trim().max(MAX_EMAIL_LENGTH, "too_long").refine(isEmail, "email_invalid"),
+  phone: z.string().trim().max(MAX_PHONE_LENGTH, "too_long"),
+  linkedin_url: z
+    .string()
+    .trim()
+    .max(MAX_URL_LENGTH, "too_long")
+    .refine((url) => !url || isLinkedInUrl(url), "linkedin_invalid"),
+  notes: z.string().trim().max(MAX_NOTES_LENGTH, "too_long"),
+});
+
+export type CandidateInput = z.infer<typeof candidateInputSchema>;
