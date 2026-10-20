@@ -10,8 +10,9 @@
 --     Accounts are only created by an admin, through an Edge Function with the service role key.
 --   * customer_id on applications and cv_assessments is set by triggers, never trusted from the client.
 --   * cv_assessments is read-only for clients. Only the assess-cv Edge Function writes to it.
+--   * Trigger errors are codes (docs/error-codes.md), never user-facing text. The UI translates them.
 --
--- Tests: supabase/tests/rls_test.sql (12 checks, runs in one transaction and rolls back).
+-- Tests: supabase/tests/rls_test.sql (13 checks, runs in one transaction and rolls back).
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
@@ -136,7 +137,7 @@ begin
   select customer_id into candidate_customer from public.candidates where id = new.candidate_id;
 
   if job_customer is null or candidate_customer is null or job_customer <> candidate_customer then
-    raise exception 'Jobbet och kandidaten måste tillhöra samma kund';
+    raise exception 'job_candidate_customer_mismatch';
   end if;
 
   new.customer_id := job_customer;
@@ -174,7 +175,7 @@ as $$
 begin
   select customer_id into new.customer_id from public.applications where id = new.application_id;
   if new.customer_id is null then
-    raise exception 'Ansökan finns inte';
+    raise exception 'application_not_found';
   end if;
   return new;
 end;

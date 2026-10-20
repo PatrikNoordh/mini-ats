@@ -8,6 +8,8 @@ export const ERROR_CODES = [
   "candidate_not_found",
   "email_exists",
   "invalid_credentials",
+  "job_candidate_customer_mismatch",
+  "application_not_found",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];

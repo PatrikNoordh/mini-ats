@@ -72,14 +72,16 @@ do $$ begin
 end $$;
 
 set local role authenticated;
-do $$ declare blocked boolean := false; begin
+do $$ declare error_code text; begin
   begin
     insert into public.applications (job_id, candidate_id)
     values ('10000000-0000-0000-0000-0000000000a1', '20000000-0000-0000-0000-0000000000b1');
-  exception when raise_exception or insufficient_privilege then blocked := true;
+  exception when raise_exception then error_code := sqlerrm;
   end;
-  if not blocked then raise exception 'FAIL 6: B linked own candidate to A''s job'; end if;
-  raise notice 'OK 6: job and candidate must belong to the same customer';
+  if error_code is distinct from 'job_candidate_customer_mismatch' then
+    raise exception 'FAIL 6: B linked own candidate to A''s job (got %)', coalesce(error_code, 'no error');
+  end if;
+  raise notice 'OK 6: job and candidate must belong to the same customer (job_candidate_customer_mismatch)';
 end $$;
 
 do $$ begin
@@ -141,6 +143,21 @@ do $$ declare blocked boolean := false; begin
   end;
   if not blocked then raise exception 'FAIL 12: B pointed its candidate''s cv_path at A''s folder'; end if;
   raise notice 'OK 12: cv_path must be inside the candidate''s own customer folder';
+end $$;
+
+-- ---------------------------------------------------------------- error codes
+-- Runs as the table owner, the way assess-cv writes with the service role.
+reset role;
+do $$ declare error_code text; begin
+  begin
+    insert into public.cv_assessments (application_id, score)
+    values ('30000000-0000-0000-0000-00000000dead', 5);
+  exception when raise_exception then error_code := sqlerrm;
+  end;
+  if error_code is distinct from 'application_not_found' then
+    raise exception 'FAIL 13: assessment for a missing application (got %)', coalesce(error_code, 'no error');
+  end if;
+  raise notice 'OK 13: an assessment needs an existing application (application_not_found)';
 end $$;
 
 rollback;

@@ -44,15 +44,17 @@ Triggers and checks raise the code as the exception message:
 raise exception 'job_candidate_customer_mismatch';
 ```
 
-The data layer maps the message to an `AppError` the same way. ATS-5 (AC4b) changes the two triggers in the first migration from Swedish text to `job_candidate_customer_mismatch` and `application_not_found`.
+The data layer maps the message to an `AppError` the same way. The two triggers in the first migration raise `job_candidate_customer_mismatch` and `application_not_found` (ATS-5, AC4b), and `supabase/tests/rls_test.sql` checks both codes.
 
 ## Codes
 
-| Code                  | Where                         | Meaning                                        |
-| --------------------- | ----------------------------- | ---------------------------------------------- |
-| `card_not_found`      | applications                  | The card does not exist for this customer      |
-| `job_not_found`       | jobs                          | The job does not exist for this customer       |
-| `candidate_not_found` | candidates                    | The candidate does not exist for this customer |
-| `email_exists`        | profiles, `admin-create-user` | An account with that email already exists      |
-| `invalid_credentials` | auth                          | Wrong email or password                        |
-| `unknown`             | anywhere                      | Fallback for errors without a known code       |
+| Code                              | Where                         | Meaning                                                 |
+| --------------------------------- | ----------------------------- | ------------------------------------------------------- |
+| `card_not_found`                  | applications                  | The card does not exist for this customer               |
+| `job_not_found`                   | jobs                          | The job does not exist for this customer                |
+| `candidate_not_found`             | candidates                    | The candidate does not exist for this customer          |
+| `email_exists`                    | profiles, `admin-create-user` | An account with that email already exists               |
+| `invalid_credentials`             | auth                          | Wrong email or password                                 |
+| `job_candidate_customer_mismatch` | applications (trigger)        | The job and the candidate belong to different customers |
+| `application_not_found`           | cv_assessments (trigger)      | The application the assessment points at does not exist |
+| `unknown`                         | anywhere                      | Fallback for errors without a known code                |

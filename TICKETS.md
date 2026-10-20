@@ -288,8 +288,12 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] Explicit table grants instead of Supabase default privileges: revoke anon, grant only what each table needs, update local_stub.sql to match — `supabase/migrations/`, `supabase/tests/local_stub.sql` (found in ATS-5)
+
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
+
+- [ ] The first migration was applied through the SQL Editor, so the CLI migration history is empty. Run `supabase migration repair --status applied 20261006000000` before the first `supabase db push`, or it tries to apply the migration again — `supabase/migrations/` (PR #27, ATS-5)
