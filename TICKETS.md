@@ -244,6 +244,10 @@ Creating users needs the service role key, so it has to run on the server.
 
 Tracked in #25.
 
+### ATS-22 · chore · Explicit table grants instead of Supabase default privileges
+
+Tracked in #31.
+
 **Checkpoint — ship version 1 to the reviewers:** admin login, customer login and repo link, plus a short note on the status.
 
 ---
@@ -288,24 +292,8 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
-- [ ] Explicit table grants instead of Supabase default privileges: revoke anon, grant only what each table needs, update local_stub.sql to match — `supabase/migrations/`, `supabase/tests/local_stub.sql` (found in ATS-5)
-- [ ] A profile without `full_name` (an account made in the dashboard) shows an empty name and avatar in the user menu; fall back to the email — `src/components/layout/UserMenu.tsx` (found in ATS-6)
-- [ ] After login the app always opens `/pipeline`; return to the page the signed-out user asked for instead — `src/routes/login.tsx`, `src/components/auth/Guards.tsx` (found in ATS-6)
-- [ ] `passwords` and `DEMO_PASSWORD` in the mock store are only written since the mock login is gone; remove them with the mock store — `src/lib/api/mockStore.ts` (found in ATS-6)
-- [ ] CI does not type-check or test the Edge Functions; add a job that runs `deno check` and `deno test` in `supabase/functions/` — `.github/workflows/ci.yml` (found in ATS-7)
-- [ ] ATS-8: the account form must check the same minimum password length as admin-create-user and show it to the admin, from one named constant — `src/components/accounts/AccountDialog.tsx`, `supabase/functions/admin-create-user/handler.ts` (found in ATS-7)
-- [ ] The pipeline search input and job filter have only an `aria-label`: no associated `<label>` and no `id`/`name`, which Chrome DevTools reports as an issue on /pipeline. Give them an `id` and a (visually hidden) label — `src/routes/_authenticated.pipeline.tsx` (found in ATS-7)
-- [ ] Error toasts show bottom-right, outside an open dialog, where they are easy to miss; decide one placement for all toasts (for example top-center) — `src/routes/__root.tsx` (found in ATS-8)
-- [ ] Form field errors are not linked to their input: no `aria-invalid`, no `aria-describedby` and no live region, so a screen reader does not announce them. Link them in the shared `Field` — `src/components/Field.tsx` (found in ATS-8)
-
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
-
-- [ ] The first migration was applied through the SQL Editor, so the CLI migration history is empty. Run `supabase migration repair --status applied 20261006000000` before the first `supabase db push`, or it tries to apply the migration again — `supabase/migrations/` (PR #27, ATS-5)
-- [ ] When the password is right but loading the profile fails (network, server), the sign-in shows the unknown error but leaves the Supabase session in place, so a reload signs the user in. Sign out again, as the missing-profile case already does — `src/contexts/AuthContext.tsx` (PR #28, ATS-6)
-- [ ] `admin-create-user` returns `method_not_allowed` (405) for anything but POST, but the code is missing from the table in `docs/error-codes.md`. The app never sends it, so add it there as a code the UI does not show — `docs/error-codes.md` (PR #29, ATS-7)
-- [ ] `MAX_PASSWORD_LENGTH` counts 72 characters, but bcrypt's limit is 72 bytes, so a long password with å/ä/ö passes the form and the function's zod check, Supabase Auth refuses it and the admin sees the unknown error. Check the length in bytes in both places — `src/lib/constants.ts`, `src/components/accounts/AccountDialog.tsx`, `supabase/functions/admin-create-user/handler.ts` (PR #30, ATS-8)
-- [ ] The account form's email check is looser than the function's `z.string().email()`, so `a@b.c` or `åsa@firma.se` passes the form and comes back as a general `invalid_input` toast. Use the same zod check in the form, or show the function's `fields` under the matching input — `src/components/accounts/AccountDialog.tsx` (PR #30, ATS-8)
