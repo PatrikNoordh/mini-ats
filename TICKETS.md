@@ -248,6 +248,10 @@ Tracked in #25.
 
 Tracked in #31.
 
+### ATS-23 · chore · Length checks in the database for job and candidate text
+
+Tracked in #36.
+
 **Checkpoint — ship version 1 to the reviewers:** admin login, customer login and repo link, plus a short note on the status.
 
 ---
@@ -292,20 +296,9 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
-- [ ] The customer chooser shows "…" forever when a customer's jobs fail to load, with no error or retry — `src/components/layout/CustomerGate.tsx` (found in ATS-9)
-- [ ] An invalid field is only marked with `aria-invalid`; the input itself has no error border, only the text below it — `src/components/Field.tsx` (found in ATS-9)
-- [ ] `@testing-library/react` is installed without its peer `@testing-library/dom`, so component tests cannot use `render` or `screen` — `package.json` (found in ATS-9)
-- [ ] The candidates table's job count shows "…" forever when the applications fail to load, while the rest of the table shows — `src/routes/_authenticated.candidates.tsx` (found in ATS-10)
-
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
-- [ ] `isValidationKey` uses `in`, which also matches inherited keys like `"constructor"`; use `Object.hasOwn` — `src/lib/validation.ts` (PR #33, ATS-9)
-- [ ] `fieldErrors` returns `Record<string, ValidationKey>`, so a schema field name that is not in `FormErrors` is not caught by the type check — `src/lib/validation.ts` (PR #33, ATS-9)
-- [ ] Job title, location and description lengths are only limited in the client; `jobs` has no `char_length` checks — `supabase/migrations/` (PR #33, ATS-9)
-- [ ] The desktop location cell does not wrap, so a long location without spaces widens the table — `src/routes/_authenticated.jobs.tsx` (PR #33, ATS-9)
-- [ ] The "Mock data: 1 admin, 2 customers…" line still describes the mock store that ATS-10 removed — `docs/ui-spec.md` (PR #34, ATS-10)
-- [ ] `saveCandidate` is plain async logic exported from a hooks file; it fits better in `src/lib/` — `src/hooks/useCandidates.ts` (PR #34, ATS-10)
