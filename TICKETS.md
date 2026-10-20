@@ -289,6 +289,9 @@ Small problems and improvements noticed while working on a ticket but outside it
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
 - [ ] Explicit table grants instead of Supabase default privileges: revoke anon, grant only what each table needs, update local_stub.sql to match — `supabase/migrations/`, `supabase/tests/local_stub.sql` (found in ATS-5)
+- [ ] A profile without `full_name` (an account made in the dashboard) shows an empty name and avatar in the user menu; fall back to the email — `src/components/layout/UserMenu.tsx` (found in ATS-6)
+- [ ] After login the app always opens `/pipeline`; return to the page the signed-out user asked for instead — `src/routes/login.tsx`, `src/components/auth/Guards.tsx` (found in ATS-6)
+- [ ] `passwords` and `DEMO_PASSWORD` in the mock store are only written since the mock login is gone; remove them with the mock store — `src/lib/api/mockStore.ts` (found in ATS-6)
 
 ## Found while reviewing PRs
 
