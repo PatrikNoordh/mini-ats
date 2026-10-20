@@ -90,6 +90,19 @@ do $$ begin
   raise notice 'OK 7: customer can move own card';
 end $$;
 
+-- The app sends customer_id when it links a candidate (the generated Insert type requires it).
+-- The trigger must replace it with the job's customer, whatever the client sent.
+do $$ declare candidate uuid; begin
+  insert into public.candidates (customer_id, full_name)
+  values ('00000000-0000-0000-0000-0000000000b1', 'Cand B2') returning id into candidate;
+  insert into public.applications (customer_id, job_id, candidate_id)
+  values ('00000000-0000-0000-0000-0000000000a1', '10000000-0000-0000-0000-0000000000b1', candidate);
+  assert (select customer_id from public.applications where candidate_id = candidate)
+         = '00000000-0000-0000-0000-0000000000b1', 'client customer_id overwritten';
+  delete from public.candidates where id = candidate; -- the counts below expect the seed data only
+  raise notice 'OK 7b: the trigger ignores the customer_id the client sends for an application';
+end $$;
+
 -- ---------------------------------------------------------------- admin
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
 do $$ begin
