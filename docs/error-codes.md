@@ -55,6 +55,8 @@ The data layer maps the message to an `AppError` the same way. The two triggers 
 | `candidate_not_found`             | candidates                    | The candidate does not exist for this customer          |
 | `email_exists`                    | profiles, `admin-create-user` | An account with that email already exists               |
 | `invalid_credentials`             | auth                          | Wrong email or password                                 |
+| `too_many_attempts`               | auth                          | Too many sign-in attempts in a short time               |
+| `profile_not_found`               | auth                          | The account has no `profiles` row                       |
 | `job_candidate_customer_mismatch` | applications (trigger)        | The job and the candidate belong to different customers |
 | `application_not_found`           | cv_assessments (trigger)      | The application the assessment points at does not exist |
 | `unknown`                         | anywhere                      | Fallback for errors without a known code                |
