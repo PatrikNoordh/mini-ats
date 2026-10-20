@@ -186,6 +186,7 @@
     "location": "Location",
     "status": "Status",
     "candidates": "Candidates",
+    "actions": "Actions",
     "open": "Open",
     "closed": "Closed",
     "close": "Close",

@@ -84,7 +84,9 @@ function Jobs({ customerId }: { customerId: string }) {
                 <TableHead className="hidden sm:table-cell">{t("jobs.location")}</TableHead>
                 <TableHead>{t("jobs.status")}</TableHead>
                 <TableHead className="text-right">{t("jobs.candidates")}</TableHead>
-                <TableHead className="w-0" />
+                <TableHead className="w-0">
+                  <span className="sr-only">{t("jobs.actions")}</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -186,6 +186,7 @@
     "location": "Ort",
     "status": "Status",
     "candidates": "Kandidater",
+    "actions": "Åtgärder",
     "open": "Öppet",
     "closed": "Stängt",
     "close": "Stäng",
