@@ -74,6 +74,7 @@
     "name_required": "Enter a name.",
     "company_required": "Enter a company.",
     "email_invalid": "Enter a valid email address.",
+    "email_taken": "An account with that email address already exists.",
     "password_too_short": "The password must be at least {{min}} characters.",
     "title_required": "Enter a title.",
     "location_required": "Enter a location.",

@@ -74,6 +74,7 @@
     "name_required": "Ange namn.",
     "company_required": "Ange företag.",
     "email_invalid": "Ange en giltig e-postadress.",
+    "email_taken": "Det finns redan ett konto med den e-postadressen.",
     "password_too_short": "Lösenordet måste ha minst {{min}} tecken.",
     "title_required": "Ange en titel.",
     "location_required": "Ange en ort.",

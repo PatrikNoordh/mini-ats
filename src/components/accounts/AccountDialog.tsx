@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ export function AccountDialog({
   const [role, setRole] = useState<Role>("customer");
   const [form, setForm] = useState(empty);
   const [errors, setErrors] = useState<FormErrors>({});
+  const emailRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (open) {
       setForm(empty);
@@ -67,7 +68,14 @@ export function AccountDialog({
       toast.success(t("accountDialog.created"));
       onOpenChange(false);
     } catch (err) {
-      toast.error(t(`errors.${errorCode(err)}`));
+      const code = errorCode(err);
+      if (code === "email_exists") {
+        // The error belongs to the email field, so show it there instead of in a toast.
+        setErrors({ email: "email_taken" });
+        emailRef.current?.focus();
+        return;
+      }
+      toast.error(t(`errors.${code}`));
     }
   };
 
@@ -114,6 +122,7 @@ export function AccountDialog({
           <Field id="a-email" label={t("accountDialog.email")} error={errors.email}>
             <Input
               id="a-email"
+              ref={emailRef}
               type="email"
               maxLength={MAX_EMAIL_LENGTH}
               value={form.email}
