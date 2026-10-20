@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { DemoLogin } from "@/components/auth/DemoLogin";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { errorCode } from "@/lib/errors";
 import { pageHead } from "@/lib/i18n";
@@ -94,7 +93,6 @@ function LoginPage() {
             {busy ? t("login.submitting") : t("login.submit")}
           </Button>
         </form>
-        <DemoLogin onSignedIn={() => navigate({ to: "/pipeline" })} />
       </div>
     </div>
   );

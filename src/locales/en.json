@@ -108,9 +108,7 @@
     "emailPlaceholder": "name@company.com",
     "password": "Password",
     "submit": "Sign in",
-    "submitting": "Signing in…",
-    "demo": "Demo",
-    "demoPlatform": "The platform"
+    "submitting": "Signing in…"
   },
   "pipeline": {
     "title": "Pipeline",

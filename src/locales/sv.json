@@ -108,9 +108,7 @@
     "emailPlaceholder": "namn@foretag.se",
     "password": "Lösenord",
     "submit": "Logga in",
-    "submitting": "Loggar in…",
-    "demo": "Demo",
-    "demoPlatform": "Plattformen"
+    "submitting": "Loggar in…"
   },
   "pipeline": {
     "title": "Pipeline",
