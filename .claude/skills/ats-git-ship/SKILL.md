@@ -132,6 +132,14 @@ gh pr create --repo "$REPO" --base main --title "<type> [ATS-<N>] <Title Case Su
 
 ## Step 7 — After the PR is open
 
+- If the PR adds a migration, apply it as described in `CLAUDE.md` § Workflow before the merge:
+  1. Ask the developer, then run `npx supabase db push`
+  2. Regenerate and compare the types, and commit and push a diff to the branch:
+     ```bash
+     npx supabase gen types typescript --linked > src/integrations/supabase/types.ts && npx prettier --write src/integrations/supabase/types.ts
+     git diff src/integrations/supabase/types.ts
+     ```
+  3. If the migration changes tables, policies or functions, ask the developer to run `supabase/tests/rls_test.sql` in the SQL Editor against the project, and add the result to the PR's Validation section
 - Tell the developer to wait for both CI jobs (app and RLS) and the Vercel preview before merging
 - Suggest running `ats-review-pr <number>` before merging
 - Tick the completed ACs on the issue only if the developer says yes:
@@ -145,6 +153,7 @@ gh pr create --repo "$REPO" --base main --title "<type> [ATS-<N>] <Title Case Su
 
 - [ ] Branch is not `main` and follows `ats/ATS-<N>-...` (or `ats/epic-<N>-review`)
 - [ ] lint, tsc, test and build pass. RLS tests passed or noted for CI
+- [ ] A new migration is applied with the developer's yes, the types are compared, and the SQL Editor RLS run is in the PR when needed
 - [ ] Rebased on `origin/main` without conflicts
 - [ ] Files staged by name, commits follow the format, no `--no-verify`
 - [ ] Push succeeded, no force-push

@@ -129,8 +129,14 @@ Allowed exceptions: `src/components/ui/` (vendored shadcn/ui code), dynamic valu
 - **Commits are small and each one builds.** Order within a feature: database → data layer → UI.
 - **Before every commit:** `npm run lint`, `npx tsc --noEmit`, `npm test` and `npm run build` must pass. The build does not type-check on this stack, so `tsc` is required.
 - **Database changes** go in a new migration in `supabase/migrations/`, get a matching check in `supabase/tests/rls_test.sql`, and the test file is run before the PR.
+- **Migrations reach the project before the merge.** A migration is never left to "apply later".
+  - Migrations must be backwards compatible with the code on `main`, because they are applied before the PR is merged: add columns with a default or as nullable, and drop or rename only in a later migration once no code on `main` uses the old shape.
+  - Before the merge, with the developer's yes, the migration is applied with `npx supabase db push`. Then the types are regenerated and compared: `npx supabase gen types typescript --linked > src/integrations/supabase/types.ts && npx prettier --write src/integrations/supabase/types.ts`, then `git diff`. A diff is committed to the branch.
+  - If the migration changes tables, policies or functions, the developer runs `supabase/tests/rls_test.sql` in the SQL Editor against the project, and the PR says it passed.
+  - If a PR whose migration is already applied is closed without merging, a new migration reverts it.
+- **The Supabase CLI** is always run as `npx supabase`. Read-only commands (`migration list`, `gen types`, `db push --dry-run`) are fine. Commands that write to the remote database (`db push`, `migration repair`) need the developer's yes every time.
 - **Pull requests** target `main` with the template: what changed (database / API / UI), acceptance criteria covered, manual test steps, tradeoffs. CI must be green.
-- **Ask before:** adding a dependency, changing the database schema outside a ticket, deleting files, pushing, or opening a PR. Running `/ats-git-ship` is the developer's request to push and open a PR.
+- **Ask before:** adding a dependency, changing the database schema outside a ticket, deleting files, writing to the remote database (`db push`, `migration repair`), pushing, or opening a PR. Running `/ats-git-ship` is the developer's request to push and open a PR.
 
 ## Working on your own
 
@@ -147,4 +153,5 @@ When a ticket is run without someone watching:
 - Lint, type check, tests, build and CI pass.
 - Tested manually as both a customer and an admin.
 - If the ticket touches data: checked that customer A cannot see or change customer B's rows, and `rls_test.sql` passes if the schema changed.
+- If the ticket adds a migration: it is applied to the project as described in § Workflow, and the types generated from the project have no diff.
 - Nothing is described as working unless it was tested.
