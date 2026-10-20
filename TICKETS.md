@@ -300,3 +300,4 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
 - [ ] The first migration was applied through the SQL Editor, so the CLI migration history is empty. Run `supabase migration repair --status applied 20261006000000` before the first `supabase db push`, or it tries to apply the migration again — `supabase/migrations/` (PR #27, ATS-5)
+- [ ] When the password is right but loading the profile fails (network, server), the sign-in shows the unknown error but leaves the Supabase session in place, so a reload signs the user in. Sign out again, as the missing-profile case already does — `src/contexts/AuthContext.tsx` (PR #28, ATS-6)
