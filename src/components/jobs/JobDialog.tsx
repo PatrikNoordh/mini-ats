@@ -74,29 +74,35 @@ export function JobDialog({
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <Field id="j-title" label={t("jobDialog.jobTitle")} error={errors.title}>
-            <Input
-              id="j-title"
-              maxLength={MAX_JOB_TITLE_LENGTH}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+            {(control) => (
+              <Input
+                {...control}
+                maxLength={MAX_JOB_TITLE_LENGTH}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            )}
           </Field>
           <Field id="j-loc" label={t("jobDialog.location")} error={errors.location}>
-            <Input
-              id="j-loc"
-              maxLength={MAX_JOB_LOCATION_LENGTH}
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
+            {(control) => (
+              <Input
+                {...control}
+                maxLength={MAX_JOB_LOCATION_LENGTH}
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
+            )}
           </Field>
           <Field id="j-desc" label={t("jobDialog.description")} error={errors.description}>
-            <Textarea
-              id="j-desc"
-              rows={4}
-              maxLength={MAX_JOB_DESCRIPTION_LENGTH}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
+            {(control) => (
+              <Textarea
+                {...control}
+                rows={4}
+                maxLength={MAX_JOB_DESCRIPTION_LENGTH}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            )}
           </Field>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

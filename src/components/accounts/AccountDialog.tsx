@@ -87,61 +87,72 @@ export function AccountDialog({
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <Field id="a-role" label={t("accountDialog.role")}>
-            <Select
-              value={role}
-              onValueChange={(value) => {
-                const parsed = roleSchema.safeParse(value);
-                if (parsed.success) setRole(parsed.data);
-              }}
-            >
-              <SelectTrigger id="a-role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="customer">{t("roles.customer")}</SelectItem>
-                <SelectItem value="admin">{t("roles.admin")}</SelectItem>
-              </SelectContent>
-            </Select>
+            {(control) => (
+              <Select
+                value={role}
+                onValueChange={(value) => {
+                  const parsed = roleSchema.safeParse(value);
+                  if (parsed.success) setRole(parsed.data);
+                }}
+              >
+                <SelectTrigger {...control}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="customer">{t("roles.customer")}</SelectItem>
+                  <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </Field>
           <Field id="a-name" label={t("accountDialog.name")} error={errors.full_name}>
-            <Input
-              id="a-name"
-              maxLength={MAX_NAME_LENGTH}
-              value={form.full_name}
-              onChange={set("full_name")}
-            />
+            {(control) => (
+              <Input
+                {...control}
+                maxLength={MAX_NAME_LENGTH}
+                value={form.full_name}
+                onChange={set("full_name")}
+              />
+            )}
           </Field>
           <Field id="a-co" label={t("accountDialog.company")} error={errors.company_name}>
-            <Input
-              id="a-co"
-              maxLength={MAX_NAME_LENGTH}
-              value={form.company_name}
-              onChange={set("company_name")}
-            />
+            {(control) => (
+              <Input
+                {...control}
+                maxLength={MAX_NAME_LENGTH}
+                value={form.company_name}
+                onChange={set("company_name")}
+              />
+            )}
           </Field>
           <Field id="a-email" label={t("accountDialog.email")} error={errors.email}>
-            <Input
-              id="a-email"
-              ref={emailRef}
-              type="email"
-              maxLength={MAX_EMAIL_LENGTH}
-              value={form.email}
-              onChange={set("email")}
-            />
+            {(control) => (
+              <Input
+                {...control}
+                ref={emailRef}
+                type="email"
+                maxLength={MAX_EMAIL_LENGTH}
+                value={form.email}
+                onChange={set("email")}
+              />
+            )}
           </Field>
-          <Field id="a-pw" label={t("accountDialog.password")} error={errors.password}>
-            <Input
-              id="a-pw"
-              type="text"
-              autoComplete="off"
-              maxLength={MAX_PASSWORD_LENGTH}
-              aria-describedby="a-pw-hint"
-              value={form.password}
-              onChange={set("password")}
-            />
-            <p id="a-pw-hint" className="text-xs text-muted-foreground">
-              {t("accountDialog.passwordHint", { min: MIN_PASSWORD_LENGTH })}
-            </p>
+          <Field
+            id="a-pw"
+            label={t("accountDialog.password")}
+            hint={t("accountDialog.passwordHint", { min: MIN_PASSWORD_LENGTH })}
+            error={errors.password}
+          >
+            {(control) => (
+              <Input
+                {...control}
+                type="text"
+                autoComplete="off"
+                maxLength={MAX_PASSWORD_LENGTH}
+                value={form.password}
+                onChange={set("password")}
+              />
+            )}
           </Field>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
