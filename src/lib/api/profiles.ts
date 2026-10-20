@@ -2,12 +2,14 @@ import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile, Role } from "@/types";
-import { AppError } from "@/lib/errors";
-import { clone, db, delay, uid } from "./mockStore";
+import { roleSchema } from "@/lib/validation";
+import { invokeFunction } from "./functions";
+
+const PROFILE_COLUMNS = "id, role, full_name, company_name, email, created_at";
 
 const profileRowSchema = z.object({
   id: z.string(),
-  role: z.enum(["admin", "customer"]),
+  role: roleSchema,
   full_name: z.string().nullable(),
   company_name: z.string().nullable(),
   email: z.string().nullable(),
@@ -27,9 +29,14 @@ export function parseProfileRow(row: unknown): Profile {
   };
 }
 
+/** Every account, newest first. RLS returns all rows to an admin and only their own to a customer. */
 export async function listProfiles(): Promise<Profile[]> {
-  await delay();
-  return clone(db().profiles);
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(PROFILE_COLUMNS)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data.map(parseProfileRow);
 }
 
 /**
@@ -39,7 +46,7 @@ export async function listProfiles(): Promise<Profile[]> {
 export async function getProfile(id: string): Promise<Profile | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, role, full_name, company_name, email, created_at")
+    .select(PROFILE_COLUMNS)
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -54,21 +61,12 @@ export interface CreateProfileInput {
   password: string;
 }
 
-export async function createProfile(input: CreateProfileInput): Promise<Profile> {
-  await delay();
-  const s = db();
-  if (s.profiles.some((p) => p.email.toLowerCase() === input.email.toLowerCase())) {
-    throw new AppError("email_exists");
-  }
-  const profile: Profile = {
-    id: uid("p"),
-    role: input.role,
-    full_name: input.full_name,
-    company_name: input.company_name,
-    email: input.email,
-    created_at: new Date().toISOString(),
-  };
-  s.profiles.push(profile);
-  s.passwords[profile.id] = input.password;
-  return clone(profile);
+const createdSchema = z.object({ id: z.string() });
+
+/**
+ * Creates an account through the admin-create-user Edge Function, which checks that the caller
+ * is an admin. The profile is made by the database trigger. Returns the new account's id.
+ */
+export async function createProfile(input: CreateProfileInput): Promise<string> {
+  return createdSchema.parse(await invokeFunction("admin-create-user", input)).id;
 }
