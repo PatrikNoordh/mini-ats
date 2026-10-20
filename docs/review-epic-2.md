@@ -18,14 +18,14 @@ Epic 2 is done and epic 3 can start. All three tickets are closed with merged an
 | Acceptance criteria | 16 of 16 met, each checked in the code |
 | Deployment | The route tree has no diff after a build, `.env.example` is unchanged and still matches the code, and Vercel production is green on `eb34a56` |
 
-The checkpoint (customer B sees none of customer A's jobs, candidates or cards) is covered by PR #35's manual steps, RLS check 2 and the live anonymous probes. Not verified: whether the ATS-10 migration `20261020000000_applications_customer_default.sql` is applied to the live project. PR #34 says it still needs to be applied, and the API does not show column defaults to the anon key. The app works either way, because the trigger sets `customer_id` before the NOT NULL check.
+The checkpoint (customer B sees none of customer A's jobs, candidates or cards) is covered by PR #35's manual steps, RLS check 2 and the live anonymous probes. The review could not verify whether the ATS-10 migration `20261020000000_applications_customer_default.sql` was applied to the live project: PR #34 said it still needed to be applied, and the API does not show column defaults to the anon key. It was checked during the close-out and was already applied (see "Repo and live database brought in line").
 
 ## Warnings and what was done
 
 | Warning | Decision |
 |---|---|
 | 10 open findings in `TICKETS.md` | Triaged, see below. The lists are now empty |
-| The ATS-10 migration may not be on the live project, and `types.ts` was changed by hand to match it | #17 ATS-17, AC6: push it after the migration repair in AC5 and regenerate the types from the project |
+| The ATS-10 migration may not be on the live project, and `types.ts` was changed by hand to match it | #17 ATS-17, AC6. Done in the close-out, together with AC5, see below |
 | Issue #11 showed its AC boxes unticked | Ticked |
 | `moveApplication` reads the next position and then writes it, so two quick moves into the same column can get the same `position` | #12 ATS-12, AC6 |
 | The customer chooser loads every job of every customer just to show a count | #14 ATS-14, AC7 |
@@ -59,8 +59,17 @@ The same rule as in epics 0 and 1: each finding becomes an extra AC on the open 
 - **#36 [ATS-23] Length checks in the database for job and candidate text** — `chore`, `database`, milestone Epic 5 — Ready to deliver. Adds `char_length` checks to the text columns of `jobs` and `candidates` with the same limits as `src/lib/constants.ts`, with RLS tests. No table had length checks, so the ticket covers candidates too.
 - **#25 [ATS-21]** grew from 10 to 17 ACs. Its scope now names the three visible changes from epic 2, and it flags that AC12 may need approval for a dev dependency.
 
+## Repo and live database brought in line
+
+The review's main concern was the gap between the repo and the live database, so it was closed before epic 3 instead of waiting for #17 in epic 6:
+
+- The SQL Editor showed `applications.customer_id` defaulting to `auth.uid()`, so both migrations had already been applied by hand.
+- `npx supabase migration repair --status applied 20261006000000 20261020000000` marked both as applied, and `npx supabase db push` reports "Remote database is up to date".
+- The types generated from the project, formatted with Prettier, have no diff against `src/integrations/supabase/types.ts`.
+- #17 ATS-17, AC5 and AC6 are ticked, with a comment on the issue.
+
 ## Notes for epic 3
 
 - Epic 3 makes drag and drop real. Design the stage change and the card position as one database call (#12 ATS-12, AC6) instead of patching it afterwards.
-- Repair the CLI migration history (#17 ATS-17, AC5) early, so the ATS-10 migration and any epic 3 migration go through `supabase db push`, not the SQL Editor.
+- Every migration from now on goes through `npx supabase db push` before its PR is merged, and the types are regenerated from the project.
 - Every new query on the board still needs the two-customer check, including the admin acting for a customer.
