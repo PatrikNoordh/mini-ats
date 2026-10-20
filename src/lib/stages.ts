@@ -50,6 +50,35 @@ export function jobsToAdd<J extends Pick<Job, "id" | "status">>(
   return jobs.filter((j) => j.status === "open" && !linked.has(j.id));
 }
 
+/**
+ * The board after a card is moved, before the database answers: the card is in its new stage,
+ * last in the column, and its days in stage start again.
+ */
+export function withCardMoved(
+  applications: readonly Application[],
+  id: string,
+  stage: Stage,
+  now: Date = new Date(),
+): Application[] {
+  const iso = now.toISOString();
+  return applications.map((a) =>
+    a.id === id
+      ? { ...a, stage, position: Number.MAX_SAFE_INTEGER, stage_changed_at: iso, updated_at: iso }
+      : a,
+  );
+}
+
+/**
+ * The board with one card put back as it was. Only that card changes, so a failed move never
+ * undoes another move made after it.
+ */
+export function withCardRestored(
+  applications: readonly Application[],
+  card: Application,
+): Application[] {
+  return applications.map((a) => (a.id === card.id ? card : a));
+}
+
 export const queryKeys = {
   profiles: () => ["profiles"] as const,
   jobs: (customerId: string | null) => ["jobs", customerId] as const,

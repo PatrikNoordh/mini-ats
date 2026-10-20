@@ -77,35 +77,21 @@ export async function addApplication(candidateId: string, jobId: string): Promis
   return parseApplicationRow(data);
 }
 
-/** The position after the last card in a stage, so a moved card lands last in its column. */
-async function nextPosition(customerId: string, stage: Stage): Promise<number> {
-  const { data, error } = await supabase
-    .from("applications")
-    .select("position")
-    .eq("customer_id", customerId)
-    .eq("stage", stage)
-    .order("position", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  return (data?.position ?? -1) + 1;
-}
-
-/** Moves a card to a stage, last in its column. The database sets stage_changed_at. */
+/**
+ * Moves a card to a stage, last in its column. One database call sets the stage and the position,
+ * so two quick moves into the same column never share a position. The database sets
+ * stage_changed_at, and raises card_not_found when the card is not this customer's.
+ */
 export async function moveApplication(
   customerId: string,
   id: string,
   stage: Stage,
 ): Promise<Application> {
-  const position = await nextPosition(customerId, stage);
-  const { data, error } = await supabase
-    .from("applications")
-    .update({ stage, position })
-    .eq("id", id)
-    .eq("customer_id", customerId)
-    .select(APPLICATION_COLUMNS)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("move_application", {
+    application_id: id,
+    customer_id: customerId,
+    new_stage: stage,
+  });
   if (error) throw fromDbError(error);
-  if (!data) throw new AppError("card_not_found");
   return parseApplicationRow(data);
 }

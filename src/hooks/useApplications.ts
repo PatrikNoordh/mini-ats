@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { addApplication, listApplications, moveApplication } from "@/lib/api/applications";
-import { queryKeys } from "@/lib/stages";
+import { queryKeys, withCardMoved, withCardRestored } from "@/lib/stages";
 import type { Application, Stage } from "@/types";
 
 export function useApplications(customerId: string | null) {
@@ -17,33 +17,29 @@ export function useMoveApplication(customerId: string | null) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const key = queryKeys.applications(customerId);
+  const mutationKey = ["moveApplication", customerId] as const;
   return useMutation({
+    mutationKey,
     mutationFn: ({ id, stage }: { id: string; stage: Stage }) =>
       moveApplication(customerId!, id, stage),
     onMutate: async ({ id, stage }) => {
       await qc.cancelQueries({ queryKey: key });
-      const previous = qc.getQueryData<Application[]>(key);
-      const now = new Date().toISOString();
-      qc.setQueryData<Application[]>(key, (old) =>
-        old?.map((a) =>
-          a.id === id
-            ? {
-                ...a,
-                stage,
-                position: Number.MAX_SAFE_INTEGER,
-                stage_changed_at: now,
-                updated_at: now,
-              }
-            : a,
-        ),
-      );
+      const previous = qc.getQueryData<Application[]>(key)?.find((a) => a.id === id);
+      qc.setQueryData<Application[]>(key, (old) => old && withCardMoved(old, id, stage));
       return { previous };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+      const previous = ctx?.previous;
+      if (previous) {
+        qc.setQueryData<Application[]>(key, (old) => old && withCardRestored(old, previous));
+      }
       toast.error(t("pipeline.moveFailed"));
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+    // Refetch once the last of several quick moves is done, so an earlier answer never shows a
+    // card back in its old column while a later move is still on its way.
+    onSettled: () => {
+      if (qc.isMutating({ mutationKey }) === 1) qc.invalidateQueries({ queryKey: key });
+    },
   });
 }
 
