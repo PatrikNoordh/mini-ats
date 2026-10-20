@@ -15,11 +15,11 @@ import {
 import { CustomerGate } from "@/components/layout/CustomerGate";
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from "@/components/States";
 import { JobDialog } from "@/components/jobs/JobDialog";
-import { useJobs, useUpdateJob } from "@/hooks/useJobs";
-import { useApplications } from "@/hooks/useApplications";
+import { useJobs, useSetJobStatus } from "@/hooks/useJobs";
+import { errorCode } from "@/lib/errors";
 import { pageHead } from "@/lib/i18n";
 import { useFormat } from "@/lib/format";
-import type { Job } from "@/types";
+import type { JobWithCount } from "@/types";
 
 export const Route = createFileRoute("/_authenticated/jobs")({
   head: ({ match }) => pageHead(match.context.language, "jobs"),
@@ -30,18 +30,18 @@ function Jobs({ customerId }: { customerId: string }) {
   const { t } = useTranslation();
   const format = useFormat();
   const jobs = useJobs(customerId);
-  const apps = useApplications(customerId);
-  const update = useUpdateJob(customerId);
-  const [editing, setEditing] = useState<Job | null>(null);
+  const setStatus = useSetJobStatus(customerId);
+  const [editing, setEditing] = useState<JobWithCount | null>(null);
   const [open, setOpen] = useState(false);
 
-  const toggle = async (j: Job) => {
+  const toggle = async (j: JobWithCount) => {
     const status = j.status === "open" ? "closed" : "open";
     try {
-      await update.mutateAsync({ id: j.id, patch: { status } });
+      await setStatus.mutateAsync({ id: j.id, status });
       toast.success(status === "open" ? t("jobs.reopened") : t("jobs.closedToast"));
-    } catch {
-      toast.error(t("jobs.statusFailed"));
+    } catch (err) {
+      const code = errorCode(err);
+      toast.error(code === "unknown" ? t("jobs.statusFailed") : t(`errors.${code}`));
     }
   };
 
@@ -90,7 +90,7 @@ function Jobs({ customerId }: { customerId: string }) {
             <TableBody>
               {jobs.data.map((j) => (
                 <TableRow key={j.id}>
-                  <TableCell>
+                  <TableCell className="wrap-anywhere">
                     <button
                       className="font-semibold text-primary hover:underline"
                       onClick={() => {
@@ -108,16 +108,12 @@ function Jobs({ customerId }: { customerId: string }) {
                       {j.status === "open" ? t("jobs.open") : t("jobs.closed")}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    {apps.data
-                      ? format.number(apps.data.filter((a) => a.job_id === j.id).length)
-                      : "…"}
-                  </TableCell>
+                  <TableCell className="text-right">{format.number(j.candidate_count)}</TableCell>
                   <TableCell>
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={update.isPending}
+                      disabled={setStatus.isPending && setStatus.variables.id === j.id}
                       onClick={() => toggle(j)}
                     >
                       {j.status === "open" ? t("jobs.close") : t("jobs.reopen")}

@@ -21,6 +21,11 @@ export interface Job {
   created_at: string;
 }
 
+/** A job as listed on the jobs page, with the number of candidates linked to it. */
+export interface JobWithCount extends Job {
+  candidate_count: number;
+}
+
 export interface Candidate {
   id: string;
   customer_id: string;

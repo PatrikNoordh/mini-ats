@@ -6,7 +6,14 @@ import type { ValidationKey } from "@/lib/validation";
 
 export type FormErrors = Partial<
   Record<
-    "full_name" | "email" | "linkedin_url" | "company_name" | "password" | "title" | "location",
+    | "full_name"
+    | "email"
+    | "linkedin_url"
+    | "company_name"
+    | "password"
+    | "title"
+    | "location"
+    | "description",
     ValidationKey
   >
 >;

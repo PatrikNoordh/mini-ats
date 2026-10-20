@@ -79,7 +79,8 @@
     "title_required": "Enter a title.",
     "location_required": "Enter a location.",
     "linkedin_invalid": "Enter a link to a LinkedIn profile, for example https://www.linkedin.com/in/name.",
-    "login_required": "Enter both email and password."
+    "login_required": "Enter both email and password.",
+    "too_long": "The text is too long."
   },
   "shell": {
     "toggleSidebar": "Show or hide the menu",

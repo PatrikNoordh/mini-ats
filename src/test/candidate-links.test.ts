@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { listApplications } from "@/lib/api/applications";
 import { updateCandidate } from "@/lib/api/candidates";
-import { listJobs } from "@/lib/api/jobs";
+import { db } from "@/lib/api/mockStore";
 
 vi.mock("@/lib/api/mockStore", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api/mockStore")>()),
@@ -36,7 +36,8 @@ describe("editing a candidate's job links", () => {
 
   it("adds a new link in the new stage and keeps the old ones", async () => {
     const before = await linkedJobIds();
-    const jobs = await listJobs(CUSTOMER);
+    // Jobs are on Supabase since ATS-9; the mock candidates still link to the mock jobs.
+    const jobs = db().jobs.filter((j) => j.customer_id === CUSTOMER);
     const newJob = jobs.map((j) => j.id).find((id) => !before.includes(id));
     if (!newJob) throw new Error("fixture: candidate is already linked to every job");
 
