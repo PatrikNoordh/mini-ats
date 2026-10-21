@@ -1,4 +1,4 @@
-import { Navigate } from "@tanstack/react-router";
+import { Navigate, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,8 +18,10 @@ export function FullPageSpinner() {
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
+  const href = useRouterState({ select: (s) => s.location.href });
   if (isLoading) return <FullPageSpinner />;
-  if (!user) return <Navigate to="/login" replace />;
+  // Login sends the user back to the page they asked for.
+  if (!user) return <Navigate to="/login" search={{ redirect: href }} replace />;
   return <>{children}</>;
 }
 
