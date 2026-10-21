@@ -73,7 +73,9 @@
     "already_linked": "The candidate is already linked to this job.",
     "links_failed": "The candidate was saved, but could not be linked to the jobs. Open the candidate and try again.",
     "unknown": "Something went wrong. Please try again.",
-    "job_has_candidates": "This job has candidates. Remove them under Candidates first, so no cards on the board are deleted by mistake."
+    "job_has_candidates": "This job has candidates. Remove them under Candidates first, so no cards on the board are deleted by mistake.",
+    "offline": "No internet connection. Check your network and try again.",
+    "network_error": "Could not reach the server. Check your connection and try again."
   },
   "validation": {
     "name_required": "Enter a name.",
@@ -97,7 +99,8 @@
     "customerLabel": "Customer",
     "chooseCustomerPlaceholder": "Choose customer…",
     "actingAs": "You are working as <bold>{{company}}</bold>. Everything you create belongs to the customer.",
-    "leaveCustomer": "Leave customer mode"
+    "leaveCustomer": "Leave customer mode",
+    "signOutFailed": "Could not sign out."
   },
   "nav": {
     "pipeline": "Pipeline",
@@ -169,7 +172,8 @@
     "add": "Add",
     "adding": "Adding…",
     "noJobsToAdd": "No more open jobs to add.",
-    "addedToast": "The candidate has been added to the job."
+    "addedToast": "The candidate has been added to the job.",
+    "addFailed": "Could not add the candidate to the job."
   },
   "candidates": {
     "title": "Candidates",
@@ -203,7 +207,9 @@
     "deleteDescription": "{{name}} will be deleted for good, with all their cards on the board.",
     "deleteLinks_one": "The candidate is linked to {{count, number}} job.",
     "deleteLinks_other": "The candidate is linked to {{count, number}} jobs.",
-    "deleted": "The candidate is deleted."
+    "deleted": "The candidate is deleted.",
+    "saveFailed": "Could not save the candidate.",
+    "deleteFailed": "Could not delete the candidate."
   },
   "jobs": {
     "title": "Jobs",
@@ -236,7 +242,8 @@
     "saveFailed": "Could not save the job.",
     "deleteTitle": "Delete the job?",
     "deleteDescription": "“{{title}}” will be deleted for good.",
-    "deleted": "The job is deleted."
+    "deleted": "The job is deleted.",
+    "deleteFailed": "Could not delete the job."
   },
   "accounts": {
     "title": "Accounts",
@@ -259,7 +266,8 @@
     "passwordHint": "At least {{min}} characters.",
     "submit": "Create account",
     "submitting": "Creating…",
-    "created": "The account has been created."
+    "created": "The account has been created.",
+    "createFailed": "Could not create the account."
   },
   "notFound": {
     "title": "Page not found",

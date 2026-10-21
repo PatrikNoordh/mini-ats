@@ -96,9 +96,9 @@ describe("deleting a job", () => {
     await screen.findByRole("alertdialog");
     fireEvent.click(screen.getAllByRole("button", { name: "Delete" }).at(-1)!);
     await waitFor(() =>
-      expect(mocks.toast.error).toHaveBeenCalledWith(
-        expect.stringContaining("Remove them under Candidates first"),
-      ),
+      expect(mocks.toast.error).toHaveBeenCalledWith("Could not delete the job.", {
+        description: expect.stringContaining("Remove them under Candidates first"),
+      }),
     );
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });

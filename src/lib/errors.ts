@@ -1,3 +1,5 @@
+import { FunctionsFetchError, isAuthRetryableFetchError } from "@supabase/supabase-js";
+
 /**
  * Errors cross the data layer as codes, never as user-facing text. The UI
  * translates them with t(`errors.${code}`). See docs/error-codes.md.
@@ -18,6 +20,8 @@ export const ERROR_CODES = [
   "links_failed",
   "already_linked",
   "job_has_candidates",
+  "offline",
+  "network_error",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -37,9 +41,31 @@ export function toErrorCode(value: unknown): ErrorCode | null {
   return ERROR_CODES.find((code) => code === value) ?? null;
 }
 
-/** The code of a known error, or "unknown" for anything else (network, bugs). */
+/** What fetch rejects with when no answer came back, in Chrome, Firefox, Safari and Node. */
+const FETCH_FAILURE = /Failed to fetch|NetworkError|Load failed|fetch failed/i;
+
+/**
+ * A request that never got an answer from the server. Each Supabase client reports it its own
+ * way: data calls return `{ message: "TypeError: Failed to fetch" }`, Edge Functions throw
+ * FunctionsFetchError and Auth throws AuthRetryableFetchError. Other errors, such as a TypeError
+ * from a bug, do not count.
+ */
+function isNetworkFailure(error: unknown): boolean {
+  if (error instanceof FunctionsFetchError || isAuthRetryableFetchError(error)) return true;
+  if (typeof error !== "object" || error === null || !("message" in error)) return false;
+  return typeof error.message === "string" && FETCH_FAILURE.test(error.message);
+}
+
+/**
+ * The code of a known error. A request that got no answer is `offline` when the browser has no
+ * connection and `network_error` when it has one. Anything else (bugs) is "unknown".
+ */
 export function errorCode(error: unknown): ErrorCode | "unknown" {
-  return error instanceof AppError ? error.code : "unknown";
+  if (error instanceof AppError) return error.code;
+  if (isNetworkFailure(error)) {
+    return typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "network_error";
+  }
+  return "unknown";
 }
 
 /**

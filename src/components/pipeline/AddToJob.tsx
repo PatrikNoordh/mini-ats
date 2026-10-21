@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Field } from "@/components/Field";
 import { useAddApplication } from "@/hooks/useApplications";
-import { errorCode } from "@/lib/errors";
+import { useErrorToast } from "@/hooks/useErrorToast";
 import { jobsToAdd } from "@/lib/stages";
 import type { Application, Job } from "@/types";
 
@@ -29,6 +29,7 @@ export function AddToJob({
 }) {
   const { t } = useTranslation();
   const add = useAddApplication(customerId);
+  const errorToast = useErrorToast();
   const [jobId, setJobId] = useState("");
   const available = jobsToAdd(jobs, applications, candidateId);
 
@@ -44,7 +45,7 @@ export function AddToJob({
       toast.success(t("candidateSheet.addedToast"));
       setJobId("");
     } catch (err) {
-      toast.error(t(`errors.${errorCode(err)}`));
+      errorToast(t("candidateSheet.addFailed"), err);
     }
   };
 

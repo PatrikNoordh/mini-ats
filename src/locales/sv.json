@@ -73,7 +73,9 @@
     "already_linked": "Kandidaten är redan kopplad till det här jobbet.",
     "links_failed": "Kandidaten sparades, men kunde inte kopplas till jobben. Öppna kandidaten och försök igen.",
     "unknown": "Något gick fel. Försök igen.",
-    "job_has_candidates": "Jobbet har kandidater. Ta bort dem under Kandidater först, så att inga kort på tavlan tas bort av misstag."
+    "job_has_candidates": "Jobbet har kandidater. Ta bort dem under Kandidater först, så att inga kort på tavlan tas bort av misstag.",
+    "offline": "Ingen internetanslutning. Kontrollera nätverket och försök igen.",
+    "network_error": "Kunde inte nå servern. Kontrollera anslutningen och försök igen."
   },
   "validation": {
     "name_required": "Ange namn.",
@@ -97,7 +99,8 @@
     "customerLabel": "Kund",
     "chooseCustomerPlaceholder": "Välj kund…",
     "actingAs": "Du arbetar som <bold>{{company}}</bold>. Allt du skapar hamnar hos kunden.",
-    "leaveCustomer": "Lämna kundläge"
+    "leaveCustomer": "Lämna kundläge",
+    "signOutFailed": "Kunde inte logga ut."
   },
   "nav": {
     "pipeline": "Pipeline",
@@ -169,7 +172,8 @@
     "add": "Lägg till",
     "adding": "Lägger till…",
     "noJobsToAdd": "Inga fler öppna jobb att lägga till.",
-    "addedToast": "Kandidaten har lagts till i jobbet."
+    "addedToast": "Kandidaten har lagts till i jobbet.",
+    "addFailed": "Kunde inte lägga till kandidaten i jobbet."
   },
   "candidates": {
     "title": "Kandidater",
@@ -203,7 +207,9 @@
     "deleteDescription": "{{name}} tas bort för gott, med alla sina kort på tavlan.",
     "deleteLinks_one": "Kandidaten är kopplad till {{count, number}} jobb.",
     "deleteLinks_other": "Kandidaten är kopplad till {{count, number}} jobb.",
-    "deleted": "Kandidaten är borttagen."
+    "deleted": "Kandidaten är borttagen.",
+    "saveFailed": "Kunde inte spara kandidaten.",
+    "deleteFailed": "Kunde inte ta bort kandidaten."
   },
   "jobs": {
     "title": "Jobb",
@@ -236,7 +242,8 @@
     "saveFailed": "Kunde inte spara jobbet.",
     "deleteTitle": "Ta bort jobbet?",
     "deleteDescription": "”{{title}}” tas bort för gott.",
-    "deleted": "Jobbet är borttaget."
+    "deleted": "Jobbet är borttaget.",
+    "deleteFailed": "Kunde inte ta bort jobbet."
   },
   "accounts": {
     "title": "Konton",
@@ -259,7 +266,8 @@
     "passwordHint": "Minst {{min}} tecken.",
     "submit": "Skapa konto",
     "submitting": "Skapar…",
-    "created": "Kontot är skapat."
+    "created": "Kontot är skapat.",
+    "createFailed": "Kunde inte skapa kontot."
   },
   "notFound": {
     "title": "Sidan hittades inte",

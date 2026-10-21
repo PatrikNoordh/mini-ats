@@ -19,6 +19,7 @@ import { ErrorState, LoadingRows } from "@/components/States";
 import { useJobs } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
 import { useDeleteCandidate, useSaveCandidate } from "@/hooks/useCandidates";
+import { useErrorToast } from "@/hooks/useErrorToast";
 import {
   MAX_EMAIL_LENGTH,
   MAX_NAME_LENGTH,
@@ -54,6 +55,7 @@ export function CandidateDialog({
   const apps = useApplications(customerId);
   const save = useSaveCandidate(customerId);
   const remove = useDeleteCandidate(customerId);
+  const errorToast = useErrorToast();
   const [confirming, setConfirming] = useState(false);
   const [form, setForm] = useState(empty);
   // Jobs picked in this dialog. The existing links come from the applications, not from here.
@@ -100,10 +102,13 @@ export function CandidateDialog({
       toast.success(candidate ? t("candidateDialog.updated") : t("candidateDialog.created"));
       onOpenChange(false);
     } catch (err) {
-      const code = errorCode(err);
-      toast.error(t(`errors.${code}`));
       // The candidate is saved, so the form closes: saving it again would create a duplicate.
-      if (code === "links_failed") onOpenChange(false);
+      if (errorCode(err) === "links_failed") {
+        toast.error(t("errors.links_failed"));
+        onOpenChange(false);
+      } else {
+        errorToast(t("candidateDialog.saveFailed"), err);
+      }
     }
   };
 
@@ -115,7 +120,7 @@ export function CandidateDialog({
       setConfirming(false);
       onOpenChange(false);
     } catch (err) {
-      toast.error(t(`errors.${errorCode(err)}`));
+      errorToast(t("candidateDialog.deleteFailed"), err);
       setConfirming(false);
     }
   };

@@ -14,12 +14,12 @@ import {
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { Field } from "@/components/Field";
 import { useCreateJob, useDeleteJob, useUpdateJob } from "@/hooks/useJobs";
+import { useErrorToast } from "@/hooks/useErrorToast";
 import {
   MAX_JOB_DESCRIPTION_LENGTH,
   MAX_JOB_LOCATION_LENGTH,
   MAX_JOB_TITLE_LENGTH,
 } from "@/lib/constants";
-import { errorCode } from "@/lib/errors";
 import { fieldErrors, jobInputSchema, type FormErrors, type JobInput } from "@/lib/validation";
 import type { JobWithCount } from "@/types";
 
@@ -38,6 +38,7 @@ export function JobDialog({
   const create = useCreateJob(customerId);
   const update = useUpdateJob(customerId);
   const remove = useDeleteJob(customerId);
+  const errorToast = useErrorToast();
   const [confirming, setConfirming] = useState(false);
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
@@ -63,8 +64,7 @@ export function JobDialog({
       toast.success(job ? t("jobDialog.updated") : t("jobDialog.created"));
       onOpenChange(false);
     } catch (err) {
-      const code = errorCode(err);
-      toast.error(code === "unknown" ? t("jobDialog.saveFailed") : t(`errors.${code}`));
+      errorToast(t("jobDialog.saveFailed"), err);
     }
   };
   const busy = create.isPending || update.isPending || remove.isPending;
@@ -84,7 +84,7 @@ export function JobDialog({
       setConfirming(false);
       onOpenChange(false);
     } catch (err) {
-      toast.error(t(`errors.${errorCode(err)}`));
+      errorToast(t("jobDialog.deleteFailed"), err);
       setConfirming(false);
     }
   };

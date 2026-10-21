@@ -18,11 +18,16 @@ import { AppError } from "@/lib/errors";
 if (!job) throw new AppError("job_not_found");
 ```
 
-Show it with `errorCode()`, which returns the code or `"unknown"`:
+Show it with `errorCode()`, which returns the code or `"unknown"`. A request that got no answer from the server is `offline` when the browser has no connection and `network_error` when it has one; `errorCode()` recognises each Supabase client's way of reporting it.
+
+An error toast says what failed and why. `useErrorToast()` in `src/hooks/useErrorToast.ts` takes the action as the title and puts the code's text below it:
 
 ```ts
-toast.error(t(`errors.${errorCode(err)}`));
+const errorToast = useErrorToast();
+errorToast(t("jobDialog.saveFailed"), err); // "Kunde inte spara jobbet." + "Ingen internetanslutning…"
 ```
+
+A code whose text already says it all, such as `links_failed`, can be shown on its own with `toast.error(t(`errors.${code}`))`.
 
 To add a code: add it to `ERROR_CODES`, then add `errors.<code>` to both locale files.
 
@@ -65,4 +70,6 @@ The data layer maps the message to an `AppError` with `fromDbError()` in `src/li
 | `links_failed`                    | candidates                    | The candidate was saved, but linking it to jobs failed    |
 | `already_linked`                  | applications                  | The candidate is already linked to that job               |
 | `job_has_candidates`              | jobs                          | The job still has candidates, so it cannot be deleted     |
+| `offline`                         | any request (browser)         | No answer, and the browser has no internet connection     |
+| `network_error`                   | any request (browser)         | No answer from the server, although the browser is online |
 | `unknown`                         | anywhere                      | Fallback for errors without a known code                  |
