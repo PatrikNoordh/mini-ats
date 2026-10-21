@@ -13,11 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { Field } from "@/components/Field";
 import { ErrorState, LoadingRows } from "@/components/States";
 import { useJobs } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
-import { useSaveCandidate } from "@/hooks/useCandidates";
+import { useDeleteCandidate, useSaveCandidate } from "@/hooks/useCandidates";
 import {
   MAX_EMAIL_LENGTH,
   MAX_NAME_LENGTH,
@@ -52,6 +53,8 @@ export function CandidateDialog({
   const jobs = useJobs(customerId);
   const apps = useApplications(customerId);
   const save = useSaveCandidate(customerId);
+  const remove = useDeleteCandidate(customerId);
+  const [confirming, setConfirming] = useState(false);
   const [form, setForm] = useState(empty);
   // Jobs picked in this dialog. The existing links come from the applications, not from here.
   const [newJobIds, setNewJobIds] = useState<string[]>([]);
@@ -101,6 +104,19 @@ export function CandidateDialog({
       toast.error(t(`errors.${code}`));
       // The candidate is saved, so the form closes: saving it again would create a duplicate.
       if (code === "links_failed") onOpenChange(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!candidate) return;
+    try {
+      await remove.mutateAsync(candidate.id);
+      toast.success(t("candidateDialog.deleted"));
+      setConfirming(false);
+      onOpenChange(false);
+    } catch (err) {
+      toast.error(t(`errors.${errorCode(err)}`));
+      setConfirming(false);
     }
   };
 
@@ -223,15 +239,44 @@ export function CandidateDialog({
             )}
           </div>
           <DialogFooter>
+            {candidate && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive sm:mr-auto"
+                disabled={save.isPending || remove.isPending}
+                onClick={() => setConfirming(true)}
+              >
+                {t("common.delete")}
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={save.isPending || linksLoading}>
+            <Button type="submit" disabled={save.isPending || remove.isPending || linksLoading}>
               {save.isPending ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
+      {candidate && (
+        <ConfirmDeleteDialog
+          open={confirming}
+          onOpenChange={setConfirming}
+          title={t("candidateDialog.deleteTitle")}
+          description={[
+            t("candidateDialog.deleteDescription", { name: candidate.full_name }),
+            // The number is only known once the links have loaded.
+            apps.isSuccess && linkedJobIds.length > 0
+              ? t("candidateDialog.deleteLinks", { count: linkedJobIds.length })
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          busy={remove.isPending}
+          onConfirm={onDelete}
+        />
+      )}
     </Dialog>
   );
 }

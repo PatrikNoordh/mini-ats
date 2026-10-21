@@ -36,7 +36,9 @@
     "save": "Save",
     "saving": "Saving…",
     "close": "Close",
-    "loadError": "Something went wrong while loading the data."
+    "loadError": "Something went wrong while loading the data.",
+    "delete": "Delete",
+    "deleting": "Deleting…"
   },
   "language": {
     "label": "Language",
@@ -196,7 +198,12 @@
     "newLinksHint": "New links start in the New stage.",
     "existingLinksHint": "Existing links cannot be removed here.",
     "created": "The candidate has been added.",
-    "updated": "The candidate has been updated."
+    "updated": "The candidate has been updated.",
+    "deleteTitle": "Delete the candidate?",
+    "deleteDescription": "{{name}} will be deleted for good, with all their cards on the board.",
+    "deleteLinks_one": "The candidate is linked to {{count, number}} job.",
+    "deleteLinks_other": "The candidate is linked to {{count, number}} jobs.",
+    "deleted": "The candidate is deleted."
   },
   "jobs": {
     "title": "Jobs",
@@ -226,7 +233,10 @@
     "description": "Description",
     "created": "The job has been created.",
     "updated": "The job has been updated.",
-    "saveFailed": "Could not save the job."
+    "saveFailed": "Could not save the job.",
+    "deleteTitle": "Delete the job?",
+    "deleteDescription": "“{{title}}” will be deleted for good.",
+    "deleted": "The job is deleted."
   },
   "accounts": {
     "title": "Accounts",
