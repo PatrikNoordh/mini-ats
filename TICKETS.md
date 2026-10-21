@@ -308,3 +308,4 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
+- [ ] The advisory lock in `move_application` was verified by hand with two sessions; no automated test runs two concurrent moves into one column — `supabase/tests/` (PR #38, ATS-12)
