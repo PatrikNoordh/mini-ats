@@ -6,7 +6,7 @@ export function useLanguage() {
   const router = useRouter();
   const language = useRouterState({ select: (s) => s.matches[0]?.context.language });
   const setLanguage = async (next: Language) => {
-    document.cookie = languageCookie(next);
+    document.cookie = languageCookie(next, window.location.protocol === "https:");
     await router.invalidate();
   };
   return { language, setLanguage };
