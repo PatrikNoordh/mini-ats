@@ -94,7 +94,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(
     async (email: string, password: string) => {
-      const profile = await resolveUser(await signInWithPassword(email, password));
+      const user = await signInWithPassword(email, password);
+      // Without a profile there is no role, so the session must not survive to a reload.
+      const profile = await resolveUser(user).catch(async (error: unknown) => {
+        await signOutUser().catch(() => {});
+        throw error;
+      });
       if (!profile) {
         await signOutUser().catch(() => {});
         throw new AppError("profile_not_found");
