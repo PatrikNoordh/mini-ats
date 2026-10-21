@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Candidate } from "@/types";
-import { AppError } from "@/lib/errors";
+import { AppError, fromWriteError } from "@/lib/errors";
 import type { CandidateInput } from "@/lib/validation";
 
 const CANDIDATE_COLUMNS =
@@ -66,7 +66,7 @@ export async function createCandidate(
     .insert({ ...toRow(input), customer_id: customerId })
     .select(CANDIDATE_COLUMNS)
     .single();
-  if (error) throw error;
+  if (error) throw fromWriteError(error);
   return parseCandidateRow(data);
 }
 
@@ -86,7 +86,7 @@ export async function updateCandidate(
     .eq("customer_id", customerId)
     .select(CANDIDATE_COLUMNS)
     .maybeSingle();
-  if (error) throw error;
+  if (error) throw fromWriteError(error);
   if (!data) throw new AppError("candidate_not_found");
   return parseCandidateRow(data);
 }

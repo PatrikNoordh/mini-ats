@@ -1,4 +1,5 @@
 import { FunctionsFetchError, isAuthRetryableFetchError } from "@supabase/supabase-js";
+import { PG_CHECK_VIOLATION } from "./constants";
 
 /**
  * Errors cross the data layer as codes, never as user-facing text. The UI
@@ -20,6 +21,7 @@ export const ERROR_CODES = [
   "links_failed",
   "already_linked",
   "job_has_candidates",
+  "text_too_long",
   "offline",
   "network_error",
 ] as const;
@@ -39,6 +41,19 @@ export class AppError extends Error {
 /** The code if the app knows it, for codes that come back from the server as text. */
 export function toErrorCode(value: unknown): ErrorCode | null {
   return ERROR_CODES.find((code) => code === value) ?? null;
+}
+
+/** The database's length checks are named <table>_<column>_length (ATS-23). */
+const LENGTH_CHECK = /_length"/;
+
+/**
+ * A database error from a write as an AppError when a text was over its length limit, otherwise
+ * the error as it is. The forms stop such text first, so this matters for clients out of date.
+ */
+export function fromWriteError(error: { code?: string; message: string }): unknown {
+  return error.code === PG_CHECK_VIOLATION && LENGTH_CHECK.test(error.message)
+    ? new AppError("text_too_long")
+    : error;
 }
 
 /** What fetch rejects with when no answer came back, in Chrome, Firefox, Safari and Node. */

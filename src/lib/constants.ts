@@ -20,9 +20,12 @@ export const MIN_PASSWORD_LENGTH = 8;
  * count as two. Same as admin-create-user.
  */
 export const MAX_PASSWORD_BYTES = 72;
-/** The longest email address SMTP allows. Same as admin-create-user. */
+/** The longest email address SMTP allows. Same as admin-create-user and the database check. */
 export const MAX_EMAIL_LENGTH = 254;
-/** Longest name or company name for an account. Same as admin-create-user. */
+/**
+ * Longest name or company name for an account, and longest candidate name. Same as
+ * admin-create-user and the database check on candidates.full_name.
+ */
 export const MAX_NAME_LENGTH = 200;
 
 /** How long the language choice is remembered. */
@@ -30,6 +33,10 @@ export const LANGUAGE_COOKIE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 
 /** Letters shown in the avatar, taken from the start of each name part. */
 export const AVATAR_INITIALS = 2;
+
+// MAX_JOB_TITLE_LENGTH, MAX_JOB_LOCATION_LENGTH, MAX_JOB_DESCRIPTION_LENGTH, MAX_NAME_LENGTH,
+// MAX_EMAIL_LENGTH, MAX_PHONE_LENGTH, MAX_URL_LENGTH and MAX_NOTES_LENGTH are also checks in the
+// database: supabase/migrations/20261021200000_text_length_checks.sql. Change a limit in both.
 
 /** Longest job title. */
 export const MAX_JOB_TITLE_LENGTH = 200;
@@ -55,3 +62,5 @@ export const MAX_NOTES_LENGTH = 5000;
 export const PG_UNIQUE_VIOLATION = "23505";
 /** Postgres error code for a foreign key violation, for example a job that still has candidates. */
 export const PG_FOREIGN_KEY_VIOLATION = "23503";
+/** Postgres error code for a failed check constraint, for example a text over its length limit. */
+export const PG_CHECK_VIOLATION = "23514";

@@ -70,6 +70,7 @@ The data layer maps the message to an `AppError` with `fromDbError()` in `src/li
 | `links_failed`                    | candidates                    | The candidate was saved, but linking it to jobs failed    |
 | `already_linked`                  | applications                  | The candidate is already linked to that job               |
 | `job_has_candidates`              | jobs                          | The job still has candidates, so it cannot be deleted     |
+| `text_too_long`                   | jobs, candidates (checks)     | A text is over its length limit in the database           |
 | `offline`                         | any request (browser)         | No answer, and the browser has no internet connection     |
 | `network_error`                   | any request (browser)         | No answer from the server, although the browser is online |
 | `unknown`                         | anywhere                      | Fallback for errors without a known code                  |

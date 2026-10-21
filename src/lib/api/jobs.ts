@@ -3,7 +3,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import type { Job, JobStatus, JobWithCount } from "@/types";
 import { PG_FOREIGN_KEY_VIOLATION } from "@/lib/constants";
-import { AppError } from "@/lib/errors";
+import { AppError, fromWriteError } from "@/lib/errors";
 import { jobStatusSchema, type JobInput } from "@/lib/validation";
 
 const JOB_COLUMNS = "id, customer_id, title, description, location, status, created_at";
@@ -65,7 +65,7 @@ export async function createJob(customerId: string, input: JobInput): Promise<Jo
     .insert({ ...toRow(input), customer_id: customerId })
     .select(JOB_COLUMNS)
     .single();
-  if (error) throw error;
+  if (error) throw fromWriteError(error);
   return parseJobRow(data);
 }
 
@@ -85,7 +85,7 @@ async function patchJob(
     .eq("customer_id", customerId)
     .select(JOB_COLUMNS)
     .maybeSingle();
-  if (error) throw error;
+  if (error) throw fromWriteError(error);
   if (!data) throw new AppError("job_not_found");
   return parseJobRow(data);
 }
