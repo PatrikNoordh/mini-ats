@@ -64,8 +64,13 @@ do $$ declare blocked boolean := false; begin
   raise notice 'OK 4: customer B cannot create rows for customer A';
 end $$;
 
+-- Refused by the table grants since ATS-22 (no update on profiles); before that RLS made it
+-- affect 0 rows. Either way the role must not change.
 do $$ begin
-  update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000000b1';
+  begin
+    update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000000b1';
+  exception when insufficient_privilege then null;
+  end;
   reset role;
   assert (select role from public.profiles where id = '00000000-0000-0000-0000-0000000000b1') = 'customer', 'B promoted itself';
   raise notice 'OK 5: customer cannot make itself admin';
@@ -198,10 +203,17 @@ end $$;
 reset role;
 set local role anon;
 select set_config('request.jwt.claims', '', true);
-do $$ begin
-  assert (select count(*) from public.jobs) = 0, 'anon sees nothing';
-  assert (select count(*) from public.profiles) = 0, 'anon sees no profiles';
-  raise notice 'OK 9: signed-out users see nothing';
+-- anon has no table privileges at all (ATS-22), so a read is refused, not just empty.
+do $$ declare tbl text; blocked boolean; begin
+  foreach tbl in array array['profiles', 'jobs', 'candidates', 'applications', 'cv_assessments'] loop
+    blocked := false;
+    begin
+      execute format('select count(*) from public.%I', tbl);
+    exception when insufficient_privilege then blocked := true;
+    end;
+    if not blocked then raise exception 'FAIL 9: a signed-out user could read %', tbl; end if;
+  end loop;
+  raise notice 'OK 9: signed-out users cannot read any table';
 end $$;
 
 do $$ declare blocked boolean := false; begin
@@ -330,6 +342,50 @@ do $$ declare job uuid; candidate uuid; begin
   assert not exists (select 1 from public.applications where customer_id = '00000000-0000-0000-0000-0000000000a1'),
          'applications gone';
   raise notice 'OK 19: deleting an account still removes its jobs and cards';
+end $$;
+
+-- ---------------------------------------------------------------- table grants (ATS-22)
+reset role;
+do $$ declare tbl text; begin
+  for tbl in select tablename from pg_tables where schemaname = 'public' loop
+    if has_table_privilege('anon', format('public.%I', tbl), 'select, insert, update, delete, truncate, references, trigger') then
+      raise exception 'FAIL 20: anon has a privilege on public.%', tbl;
+    end if;
+  end loop;
+  raise notice 'OK 20: anon has no privilege on any table in public, also tables added later';
+end $$;
+
+do $$ declare blocked boolean := false; begin
+  assert not has_table_privilege('authenticated', 'public.cv_assessments', 'insert'), 'no insert';
+  assert not has_table_privilege('authenticated', 'public.cv_assessments', 'update'), 'no update';
+  assert not has_table_privilege('authenticated', 'public.cv_assessments', 'delete'), 'no delete';
+  set local role authenticated;
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
+  begin
+    delete from public.cv_assessments;
+  exception when insufficient_privilege then blocked := true;
+  end;
+  reset role;
+  if not blocked then raise exception 'FAIL 21: even an admin client could write cv_assessments'; end if;
+  raise notice 'OK 21: authenticated cannot write cv_assessments, not even an admin';
+end $$;
+
+-- The grants are exactly what the app uses. A change here is a deliberate change to this list.
+do $$ declare actual text; expected text :=
+  'applications:INSERT,SELECT,UPDATE candidates:DELETE,INSERT,SELECT,UPDATE '
+  'cv_assessments:SELECT jobs:DELETE,INSERT,SELECT,UPDATE profiles:SELECT';
+begin
+  select string_agg(table_name || ':' || privileges, ' ' order by table_name) into actual
+  from (
+    select table_name, string_agg(privilege_type, ',' order by privilege_type) as privileges
+    from information_schema.role_table_grants
+    where grantee = 'authenticated' and table_schema = 'public'
+    group by table_name
+  ) grants;
+  if actual is distinct from expected then
+    raise exception 'FAIL 22: authenticated grants are % (expected %)', actual, expected;
+  end if;
+  raise notice 'OK 22: authenticated has only the table privileges the app uses';
 end $$;
 
 rollback;
