@@ -3,6 +3,7 @@ import { createMemoryHistory, createRouter } from "@tanstack/react-router";
 import { describe, expect, it } from "vitest";
 
 import { safeRedirect } from "@/lib/redirect";
+import { searchSerializer } from "@/lib/search-params";
 import { routeTree } from "@/routeTree.gen";
 
 describe("safeRedirect", () => {
@@ -42,6 +43,7 @@ function loginRouter(href = "/login") {
   return createRouter({
     routeTree,
     context: { queryClient: new QueryClient() },
+    ...searchSerializer,
     history: createMemoryHistory({ initialEntries: [href] }),
   });
 }

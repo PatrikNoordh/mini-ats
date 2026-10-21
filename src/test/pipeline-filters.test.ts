@@ -3,6 +3,7 @@ import { createMemoryHistory, createRouter } from "@tanstack/react-router";
 import { describe, expect, it } from "vitest";
 
 import { MAX_SEARCH_LENGTH } from "@/lib/constants";
+import { searchSerializer } from "@/lib/search-params";
 import { routeTree } from "@/routeTree.gen";
 
 // Reads the filters through the pipeline route's validateSearch and writes them
@@ -11,6 +12,7 @@ function pipelineRouter(href = "/pipeline") {
   return createRouter({
     routeTree,
     context: { queryClient: new QueryClient() },
+    ...searchSerializer,
     history: createMemoryHistory({ initialEntries: [href] }),
   });
 }
@@ -34,15 +36,24 @@ describe("pipeline filters in the URL", () => {
     expect(search?.q).toBeUndefined();
   });
 
-  it("drops a filter value that is not a string instead of failing", () => {
+  it("reads a value that looks like JSON as text instead of failing", () => {
     const search = readFilters('/pipeline?job={"a":1}&q=Anna');
-    expect(search?.job).toBeUndefined();
+    expect(search?.job).toBe('{"a":1}');
     expect(search?.q).toBe("Anna");
   });
 
-  it("keeps a hand-typed numeric search as text", () => {
-    expect(readFilters("/pipeline?q=123")?.q).toBe("123");
-    expect(readFilters("/pipeline?q=0")?.q).toBe("0");
+  it("keeps a hand-typed search exactly as text", () => {
+    for (const q of ["123", "0", "1e3", "12.50", "true", "false", "null", '"quoted"', "-5"]) {
+      expect(readFilters(`/pipeline?q=${encodeURIComponent(q)}`)?.q, q).toBe(q);
+    }
+  });
+
+  it("round-trips a search that looks like a number, boolean or null", () => {
+    for (const q of ["1e3", "12.50", "true", "null"]) {
+      const location = pipelineRouter().buildLocation({ to: "/pipeline", search: { q } });
+      expect(location.searchStr).toBe(`?q=${q}`);
+      expect(readFilters(location.href)?.q).toBe(q);
+    }
   });
 
   it("cuts a very long search to the longest the field allows", () => {

@@ -19,10 +19,10 @@ import { resolveJobFilter, STAGES } from "@/lib/stages";
 
 const searchSchema = z.object({
   job: z.string().optional().catch(undefined),
-  // The router reads a hand-typed ?q=123 as a number. Keep it as the text that was typed.
+  // Kept as the text that was typed, also ?q=1e3 or ?q=true (src/lib/search-params.ts).
   q: z
-    .union([z.string(), z.number()])
-    .transform((v) => String(v).slice(0, MAX_SEARCH_LENGTH))
+    .string()
+    .transform((v) => v.slice(0, MAX_SEARCH_LENGTH))
     .optional()
     .catch(undefined),
 });
