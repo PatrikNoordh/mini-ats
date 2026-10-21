@@ -100,7 +100,8 @@
     "chooseCustomerPlaceholder": "Choose customer…",
     "actingAs": "You are working as <bold>{{company}}</bold>. Everything you create belongs to the customer.",
     "leaveCustomer": "Leave customer mode",
-    "signOutFailed": "Could not sign out."
+    "signOutFailed": "Could not sign out.",
+    "customersFailed": "Could not load the customers."
   },
   "nav": {
     "pipeline": "Pipeline",
