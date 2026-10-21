@@ -4,9 +4,9 @@ import { linkCandidate, parseApplicationRow } from "@/lib/api/applications";
 import { createCandidate, parseCandidateRow, updateCandidate } from "@/lib/api/candidates";
 import { MAX_NAME_LENGTH } from "@/lib/constants";
 import { AppError, errorCode, fromDbError } from "@/lib/errors";
+import { saveCandidate } from "@/lib/save-candidate";
 import { stageSchema, STAGES } from "@/lib/stages";
 import { candidateInputSchema, fieldErrors } from "@/lib/validation";
-import { saveCandidate } from "@/hooks/useCandidates";
 import type { Candidate } from "@/types";
 
 vi.mock("@/lib/api/candidates", async (importOriginal) => ({
