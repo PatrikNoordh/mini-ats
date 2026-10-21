@@ -75,7 +75,8 @@
     "unknown": "Något gick fel. Försök igen.",
     "job_has_candidates": "Jobbet har kandidater. Ta bort dem under Kandidater först, så att inga kort på tavlan tas bort av misstag.",
     "offline": "Ingen internetanslutning. Kontrollera nätverket och försök igen.",
-    "network_error": "Kunde inte nå servern. Kontrollera anslutningen och försök igen."
+    "network_error": "Kunde inte nå servern. Kontrollera anslutningen och försök igen.",
+    "text_too_long": "En av texterna är för lång. Korta den och försök igen."
   },
   "validation": {
     "name_required": "Ange namn.",

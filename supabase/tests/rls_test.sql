@@ -388,4 +388,45 @@ begin
   raise notice 'OK 22: authenticated has only the table privileges the app uses';
 end $$;
 
+-- ---------------------------------------------------------------- text lengths (ATS-23)
+-- As customer B through the API path: a value at each limit is stored, one character more is
+-- refused. å is one character, the way the forms and char_length count.
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}', true);
+do $$ declare
+  job uuid; candidate uuid; rec record; refused boolean;
+begin
+  insert into public.jobs (customer_id, title) values ('00000000-0000-0000-0000-0000000000b1', 'Length job')
+    returning id into job;
+  insert into public.candidates (customer_id, full_name) values ('00000000-0000-0000-0000-0000000000b1', 'Length cand')
+    returning id into candidate;
+  for rec in select * from (values
+    ('jobs', 'title', 200), ('jobs', 'location', 200), ('jobs', 'description', 5000),
+    ('candidates', 'full_name', 200), ('candidates', 'email', 254), ('candidates', 'phone', 50),
+    ('candidates', 'notes', 5000)
+  ) as limits (tbl, col, max_length) loop
+    execute format('update public.%I set %I = repeat(''å'', %s) where id = $1', rec.tbl, rec.col, rec.max_length)
+      using case rec.tbl when 'jobs' then job else candidate end;
+    refused := false;
+    begin
+      execute format('update public.%I set %I = repeat(''å'', %s) where id = $1', rec.tbl, rec.col, rec.max_length + 1)
+        using case rec.tbl when 'jobs' then job else candidate end;
+    exception when check_violation then refused := true;
+    end;
+    if not refused then raise exception 'FAIL 23: %.% accepted % characters', rec.tbl, rec.col, rec.max_length + 1; end if;
+  end loop;
+  -- linkedin_url must also match its URL check, so it is padded after a valid start.
+  update public.candidates set linkedin_url = rpad('https://www.linkedin.com/in/', 2048, 'å') where id = candidate;
+  refused := false;
+  begin
+    update public.candidates set linkedin_url = rpad('https://www.linkedin.com/in/', 2049, 'å') where id = candidate;
+  exception when check_violation then refused := true;
+  end;
+  if not refused then raise exception 'FAIL 23: candidates.linkedin_url accepted 2049 characters'; end if;
+  update public.candidates set email = null, phone = null, linkedin_url = null, notes = null where id = candidate;
+  delete from public.candidates where id = candidate;
+  delete from public.jobs where id = job;
+  raise notice 'OK 23: every job and candidate text is stored at its limit and refused one character over';
+end $$;
+
 rollback;

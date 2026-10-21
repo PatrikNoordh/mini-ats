@@ -75,7 +75,8 @@
     "unknown": "Something went wrong. Please try again.",
     "job_has_candidates": "This job has candidates. Remove them under Candidates first, so no cards on the board are deleted by mistake.",
     "offline": "No internet connection. Check your network and try again.",
-    "network_error": "Could not reach the server. Check your connection and try again."
+    "network_error": "Could not reach the server. Check your connection and try again.",
+    "text_too_long": "One of the texts is too long. Shorten it and try again."
   },
   "validation": {
     "name_required": "Enter a name.",
