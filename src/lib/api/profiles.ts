@@ -39,6 +39,32 @@ export async function listProfiles(): Promise<Profile[]> {
   return data.map(parseProfileRow);
 }
 
+// `jobs(count)` comes back as a list with one row: [{ count: n }].
+const openJobCountRowSchema = z.object({
+  id: z.string(),
+  jobs: z.array(z.object({ count: z.number() })),
+});
+
+/** Open-job count rows as a map from customer id to count. */
+export function parseOpenJobCounts(rows: unknown): Map<string, number> {
+  const parsed = z.array(openJobCountRowSchema).parse(rows);
+  return new Map(parsed.map((r) => [r.id, r.jobs[0]?.count ?? 0]));
+}
+
+/**
+ * The number of open jobs of every customer, in one request, for the admin's customer chooser.
+ * Only the counts come back, not the jobs. RLS returns every customer to an admin.
+ */
+export async function countOpenJobsByCustomer(): Promise<Map<string, number>> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, jobs(count)")
+    .eq("role", "customer")
+    .eq("jobs.status", "open");
+  if (error) throw error;
+  return parseOpenJobCounts(data);
+}
+
 /**
  * The signed-in user's own profile from the database. `profiles.role` is the role that counts
  * (CLAUDE.md, security rule 4). RLS only returns the user's own row, or any row for an admin.

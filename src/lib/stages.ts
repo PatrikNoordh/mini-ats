@@ -86,6 +86,8 @@ export function withCardRestored(
 
 export const queryKeys = {
   profiles: () => ["profiles"] as const,
+  /** Every customer's open-job count. Admin only, so it holds no single customer's id. */
+  openJobCounts: () => ["openJobCounts"] as const,
   jobs: (customerId: string | null) => ["jobs", customerId] as const,
   candidates: (customerId: string | null) => ["candidates", customerId] as const,
   applications: (customerId: string | null) => ["applications", customerId] as const,

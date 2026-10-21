@@ -16,7 +16,10 @@ export function useCreateJob(customerId: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: JobInput) => createJob(customerId!, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });
+      qc.invalidateQueries({ queryKey: queryKeys.openJobCounts() });
+    },
   });
 }
 
@@ -34,6 +37,9 @@ export function useSetJobStatus(customerId: string | null) {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: JobStatus }) =>
       setJobStatus(customerId!, id, status),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });
+      qc.invalidateQueries({ queryKey: queryKeys.openJobCounts() });
+    },
   });
 }
