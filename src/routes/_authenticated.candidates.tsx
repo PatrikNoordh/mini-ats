@@ -53,9 +53,15 @@ function Candidates({ customerId }: { customerId: string }) {
       <div className="rounded-lg border bg-card">
         {cands.isLoading ? (
           <LoadingRows />
-        ) : cands.isError ? (
+        ) : cands.isError || apps.isError ? (
+          // The job counts come from the applications, so the table is incomplete without them.
           <div className="p-4">
-            <ErrorState onRetry={() => cands.refetch()} />
+            <ErrorState
+              onRetry={() => {
+                if (cands.isError) cands.refetch();
+                if (apps.isError) apps.refetch();
+              }}
+            />
           </div>
         ) : list.length === 0 ? (
           <div className="p-4">
