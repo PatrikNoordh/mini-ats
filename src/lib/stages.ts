@@ -8,6 +8,11 @@ export const stageSchema = z.enum(["new", "screening", "interview", "offer", "hi
 
 export const STAGES: Stage[] = [...stageSchema.options];
 
+/** The stage next to a stage on the board, one step left (-1) or right (1). None past the ends. */
+export function neighbourStage(stage: Stage, step: -1 | 1): Stage | undefined {
+  return STAGES[STAGES.indexOf(stage) + step];
+}
+
 /** Whole days since the given ISO date (never negative). */
 export function daysSince(iso: string, now: Date = new Date()): number {
   const diff = now.getTime() - new Date(iso).getTime();
@@ -48,6 +53,35 @@ export function jobsToAdd<J extends Pick<Job, "id" | "status">>(
     applications.filter((a) => a.candidate_id === candidateId).map((a) => a.job_id),
   );
   return jobs.filter((j) => j.status === "open" && !linked.has(j.id));
+}
+
+/**
+ * The board after a card is moved, before the database answers: the card is in its new stage,
+ * last in the column, and its days in stage start again.
+ */
+export function withCardMoved(
+  applications: readonly Application[],
+  id: string,
+  stage: Stage,
+  now: Date = new Date(),
+): Application[] {
+  const iso = now.toISOString();
+  return applications.map((a) =>
+    a.id === id
+      ? { ...a, stage, position: Number.MAX_SAFE_INTEGER, stage_changed_at: iso, updated_at: iso }
+      : a,
+  );
+}
+
+/**
+ * The board with one card put back as it was. Only that card changes, so a failed move never
+ * undoes another move made after it.
+ */
+export function withCardRestored(
+  applications: readonly Application[],
+  card: Application,
+): Application[] {
+  return applications.map((a) => (a.id === card.id ? card : a));
 }
 
 export const queryKeys = {

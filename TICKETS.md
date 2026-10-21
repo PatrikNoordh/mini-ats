@@ -296,9 +296,16 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] `npx prettier --check src` fails on `src/routes/README.md`, so the docs folder is not covered by a format check — `src/routes/README.md` (found in ATS-12)
+- [ ] The header of the first migration says `rls_test.sql` has 13 checks; it now has more, and the count goes stale with every new check — `supabase/migrations/20261006000000_init.sql` (found in ATS-12)
+- [ ] `@testing-library/react` is a dev dependency but its peer `@testing-library/dom` is missing, so it cannot be used; tests render with `react-dom/client` instead. Add the peer or drop the package — `package.json` (found in ATS-12)
+- [ ] Every mutation except the card move uses TanStack Query's default `networkMode: "online"`, so offline a save is paused without an error and the dialog stays pending. Consider `networkMode: "always"` as the default for mutations — `src/router.tsx` (found in ATS-12)
+- [ ] Dev server noise: `npm run dev` prints about 50 lightningcss "Unknown at rule @theme/@utility" warnings from tw-animate-css, plus a notice to replace vite-tsconfig-paths with `resolve.tsconfigPaths`. The app and animations work. Find the root cause and silence them without removing the Lovable build wrapper — `vite.config.ts` (found in ATS-12)
+
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
+- [ ] The advisory lock in `move_application` was verified by hand with two sessions; no automated test runs two concurrent moves into one column — `supabase/tests/` (PR #38, ATS-12)

@@ -40,7 +40,7 @@ An application links one candidate to one job and is one card on the kanban boar
 - The data functions call Supabase (since epic 2). ATS-1 to ATS-9 used an in-memory mock store, `src/lib/api/mockStore.ts`, removed in ATS-10.
 - TanStack Query hooks in `src/hooks/`: `useJobs`, `useCandidates`, `useApplications`, `useProfiles`, plus mutations.
 - Every query key that returns customer data includes the active customer id, for example `["jobs", customerId]`. Switching customer must never show the previous customer's cached data.
-- Moving a card uses an optimistic update and rolls back with a toast if the call fails.
+- Moving a card uses an optimistic update and rolls back with a toast if the call fails. The database function `move_application` sets the stage and the card's position, last in its new column, in one call.
 - Components never call Supabase directly.
 - Mock data: 1 admin, 2 customers ("Nordkust Bygg AB" and "Studio Lumen"), 3–4 jobs each and about 15 candidates per customer spread across all stages. Only obviously fake people and `.test` email addresses.
 
@@ -66,6 +66,7 @@ An application links one candidate to one job and is one card on the kanban boar
    - One column per stage, in order. The column header shows the stage name and the number of cards.
    - Compact cards: candidate name, job title, and days in the current stage computed from `stage_changed_at`. Small enough that many fit on screen.
    - Drag a card to another column to change its stage. Changing stage sets `stage_changed_at` to now.
+   - With the keyboard: Tab to a card, Enter opens it, space picks it up, the left and right arrow keys move it one column, and space drops it. Escape cancels. Screen readers hear the moves in the chosen language.
    - Clicking a card opens a side sheet with the candidate's details, LinkedIn link (new tab), notes, and the jobs they are linked to.
    - Filters above the board: a job dropdown (all jobs or one job) and a name search that filters as you type. Both live in the URL as `?job=<job id>&q=<text>`.
    - A clear empty state when no cards match.

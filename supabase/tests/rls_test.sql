@@ -109,12 +109,58 @@ do $$ declare candidate uuid; spoofed uuid; begin
   raise notice 'OK 7b: an application gets customer_id from the job, never from the client';
 end $$;
 
+-- move_application (ATS-12) puts a moved card last in its new column, in the same call.
+do $$ declare candidate uuid; second uuid; first_pos int; second_pos int; again_pos int; begin
+  insert into public.candidates (customer_id, full_name)
+  values ('00000000-0000-0000-0000-0000000000b1', 'Cand B4') returning id into candidate;
+  insert into public.applications (job_id, candidate_id)
+  values ('10000000-0000-0000-0000-0000000000b1', candidate) returning id into second;
+  select position into first_pos from public.move_application(
+    '30000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1', 'offer');
+  select position into second_pos from public.move_application(
+    second, '00000000-0000-0000-0000-0000000000b1', 'offer');
+  select position into again_pos from public.move_application(
+    '30000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1', 'offer');
+  assert first_pos = 0, 'first card in an empty column gets position 0';
+  assert second_pos = 1, 'next card lands after it';
+  assert again_pos = 2, 'a card moved within its column goes last';
+  assert (select stage from public.applications where id = second) = 'offer', 'stage changed';
+  delete from public.candidates where id = candidate; -- the counts below expect the seed data only
+  raise notice 'OK 7c: move_application sets the stage and the next position in one call';
+end $$;
+
+do $$ declare error_code text; other_code text; begin
+  begin
+    perform public.move_application(
+      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1', 'hired');
+  exception when raise_exception then error_code := sqlerrm;
+  end;
+  begin
+    perform public.move_application(
+      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1', 'hired');
+  exception when raise_exception then other_code := sqlerrm;
+  end;
+  if error_code is distinct from 'card_not_found' or other_code is distinct from 'card_not_found' then
+    raise exception 'FAIL 7d: B moved A''s card (got %, %)',
+      coalesce(error_code, 'no error'), coalesce(other_code, 'no error');
+  end if;
+  raise notice 'OK 7d: customer B cannot move customer A''s card (card_not_found)';
+end $$;
+
 -- ---------------------------------------------------------------- admin
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
 do $$ begin
-  assert (select count(*) from public.jobs) = 2, 'admin sees all jobs';
-  assert (select count(*) from public.candidates) = 2, 'A''s candidate survived B''s delete attempt';
-  assert (select count(*) from public.profiles) = 3, 'admin sees all profiles';
+  -- Only the test rows are counted: a real project has other customers' data too.
+  assert (select count(*) from public.jobs where customer_id in
+          ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1')) = 2,
+         'admin sees all jobs';
+  assert (select count(*) from public.candidates where customer_id in
+          ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1')) = 2,
+         'A''s candidate survived B''s delete attempt';
+  assert (select count(*) from public.profiles where id in
+          ('00000000-0000-0000-0000-0000000000ad', '00000000-0000-0000-0000-0000000000a1',
+           '00000000-0000-0000-0000-0000000000b1')) = 3,
+         'admin sees all profiles';
   insert into public.jobs (customer_id, title) values ('00000000-0000-0000-0000-0000000000a1', 'Created by admin for A');
   raise notice 'OK 8: admin sees everything and can act for a customer';
 end $$;
@@ -129,6 +175,25 @@ do $$ declare job uuid; begin
   raise notice 'OK 8b: an application an admin creates for a customer belongs to that customer';
 end $$;
 
+-- The admin moves a card for the active customer. The customer id must match the card's.
+do $$ declare error_code text; begin
+  assert (select stage from public.applications where id = '30000000-0000-0000-0000-0000000000a1') = 'new',
+         'A''s card survived B''s move attempt';
+  perform public.move_application(
+    '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1', 'screening');
+  assert (select stage from public.applications where id = '30000000-0000-0000-0000-0000000000a1') = 'screening',
+         'admin moved A''s card';
+  begin
+    perform public.move_application(
+      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1', 'hired');
+  exception when raise_exception then error_code := sqlerrm;
+  end;
+  if error_code is distinct from 'card_not_found' then
+    raise exception 'FAIL 8c: admin moved A''s card while acting for B (got %)', coalesce(error_code, 'no error');
+  end if;
+  raise notice 'OK 8c: admin can move a card only for the customer it belongs to';
+end $$;
+
 -- ---------------------------------------------------------------- anon
 reset role;
 set local role anon;
@@ -137,6 +202,16 @@ do $$ begin
   assert (select count(*) from public.jobs) = 0, 'anon sees nothing';
   assert (select count(*) from public.profiles) = 0, 'anon sees no profiles';
   raise notice 'OK 9: signed-out users see nothing';
+end $$;
+
+do $$ declare blocked boolean := false; begin
+  begin
+    perform public.move_application(
+      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1', 'hired');
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL 9b: a signed-out user could call move_application'; end if;
+  raise notice 'OK 9b: signed-out users cannot move cards';
 end $$;
 
 -- ---------------------------------------------------------------- storage

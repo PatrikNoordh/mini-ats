@@ -44,13 +44,13 @@ Triggers and checks raise the code as the exception message:
 raise exception 'job_candidate_customer_mismatch';
 ```
 
-The data layer maps the message to an `AppError` with `fromDbError()` in `src/lib/errors.ts`. The two triggers in the first migration raise `job_candidate_customer_mismatch` and `application_not_found` (ATS-5, AC4b), and `supabase/tests/rls_test.sql` checks both codes.
+The data layer maps the message to an `AppError` with `fromDbError()` in `src/lib/errors.ts`. The two triggers in the first migration raise `job_candidate_customer_mismatch` and `application_not_found` (ATS-5, AC4b), and the `move_application` function raises `card_not_found` (ATS-12). `supabase/tests/rls_test.sql` checks all three codes.
 
 ## Codes
 
 | Code                              | Where                         | Meaning                                                   |
 | --------------------------------- | ----------------------------- | --------------------------------------------------------- |
-| `card_not_found`                  | applications                  | The card does not exist for this customer                 |
+| `card_not_found`                  | `move_application` (function) | The card does not exist for this customer                 |
 | `job_not_found`                   | jobs                          | The job does not exist for this customer                  |
 | `candidate_not_found`             | candidates                    | The candidate does not exist for this customer            |
 | `email_exists`                    | profiles, `admin-create-user` | An account with that email already exists                 |

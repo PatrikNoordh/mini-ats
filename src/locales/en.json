@@ -135,7 +135,17 @@
     "moveFailed": "Could not move the card. The change has been undone.",
     "daysInStage": "Days in stage",
     "days_one": "{{count, number}} d",
-    "days_other": "{{count, number}} d"
+    "days_other": "{{count, number}} d",
+    "cardLabel_one": "{{name}}, {{job}}, {{count, number}} day in stage",
+    "cardLabel_other": "{{name}}, {{job}}, {{count, number}} days in stage",
+    "dragInstructions": "Press Enter to open the candidate. Press space to pick up the card, move it with the left and right arrow keys and press space again to drop it. Escape cancels the move.",
+    "announce": {
+      "pickedUp": "Picked up {{name}} from {{stage}}.",
+      "over": "{{name}} is over {{stage}}.",
+      "notOver": "{{name}} is not over a column.",
+      "dropped": "Dropped {{name}} in {{stage}}.",
+      "cancelled": "Move cancelled. {{name}} stays in {{stage}}."
+    }
   },
   "candidateSheet": {
     "added": "Added {{date}}",
