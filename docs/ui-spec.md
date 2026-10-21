@@ -58,6 +58,8 @@ An application links one candidate to one job and is one card on the kanban boar
 - Every customer screen (jobs, candidates, pipeline) shows and creates data for the active customer only.
 - An admin with no customer chosen sees "Välj en kund att arbeta som" with one card per customer instead of data. Each card shows the customer's number of open jobs, all fetched in one request. The chooser has loading, empty and error states, and a failed count shows an error with a retry while the customers can still be picked.
 - Switching customer starts the page afresh, so no open panel or dialog from the previous customer carries over.
+- A reload in the same tab keeps the admin's chosen customer (`sessionStorage`, stored with the admin's own id). The stored id is used only once it is in the admin's customer list; until the list is in, the page shows a loading state, and an id that is not in it is dropped. Logout and leaving customer mode forget the choice. A customer account never reads or writes it.
+- When the customer list fails, the header picker shows an error with a retry instead of an empty list.
 - An admin acting for a customer sees a banner: "Du arbetar som [företagsnamn]" with a button to leave.
 
 ## Pages

@@ -1,5 +1,6 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -9,11 +10,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useActiveCustomer } from "@/contexts/ActiveCustomerContext";
+import { useProfiles } from "@/hooks/useProfiles";
 
 export function CustomerPicker() {
   const { t } = useTranslation();
   const { customers, customerId, setCustomerId } = useActiveCustomer();
+  const profiles = useProfiles();
   const id = useId();
+  if (profiles.isError) {
+    return (
+      <div role="alert" className="flex min-w-0 items-center gap-2 text-sm text-destructive">
+        {/* Visible from sm, read by screen readers at every width. */}
+        <span className="sr-only sm:not-sr-only">{t("shell.customersFailed")}</span>
+        <Button variant="outline" size="sm" onClick={() => profiles.refetch()}>
+          {t("common.retry")}
+        </Button>
+      </div>
+    );
+  }
   return (
     <div className="flex min-w-0 items-center gap-2">
       {/* Visible from sm, read by screen readers at every width. */}

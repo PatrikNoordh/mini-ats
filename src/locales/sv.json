@@ -100,7 +100,8 @@
     "chooseCustomerPlaceholder": "Välj kund…",
     "actingAs": "Du arbetar som <bold>{{company}}</bold>. Allt du skapar hamnar hos kunden.",
     "leaveCustomer": "Lämna kundläge",
-    "signOutFailed": "Kunde inte logga ut."
+    "signOutFailed": "Kunde inte logga ut.",
+    "customersFailed": "Kunde inte hämta kunderna."
   },
   "nav": {
     "pipeline": "Pipeline",

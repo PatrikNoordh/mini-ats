@@ -3,7 +3,7 @@ import { Fragment, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState, ErrorState } from "@/components/States";
+import { EmptyState, ErrorState, LoadingRows } from "@/components/States";
 import { useActiveCustomer } from "@/contexts/ActiveCustomerContext";
 import { CHOOSER_LOADING_CARDS } from "@/lib/constants";
 import { useOpenJobCounts, useProfiles } from "@/hooks/useProfiles";
@@ -103,8 +103,10 @@ function CustomerChooser() {
  */
 export function CustomerGate({ children }: { children: (customerId: string) => ReactNode }) {
   const { t } = useTranslation();
-  const { customerId } = useActiveCustomer();
+  const { customerId, isRestoring } = useActiveCustomer();
   if (customerId) return <Fragment key={customerId}>{children(customerId)}</Fragment>;
+  // After a reload, the admin's earlier choice waits for the customer list: no chooser flash.
+  if (isRestoring) return <LoadingRows />;
   return (
     <div className="mx-auto max-w-3xl rounded-xl border border-dashed bg-card p-6 text-center md:p-8">
       <h2 className="text-lg font-bold">{t("gate.title")}</h2>
