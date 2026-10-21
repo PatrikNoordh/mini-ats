@@ -61,3 +61,5 @@ jobs:
           done
       - name: RLS checks
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_test.sql
+      - name: Concurrent card moves
+        run: bash supabase/tests/move_application_concurrency.sh
