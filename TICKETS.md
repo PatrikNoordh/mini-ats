@@ -256,6 +256,10 @@ Tracked in #36.
 
 Tracked in #40.
 
+### ATS-25 · fix · Keep an admin's chosen customer across reloads
+
+Tracked in #43.
+
 **Checkpoint — ship version 1 to the reviewers:** admin login, customer login and repo link, plus a short note on the status.
 
 ---
