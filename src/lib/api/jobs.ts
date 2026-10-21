@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Job, JobStatus, JobWithCount } from "@/types";
+import { PG_FOREIGN_KEY_VIOLATION } from "@/lib/constants";
 import { AppError } from "@/lib/errors";
 import { jobStatusSchema, type JobInput } from "@/lib/validation";
 
@@ -96,4 +97,22 @@ export function updateJob(customerId: string, id: string, input: JobInput): Prom
 /** Closes or reopens a job. */
 export function setJobStatus(customerId: string, id: string, status: JobStatus): Promise<Job> {
   return patchJob(customerId, id, { status });
+}
+
+/**
+ * Deletes one of the customer's jobs. The database refuses while candidates are linked to it
+ * (foreign key on applications.job_id), so no cards on the board disappear with the job.
+ */
+export async function deleteJob(customerId: string, id: string): Promise<void> {
+  const { data, error } = await supabase
+    .from("jobs")
+    .delete()
+    .eq("id", id)
+    .eq("customer_id", customerId)
+    .select("id")
+    .maybeSingle();
+  if (error) {
+    throw error.code === PG_FOREIGN_KEY_VIOLATION ? new AppError("job_has_candidates") : error;
+  }
+  if (!data) throw new AppError("job_not_found");
 }

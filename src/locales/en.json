@@ -36,7 +36,9 @@
     "save": "Save",
     "saving": "Saving…",
     "close": "Close",
-    "loadError": "Something went wrong while loading the data."
+    "loadError": "Something went wrong while loading the data.",
+    "delete": "Delete",
+    "deleting": "Deleting…"
   },
   "language": {
     "label": "Language",
@@ -70,7 +72,8 @@
     "application_not_found": "The application could not be found.",
     "already_linked": "The candidate is already linked to this job.",
     "links_failed": "The candidate was saved, but could not be linked to the jobs. Open the candidate and try again.",
-    "unknown": "Something went wrong. Please try again."
+    "unknown": "Something went wrong. Please try again.",
+    "job_has_candidates": "This job has candidates. Remove them under Candidates first, so no cards on the board are deleted by mistake."
   },
   "validation": {
     "name_required": "Enter a name.",
@@ -195,7 +198,12 @@
     "newLinksHint": "New links start in the New stage.",
     "existingLinksHint": "Existing links cannot be removed here.",
     "created": "The candidate has been added.",
-    "updated": "The candidate has been updated."
+    "updated": "The candidate has been updated.",
+    "deleteTitle": "Delete the candidate?",
+    "deleteDescription": "{{name}} will be deleted for good, with all their cards on the board.",
+    "deleteLinks_one": "The candidate is linked to {{count, number}} job.",
+    "deleteLinks_other": "The candidate is linked to {{count, number}} jobs.",
+    "deleted": "The candidate is deleted."
   },
   "jobs": {
     "title": "Jobs",
@@ -225,7 +233,10 @@
     "description": "Description",
     "created": "The job has been created.",
     "updated": "The job has been updated.",
-    "saveFailed": "Could not save the job."
+    "saveFailed": "Could not save the job.",
+    "deleteTitle": "Delete the job?",
+    "deleteDescription": "“{{title}}” will be deleted for good.",
+    "deleted": "The job is deleted."
   },
   "accounts": {
     "title": "Accounts",

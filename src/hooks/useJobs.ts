@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createJob, listJobs, setJobStatus, updateJob } from "@/lib/api/jobs";
+import { createJob, deleteJob, listJobs, setJobStatus, updateJob } from "@/lib/api/jobs";
 import { queryKeys } from "@/lib/stages";
 import type { JobInput } from "@/lib/validation";
 import type { JobStatus } from "@/types";
@@ -39,6 +39,19 @@ export function useSetJobStatus(customerId: string | null) {
       setJobStatus(customerId!, id, status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });
+      qc.invalidateQueries({ queryKey: queryKeys.openJobCounts() });
+    },
+  });
+}
+
+export function useDeleteJob(customerId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteJob(customerId!, id),
+    // Also after a refusal: the job's candidate count on screen was out of date.
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });
+      qc.invalidateQueries({ queryKey: queryKeys.applications(customerId) });
       qc.invalidateQueries({ queryKey: queryKeys.openJobCounts() });
     },
   });

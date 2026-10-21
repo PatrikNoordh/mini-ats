@@ -36,7 +36,9 @@
     "save": "Spara",
     "saving": "Sparar…",
     "close": "Stäng",
-    "loadError": "Något gick fel när data hämtades."
+    "loadError": "Något gick fel när data hämtades.",
+    "delete": "Ta bort",
+    "deleting": "Tar bort…"
   },
   "language": {
     "label": "Språk",
@@ -70,7 +72,8 @@
     "application_not_found": "Ansökan hittades inte.",
     "already_linked": "Kandidaten är redan kopplad till det här jobbet.",
     "links_failed": "Kandidaten sparades, men kunde inte kopplas till jobben. Öppna kandidaten och försök igen.",
-    "unknown": "Något gick fel. Försök igen."
+    "unknown": "Något gick fel. Försök igen.",
+    "job_has_candidates": "Jobbet har kandidater. Ta bort dem under Kandidater först, så att inga kort på tavlan tas bort av misstag."
   },
   "validation": {
     "name_required": "Ange namn.",
@@ -195,7 +198,12 @@
     "newLinksHint": "Nya kopplingar hamnar i steget Ny.",
     "existingLinksHint": "Befintliga kopplingar kan inte tas bort här.",
     "created": "Kandidaten är tillagd.",
-    "updated": "Kandidaten är uppdaterad."
+    "updated": "Kandidaten är uppdaterad.",
+    "deleteTitle": "Ta bort kandidaten?",
+    "deleteDescription": "{{name}} tas bort för gott, med alla sina kort på tavlan.",
+    "deleteLinks_one": "Kandidaten är kopplad till {{count, number}} jobb.",
+    "deleteLinks_other": "Kandidaten är kopplad till {{count, number}} jobb.",
+    "deleted": "Kandidaten är borttagen."
   },
   "jobs": {
     "title": "Jobb",
@@ -225,7 +233,10 @@
     "description": "Beskrivning",
     "created": "Jobbet är skapat.",
     "updated": "Jobbet är uppdaterat.",
-    "saveFailed": "Kunde inte spara jobbet."
+    "saveFailed": "Kunde inte spara jobbet.",
+    "deleteTitle": "Ta bort jobbet?",
+    "deleteDescription": "”{{title}}” tas bort för gott.",
+    "deleted": "Jobbet är borttaget."
   },
   "accounts": {
     "title": "Konton",

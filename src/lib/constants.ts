@@ -53,3 +53,5 @@ export const MAX_NOTES_LENGTH = 5000;
 
 /** Postgres error code for a unique constraint violation, for example a candidate linked twice. */
 export const PG_UNIQUE_VIOLATION = "23505";
+/** Postgres error code for a foreign key violation, for example a job that still has candidates. */
+export const PG_FOREIGN_KEY_VIOLATION = "23503";
