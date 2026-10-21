@@ -264,4 +264,72 @@ do $$ declare error_code text; begin
   raise notice 'OK 13: an assessment needs an existing application (application_not_found)';
 end $$;
 
+-- ---------------------------------------------------------------- deletes (ATS-26)
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}', true);
+
+do $$ begin
+  delete from public.jobs where id = '10000000-0000-0000-0000-0000000000a1';
+  delete from public.candidates where id = '20000000-0000-0000-0000-0000000000a1';
+  reset role;
+  assert exists (select 1 from public.jobs where id = '10000000-0000-0000-0000-0000000000a1'), 'A job survived';
+  assert exists (select 1 from public.candidates where id = '20000000-0000-0000-0000-0000000000a1'), 'A candidate survived';
+  raise notice 'OK 14: customer B cannot delete customer A''s job or candidate (0 rows affected)';
+end $$;
+
+set local role authenticated;
+do $$ declare blocked boolean := false; begin
+  begin
+    delete from public.jobs where id = '10000000-0000-0000-0000-0000000000b1';
+  exception when foreign_key_violation then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL 15: B deleted a job that still has a candidate'; end if;
+  assert exists (select 1 from public.applications where job_id = '10000000-0000-0000-0000-0000000000b1'),
+         'the card survived';
+  raise notice 'OK 15: a job with candidates cannot be deleted (foreign_key_violation)';
+end $$;
+
+do $$ declare empty_job uuid; begin
+  insert into public.jobs (customer_id, title)
+  values ('00000000-0000-0000-0000-0000000000b1', 'Empty job') returning id into empty_job;
+  delete from public.jobs where id = empty_job;
+  assert not exists (select 1 from public.jobs where id = empty_job), 'empty job deleted';
+  raise notice 'OK 16: customer can delete own job without candidates';
+end $$;
+
+do $$ begin
+  delete from public.candidates where id = '20000000-0000-0000-0000-0000000000b1';
+  assert not exists (select 1 from public.candidates where id = '20000000-0000-0000-0000-0000000000b1'), 'candidate deleted';
+  assert not exists (select 1 from public.applications where candidate_id = '20000000-0000-0000-0000-0000000000b1'),
+         'their applications deleted';
+  delete from public.jobs where id = '10000000-0000-0000-0000-0000000000b1';
+  assert not exists (select 1 from public.jobs where id = '10000000-0000-0000-0000-0000000000b1'),
+         'the job can be deleted once it has no candidates';
+  raise notice 'OK 17: deleting a candidate removes their cards, and then the job can be deleted';
+end $$;
+
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
+do $$ begin
+  delete from public.candidates where id = '20000000-0000-0000-0000-0000000000a1';
+  assert not exists (select 1 from public.candidates where id = '20000000-0000-0000-0000-0000000000a1'), 'admin deleted';
+  raise notice 'OK 18: admin can delete a customer''s candidate';
+end $$;
+
+-- Deleting an account cascades to its jobs and applications in one statement. The job foreign
+-- key checks at the end of the statement, so this must still work.
+reset role;
+do $$ declare job uuid; candidate uuid; begin
+  insert into public.jobs (customer_id, title)
+  values ('00000000-0000-0000-0000-0000000000a1', 'Job A2') returning id into job;
+  insert into public.candidates (customer_id, full_name)
+  values ('00000000-0000-0000-0000-0000000000a1', 'Cand A2') returning id into candidate;
+  insert into public.applications (job_id, candidate_id) values (job, candidate);
+  delete from auth.users where id = '00000000-0000-0000-0000-0000000000a1';
+  assert not exists (select 1 from public.jobs where customer_id = '00000000-0000-0000-0000-0000000000a1'), 'jobs gone';
+  assert not exists (select 1 from public.applications where customer_id = '00000000-0000-0000-0000-0000000000a1'),
+         'applications gone';
+  raise notice 'OK 19: deleting an account still removes its jobs and cards';
+end $$;
+
 rollback;
