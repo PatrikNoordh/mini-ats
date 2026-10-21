@@ -80,7 +80,7 @@ function Candidates({ customerId }: { customerId: string }) {
             <TableBody>
               {list.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell>
+                  <TableCell className="wrap-anywhere">
                     <button
                       className="font-semibold text-primary hover:underline"
                       onClick={() => {
@@ -92,7 +92,7 @@ function Candidates({ customerId }: { customerId: string }) {
                     </button>
                     <div className="text-xs text-muted-foreground sm:hidden">{c.email}</div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">{c.email}</TableCell>
+                  <TableCell className="hidden wrap-anywhere sm:table-cell">{c.email}</TableCell>
                   <TableCell>
                     {c.linkedin_url ? (
                       <a
