@@ -309,3 +309,4 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
 - [ ] The advisory lock in `move_application` was verified by hand with two sessions; no automated test runs two concurrent moves into one column — `supabase/tests/` (PR #38, ATS-12)
+- [ ] The router parses `?q=` before the schema: `?q=1e3` becomes "1000", `?q=12.50` becomes "12.5", and `?q=true` or `?q=null` drops the search. A custom `parseSearch` that keeps `q` as raw text would fix all of them — `src/routes/_authenticated.pipeline.tsx` (PR #39, ATS-13)
