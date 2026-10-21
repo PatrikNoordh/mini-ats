@@ -67,7 +67,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 2. **Edge Functions read with the caller's JWT.** Use the service role key only for the one privileged action the function exists for (creating a user, saving an assessment). Never use it to read data on behalf of a user.
 3. **Public sign-up is disabled.** Accounts are only created by an admin through the `admin-create-user` Edge Function, which checks that the caller is an admin before doing anything.
 4. **`profiles.role` is the role that counts.** RLS reads it through `public.is_admin()`, and the app reads it from the user's own profile. `app_metadata.role` is set when the account is created so the trigger can copy it. Never read the role from `user_metadata`.
-5. **Every table has Row Level Security.** Customers see only rows where `customer_id` is their own id. Admins see everything through `public.is_admin()`. A new table without RLS policies is a bug.
+5. **Every table has Row Level Security.** Customers see only rows where `customer_id` is their own id. Admins see everything through `public.is_admin()`. A new table without RLS policies is a bug. Table privileges are explicit too: `anon` has none, and a new table gets no privileges until its migration grants `authenticated` only the operations the app uses (ATS-22).
 6. **Do not rely on the frontend for access control.** Hiding a button is UX, not security. RLS is the security.
 7. **The database sets `customer_id` where it can.** `applications.customer_id` comes from the job and `cv_assessments.customer_id` from the application, both via triggers. Never trust a `customer_id` sent from the client for those tables.
 8. **`cv_assessments` is read-only for clients.** Only `assess-cv` writes to it.

@@ -38,5 +38,5 @@ $$;
 grant usage on schema auth, storage, public to anon, authenticated, service_role;
 grant execute on function auth.uid() to anon, authenticated, service_role;
 grant all on storage.objects to authenticated, service_role;
--- Supabase grants table privileges to these roles by default; RLS does the filtering.
-alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+-- No default table privileges: the migrations grant them explicitly (ATS-22), so CI tests the
+-- same privileges as the project.
