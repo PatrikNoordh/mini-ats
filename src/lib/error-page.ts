@@ -8,15 +8,31 @@ import { languageFromCookies } from "./language";
  */
 export const THEME_TOKENS = themeCss.match(/:root\s*\{[^}]*\}/)?.[0] ?? "";
 
+const HTML_ENTITIES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
+/** Escapes text for use in HTML content and quoted attributes. */
+export function escapeHtml(text: string): string {
+  return text.replace(/[&<>"']/g, (char) => HTML_ENTITIES[char] ?? char);
+}
+
 /** Plain HTML error page for server failures, in the language from the request's cookie. */
 export function renderErrorPage(request?: Request): string {
   const language = languageFromCookies(request?.headers.get("cookie"));
-  const t = getT(language);
+  const translate = getT(language);
+  // Translations are plain text, so every one is escaped before it goes into the HTML.
+  const t = (key: "title" | "description" | "retry" | "home") =>
+    escapeHtml(translate(`errorPage.${key}`));
   return `<!doctype html>
 <html lang="${language}">
   <head>
     <meta charset="utf-8" />
-    <title>${t("errorPage.title")}</title>
+    <title>${t("title")}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       ${THEME_TOKENS}
@@ -32,11 +48,11 @@ export function renderErrorPage(request?: Request): string {
   </head>
   <body>
     <div class="card">
-      <h1>${t("errorPage.title")}</h1>
-      <p>${t("errorPage.description")}</p>
+      <h1>${t("title")}</h1>
+      <p>${t("description")}</p>
       <div class="actions">
-        <button class="primary" onclick="location.reload()">${t("errorPage.retry")}</button>
-        <a class="secondary" href="/">${t("errorPage.home")}</a>
+        <button class="primary" onclick="location.reload()">${t("retry")}</button>
+        <a class="secondary" href="/">${t("home")}</a>
       </div>
     </div>
   </body>
