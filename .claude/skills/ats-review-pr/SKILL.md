@@ -135,6 +135,8 @@ If reviewing a real PR, ask the developer before posting the review as a comment
 gh pr comment <number> --repo "$REPO" --body "<review>"
 ```
 
+When the status is ✅ Approved, the same yes also ticks the issue's ACs that the review marked ✅, if they are still `- [ ]`. Edit the body through a file in the scratchpad (`gh issue edit <n> --body-file`), and say which ACs were ticked. Never tick an AC the review marked ⚠️ or ❌.
+
 ## Severity
 
 - 🔴 **Blocker:** security rule broken, missing RLS, failing CI, type error, AC claimed but not implemented. Do not merge

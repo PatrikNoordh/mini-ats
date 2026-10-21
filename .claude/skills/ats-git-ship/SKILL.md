@@ -142,10 +142,13 @@ gh pr create --repo "$REPO" --base main --title "<type> [ATS-<N>] <Title Case Su
   3. If the migration changes tables, policies or functions, ask the developer to run `supabase/tests/rls_test.sql` in the SQL Editor against the project, and add the result to the PR's Validation section
 - Tell the developer to wait for both CI jobs (app and RLS) and the Vercel preview before merging
 - Suggest running `ats-review-pr <number>` before merging
-- Tick the completed ACs on the issue only if the developer says yes:
+- Always ask: "Tick AC1–AC<n> on #<number> now that the PR covers them?" Tick them only after a yes, and only the ACs the PR marks `- [x]`:
   ```bash
-  gh issue edit <number> --repo "$REPO" --body "<body with verified items changed to - [x]>"
+  gh issue view <number> --repo "$REPO" --json body -q .body > "$SCRATCH/body<number>.md"
+  # change the verified items to - [x] in "$SCRATCH/new<number>.md", then:
+  gh issue edit <number> --repo "$REPO" --body-file "$SCRATCH/new<number>.md"
   ```
+  If the answer is no, say that `ats-review-pr` ticks them when it approves.
 
 ---
 
@@ -159,3 +162,4 @@ gh pr create --repo "$REPO" --base main --title "<type> [ATS-<N>] <Title Case Su
 - [ ] Push succeeded, no force-push
 - [ ] PR to `main` with the template filled in and `Closes #<number>` (not for `ats/epic-<N>-review`)
 - [ ] PR URL shown
+- [ ] Asked whether to tick the issue's ACs (not for `ats/epic-<N>-review`)
