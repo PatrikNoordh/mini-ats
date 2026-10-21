@@ -72,8 +72,8 @@ An application links one candidate to one job and is one card on the kanban boar
    - Filters above the board: a job dropdown (all jobs or one job) and a name search that filters as you type. Both live in the URL as `?job=<job id>&q=<text>`. A hand-typed numeric search such as `?q=123` is kept as text, and each filter has a visually hidden label.
    - A clear empty state when no cards match.
    - The board scrolls horizontally on mobile.
-3. **`/jobs`:** table with title, location, status and number of candidates. Create and edit in a dialog. Close and reopen a job.
-4. **`/candidates`:** table with name, email and LinkedIn. Create and edit in a dialog: name, email, phone, LinkedIn URL (must be a linkedin.com URL), notes, and one or more jobs to link to. A new link starts in "Ny".
+3. **`/jobs`:** table with title, location, status and number of candidates. Create and edit in a dialog. Close and reopen a job. Delete a job from its edit dialog, after a confirm, only while no candidates are linked to it: otherwise a toast says to remove its candidates under Kandidater first (`job_has_candidates`), and the database refuses too.
+4. **`/candidates`:** table with name, email and LinkedIn. Create and edit in a dialog: name, email, phone, LinkedIn URL (must be a linkedin.com URL), notes, and one or more jobs to link to. A new link starts in "Ny". Delete a candidate from its edit dialog, after a confirm that names them and how many jobs they are linked to. Their cards on the board and their assessments go with them.
 5. **`/admin/accounts`:** admin only. Table with name, company, email, role and created date. A dialog to create an account: role, name, company, email and a temporary password.
 
 ## Layout and design
