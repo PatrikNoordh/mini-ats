@@ -20,8 +20,8 @@ export function useMoveApplication(customerId: string | null) {
   const mutationKey = ["moveApplication", customerId] as const;
   return useMutation({
     mutationKey,
-    // Offline, the default pauses the move until the network is back while the board already
-    // shows the card moved. Run it at once instead, so it fails and the card goes back.
+    // Already the app's default for mutations (src/lib/query-client.ts). Kept here because the
+    // board shows the card moved at once: a paused move would leave it in the wrong column.
     networkMode: "always",
     mutationFn: ({ id, stage }: { id: string; stage: Stage }) =>
       moveApplication(customerId!, id, stage),
