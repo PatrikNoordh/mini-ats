@@ -8,8 +8,10 @@ import {
   MAX_JOB_TITLE_LENGTH,
   MAX_NAME_LENGTH,
   MAX_NOTES_LENGTH,
+  MAX_PASSWORD_BYTES,
   MAX_PHONE_LENGTH,
   MAX_URL_LENGTH,
+  MIN_PASSWORD_LENGTH,
 } from "@/lib/constants";
 import { isLinkedInUrl } from "@/lib/stages";
 
@@ -73,3 +75,28 @@ export const candidateInputSchema = z.object({
 });
 
 export type CandidateInput = z.infer<typeof candidateInputSchema>;
+
+/** Length in bytes when encoded as UTF-8, the way Supabase Auth stores a password. */
+export function utf8Length(value: string): number {
+  return new TextEncoder().encode(value).length;
+}
+
+const requiredName = (message: ValidationKey) =>
+  z.string().trim().min(1, message).max(MAX_NAME_LENGTH, "too_long");
+
+/**
+ * The new-account form. The same rules as `newAccountSchema` in admin-create-user, so every
+ * error the function would return is shown under its field first.
+ */
+export const accountInputSchema = z.object({
+  role: roleSchema,
+  full_name: requiredName("name_required"),
+  company_name: requiredName("company_required"),
+  email: z.string().trim().max(MAX_EMAIL_LENGTH, "too_long").email("email_invalid"),
+  password: z
+    .string()
+    .min(MIN_PASSWORD_LENGTH, "password_too_short")
+    .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES, "password_too_long"),
+});
+
+export type AccountInput = z.infer<typeof accountInputSchema>;

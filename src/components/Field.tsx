@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
-import { MIN_PASSWORD_LENGTH } from "@/lib/constants";
+import { MAX_PASSWORD_BYTES, MIN_PASSWORD_LENGTH } from "@/lib/constants";
 import type { ValidationKey } from "@/lib/validation";
 
 export type FormErrors = Partial<
@@ -63,7 +63,7 @@ export function Field({
       )}
       {error && (
         <p id={errorId} className="text-xs text-destructive">
-          {t(`validation.${error}`, { min: MIN_PASSWORD_LENGTH })}
+          {t(`validation.${error}`, { min: MIN_PASSWORD_LENGTH, max: MAX_PASSWORD_BYTES })}
         </p>
       )}
     </div>

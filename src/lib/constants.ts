@@ -15,8 +15,11 @@ export const DRAG_TOUCH_TOLERANCE_PX = 8;
 
 /** Minimum length of a password set by an admin. Same as in the admin-create-user function. */
 export const MIN_PASSWORD_LENGTH = 8;
-/** Supabase Auth hashes passwords with bcrypt, which only reads 72 bytes. Same as admin-create-user. */
-export const MAX_PASSWORD_LENGTH = 72;
+/**
+ * Supabase Auth hashes passwords with bcrypt, which only reads 72 bytes of UTF-8, so å, ä and ö
+ * count as two. Same as admin-create-user.
+ */
+export const MAX_PASSWORD_BYTES = 72;
 /** The longest email address SMTP allows. Same as admin-create-user. */
 export const MAX_EMAIL_LENGTH = 254;
 /** Longest name or company name for an account. Same as admin-create-user. */

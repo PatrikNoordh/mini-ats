@@ -22,11 +22,11 @@ import { useCreateProfile } from "@/hooks/useProfiles";
 import {
   MAX_EMAIL_LENGTH,
   MAX_NAME_LENGTH,
-  MAX_PASSWORD_LENGTH,
+  MAX_PASSWORD_BYTES,
   MIN_PASSWORD_LENGTH,
 } from "@/lib/constants";
 import { errorCode } from "@/lib/errors";
-import { isEmail, roleSchema } from "@/lib/validation";
+import { accountInputSchema, fieldErrors, roleSchema } from "@/lib/validation";
 import type { Role } from "@/types";
 
 const empty = { full_name: "", company_name: "", email: "", password: "" };
@@ -56,15 +56,11 @@ export function AccountDialog({
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const errs: FormErrors = {};
-    if (!form.full_name.trim()) errs.full_name = "name_required";
-    if (!form.company_name.trim()) errs.company_name = "company_required";
-    if (!isEmail(form.email)) errs.email = "email_invalid";
-    if (form.password.length < MIN_PASSWORD_LENGTH) errs.password = "password_too_short";
-    setErrors(errs);
-    if (Object.keys(errs).length) return;
+    const parsed = accountInputSchema.safeParse({ ...form, role });
+    setErrors(parsed.success ? {} : fieldErrors(parsed.error));
+    if (!parsed.success) return;
     try {
-      await create.mutateAsync({ ...form, email: form.email.trim(), role });
+      await create.mutateAsync(parsed.data);
       toast.success(t("accountDialog.created"));
       onOpenChange(false);
     } catch (err) {
@@ -148,7 +144,8 @@ export function AccountDialog({
                 {...control}
                 type="text"
                 autoComplete="off"
-                maxLength={MAX_PASSWORD_LENGTH}
+                // Characters, so never stricter than the byte limit the schema checks.
+                maxLength={MAX_PASSWORD_BYTES}
                 value={form.password}
                 onChange={set("password")}
               />
