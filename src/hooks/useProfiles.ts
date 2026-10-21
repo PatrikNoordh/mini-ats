@@ -23,6 +23,10 @@ export function useCreateProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateProfileInput) => createProfile(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.profiles() }),
+    // A new customer needs a count too, or its chooser card says the count is unavailable.
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.profiles() });
+      qc.invalidateQueries({ queryKey: queryKeys.openJobCounts() });
+    },
   });
 }
