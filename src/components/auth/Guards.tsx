@@ -18,7 +18,9 @@ export function FullPageSpinner() {
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
-  const href = useRouterState({ select: (s) => s.location.href });
+  // The page on screen, not a navigation in progress: this guard stays mounted while the router
+  // moves to /login, and would otherwise send /login itself as the page to return to.
+  const href = useRouterState({ select: (s) => (s.resolvedLocation ?? s.location).href });
   if (isLoading) return <FullPageSpinner />;
   // Login sends the user back to the page they asked for.
   if (!user) return <Navigate to="/login" search={{ redirect: href }} replace />;

@@ -58,6 +58,19 @@ describe("?redirect= on the login page", () => {
     expect(readRedirect(location.href)).toBe(target);
   });
 
+  it("brings the pipeline filters back unchanged", () => {
+    // RequireAuth sends the router's own href for the page, as it was typed.
+    const page = loginRouter("/pipeline?job=c1_job1&q=Anna%20Berg").latestLocation.href;
+    const login = loginRouter().buildLocation({ to: "/login", search: { redirect: page } });
+    const target = readRedirect(login.href);
+    expect(target).toBeDefined();
+    const router = loginRouter(target);
+    expect(router.matchRoutes(router.latestLocation).at(-1)?.search).toMatchObject({
+      job: "c1_job1",
+      q: "Anna Berg",
+    });
+  });
+
   it("drops a URL to another site", () => {
     expect(readRedirect("/login?redirect=https%3A%2F%2Fevil.test")).toBeUndefined();
     expect(readRedirect("/login?redirect=%2F%2Fevil.test")).toBeUndefined();
