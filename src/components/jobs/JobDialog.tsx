@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, type FormErrors } from "@/components/Field";
+import { Field } from "@/components/Field";
 import { useCreateJob, useUpdateJob } from "@/hooks/useJobs";
 import {
   MAX_JOB_DESCRIPTION_LENGTH,
@@ -19,7 +19,7 @@ import {
   MAX_JOB_TITLE_LENGTH,
 } from "@/lib/constants";
 import { errorCode } from "@/lib/errors";
-import { fieldErrors, jobInputSchema } from "@/lib/validation";
+import { fieldErrors, jobInputSchema, type FormErrors, type JobInput } from "@/lib/validation";
 import type { Job } from "@/types";
 
 export function JobDialog({
@@ -39,7 +39,7 @@ export function JobDialog({
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<FormErrors<JobInput>>({});
 
   useEffect(() => {
     if (!open) return;
@@ -52,7 +52,7 @@ export function JobDialog({
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const parsed = jobInputSchema.safeParse({ title, location, description });
-    setErrors(parsed.success ? {} : fieldErrors(parsed.error));
+    setErrors(parsed.success ? {} : fieldErrors(jobInputSchema, parsed.error));
     if (!parsed.success) return;
     try {
       if (job) await update.mutateAsync({ id: job.id, input: parsed.data });

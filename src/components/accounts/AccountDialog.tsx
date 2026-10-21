@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Field, type FormErrors } from "@/components/Field";
+import { Field } from "@/components/Field";
 import { useCreateProfile } from "@/hooks/useProfiles";
 import {
   MAX_EMAIL_LENGTH,
@@ -26,7 +26,13 @@ import {
   MIN_PASSWORD_LENGTH,
 } from "@/lib/constants";
 import { errorCode } from "@/lib/errors";
-import { accountInputSchema, fieldErrors, roleSchema } from "@/lib/validation";
+import {
+  accountInputSchema,
+  fieldErrors,
+  roleSchema,
+  type AccountInput,
+  type FormErrors,
+} from "@/lib/validation";
 import type { Role } from "@/types";
 
 const empty = { full_name: "", company_name: "", email: "", password: "" };
@@ -42,7 +48,7 @@ export function AccountDialog({
   const create = useCreateProfile();
   const [role, setRole] = useState<Role>("customer");
   const [form, setForm] = useState(empty);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<FormErrors<AccountInput>>({});
   const emailRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (open) {
@@ -57,7 +63,7 @@ export function AccountDialog({
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const parsed = accountInputSchema.safeParse({ ...form, role });
-    setErrors(parsed.success ? {} : fieldErrors(parsed.error));
+    setErrors(parsed.success ? {} : fieldErrors(accountInputSchema, parsed.error));
     if (!parsed.success) return;
     try {
       await create.mutateAsync(parsed.data);
@@ -82,7 +88,7 @@ export function AccountDialog({
           <DialogTitle>{t("accountDialog.title")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <Field id="a-role" label={t("accountDialog.role")}>
+          <Field id="a-role" label={t("accountDialog.role")} error={errors.role}>
             {(control) => (
               <Select
                 value={role}

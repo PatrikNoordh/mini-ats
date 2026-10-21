@@ -14,7 +14,7 @@ describe("account form", () => {
 
   function errorsFor(values: Partial<typeof input>) {
     const result = accountInputSchema.safeParse({ ...input, ...values });
-    return result.success ? {} : fieldErrors(result.error);
+    return result.success ? {} : fieldErrors(accountInputSchema, result.error);
   }
 
   it("trims the names and email but not the password", () => {

@@ -4,22 +4,6 @@ import { Label } from "@/components/ui/label";
 import { MAX_PASSWORD_BYTES, MIN_PASSWORD_LENGTH } from "@/lib/constants";
 import type { ValidationKey } from "@/lib/validation";
 
-export type FormErrors = Partial<
-  Record<
-    | "full_name"
-    | "email"
-    | "phone"
-    | "linkedin_url"
-    | "company_name"
-    | "password"
-    | "title"
-    | "location"
-    | "description"
-    | "notes",
-    ValidationKey
-  >
->;
-
 /** The props that tie a control to its label, hint and error. Spread them on the control. */
 export interface FieldControlProps {
   id: string;

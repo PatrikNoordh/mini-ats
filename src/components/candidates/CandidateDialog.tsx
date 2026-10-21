@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Field, type FormErrors } from "@/components/Field";
+import { Field } from "@/components/Field";
 import { ErrorState, LoadingRows } from "@/components/States";
 import { useJobs } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
@@ -27,7 +27,12 @@ import {
 } from "@/lib/constants";
 import { errorCode } from "@/lib/errors";
 import { cn } from "@/lib/utils";
-import { candidateInputSchema, fieldErrors } from "@/lib/validation";
+import {
+  candidateInputSchema,
+  fieldErrors,
+  type CandidateInput,
+  type FormErrors,
+} from "@/lib/validation";
 import type { Candidate } from "@/types";
 
 const empty = { full_name: "", email: "", phone: "", linkedin_url: "", notes: "" };
@@ -50,7 +55,7 @@ export function CandidateDialog({
   const [form, setForm] = useState(empty);
   // Jobs picked in this dialog. The existing links come from the applications, not from here.
   const [newJobIds, setNewJobIds] = useState<string[]>([]);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<FormErrors<CandidateInput>>({});
 
   // Jobs the candidate is already linked to. They can't be unlinked here, so they show as checked
   // and disabled. Read from the query, so links that arrive after the dialog opened still show.
@@ -81,7 +86,7 @@ export function CandidateDialog({
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const parsed = candidateInputSchema.safeParse(form);
-    setErrors(parsed.success ? {} : fieldErrors(parsed.error));
+    setErrors(parsed.success ? {} : fieldErrors(candidateInputSchema, parsed.error));
     if (!parsed.success) return;
     try {
       await save.mutateAsync({
