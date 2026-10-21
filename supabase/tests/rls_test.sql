@@ -150,9 +150,17 @@ end $$;
 -- ---------------------------------------------------------------- admin
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
 do $$ begin
-  assert (select count(*) from public.jobs) = 2, 'admin sees all jobs';
-  assert (select count(*) from public.candidates) = 2, 'A''s candidate survived B''s delete attempt';
-  assert (select count(*) from public.profiles) = 3, 'admin sees all profiles';
+  -- Only the test rows are counted: a real project has other customers' data too.
+  assert (select count(*) from public.jobs where customer_id in
+          ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1')) = 2,
+         'admin sees all jobs';
+  assert (select count(*) from public.candidates where customer_id in
+          ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1')) = 2,
+         'A''s candidate survived B''s delete attempt';
+  assert (select count(*) from public.profiles where id in
+          ('00000000-0000-0000-0000-0000000000ad', '00000000-0000-0000-0000-0000000000a1',
+           '00000000-0000-0000-0000-0000000000b1')) = 3,
+         'admin sees all profiles';
   insert into public.jobs (customer_id, title) values ('00000000-0000-0000-0000-0000000000a1', 'Created by admin for A');
   raise notice 'OK 8: admin sees everything and can act for a customer';
 end $$;
