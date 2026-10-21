@@ -104,7 +104,7 @@ function Jobs({ customerId }: { customerId: string }) {
                     </button>
                     <div className="text-xs text-muted-foreground sm:hidden">{j.location}</div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">{j.location}</TableCell>
+                  <TableCell className="hidden wrap-anywhere sm:table-cell">{j.location}</TableCell>
                   <TableCell>
                     <Badge variant={j.status === "open" ? "default" : "secondary"}>
                       {j.status === "open" ? t("jobs.open") : t("jobs.closed")}
