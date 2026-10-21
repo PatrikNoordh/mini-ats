@@ -304,6 +304,10 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] A long email without spaces does not wrap in the desktop email column of the candidates table, the same problem AC16 fixed for the job location — `src/routes/_authenticated.candidates.tsx` (found in ATS-21)
+- [ ] The name next to the avatar in the header does not truncate, so a long email (shown when an account has no name) can crowd the header on medium screens — `src/components/layout/UserMenu.tsx` (found in ATS-21)
+- [ ] Signing out from the user menu may leave the current page in `?redirect=`, so the next account that signs in on that device lands on it; RLS keeps the data safe, but a deliberate sign-out could go to a bare `/login` — `src/components/layout/UserMenu.tsx`, `src/components/auth/Guards.tsx` (found in ATS-21)
+
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".

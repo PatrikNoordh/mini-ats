@@ -47,9 +47,9 @@ An application links one candidate to one job and is one card on the kanban boar
 ## Auth (Supabase Auth, from ATS-6)
 
 - `src/contexts/AuthContext.tsx` with `useAuth()` exposing: `user`, `profile`, `role`, `isLoading`, `signIn(email, password)`, `signOut()`. The Supabase calls live in `src/lib/api/auth.ts`.
-- The role comes from the user's own `profiles` row. A signed-in user without a profile is signed out again.
+- The role comes from the user's own `profiles` row. A user whose profile is missing, or fails to load at sign-in, is signed out again.
 - The session is read in the browser only, so the server renders the loading state for protected pages.
-- Route guards: `RequireAuth` redirects signed-out users to `/login`. `RequireAdmin` redirects customers to `/pipeline`.
+- Route guards: `RequireAuth` redirects signed-out users to `/login?redirect=<the page they asked for>`, and login returns them there. Only a path inside the app is accepted (`src/lib/redirect.ts`). `RequireAdmin` redirects customers to `/pipeline`.
 - `signOut()` signs out on this device and clears the TanStack Query cache. The cache is also cleared whenever the signed-in user changes, for example after a sign-out in another tab.
 
 ## Active customer
@@ -63,7 +63,7 @@ An application links one candidate to one job and is one card on the kanban boar
 ## Pages
 
 1. **`/login`:** email and password form with Swedish error messages.
-2. **`/pipeline`** (start page after login), the kanban board:
+2. **`/pipeline`** (start page after login, unless the user asked for another page), the kanban board:
    - One column per stage, in order. The column header shows the stage name and the number of cards.
    - Compact cards: candidate name, job title, and days in the current stage computed from `stage_changed_at`. Small enough that many fit on screen.
    - Drag a card to another column to change its stage. Changing stage sets `stage_changed_at` to now.
