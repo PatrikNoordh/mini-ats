@@ -67,7 +67,8 @@ function RootComponent() {
       <AuthProvider>
         <ActiveCustomerProvider>
           <Outlet />
-          <Toaster richColors position="bottom-right" />
+          {/* Top center stays clear of the side panel and of dialog buttons, which sit at the bottom. */}
+          <Toaster richColors position="top-center" />
         </ActiveCustomerProvider>
       </AuthProvider>
     </QueryClientProvider>
