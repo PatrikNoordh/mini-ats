@@ -260,6 +260,10 @@ Tracked in #40.
 
 Tracked in #43.
 
+### ATS-26 · feat · Delete a job without candidates, and delete a candidate
+
+Tracked in #45.
+
 **Checkpoint — ship version 1 to the reviewers:** admin login, customer login and repo link, plus a short note on the status.
 
 ---
