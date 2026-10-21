@@ -36,5 +36,12 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    // Each context file exports its provider together with the hook that reads it, and the
+    // vendored shadcn/ui files export their variants next to the component. Splitting them
+    // would only buy fast refresh on files that rarely change; an edit there reloads the page.
+    files: ["src/contexts/**/*.tsx", "src/components/ui/**/*.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
   eslintPluginPrettier,
 );

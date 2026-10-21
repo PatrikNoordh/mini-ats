@@ -4,9 +4,9 @@ import { linkCandidate, parseApplicationRow } from "@/lib/api/applications";
 import { createCandidate, parseCandidateRow, updateCandidate } from "@/lib/api/candidates";
 import { MAX_NAME_LENGTH } from "@/lib/constants";
 import { AppError, errorCode, fromDbError } from "@/lib/errors";
+import { saveCandidate } from "@/lib/save-candidate";
 import { stageSchema, STAGES } from "@/lib/stages";
 import { candidateInputSchema, fieldErrors } from "@/lib/validation";
-import { saveCandidate } from "@/hooks/useCandidates";
 import type { Candidate } from "@/types";
 
 vi.mock("@/lib/api/candidates", async (importOriginal) => ({
@@ -121,7 +121,7 @@ describe("candidate form", () => {
     const result = candidateInputSchema.safeParse({ ...input, full_name: "  ", email: "alva" });
     expect(result.success).toBe(false);
     if (result.success) return;
-    expect(fieldErrors(result.error)).toEqual({
+    expect(fieldErrors(candidateInputSchema, result.error)).toEqual({
       full_name: "name_required",
       email: "email_invalid",
     });
@@ -134,7 +134,9 @@ describe("candidate form", () => {
     });
     expect(result.success).toBe(false);
     if (result.success) return;
-    expect(fieldErrors(result.error)).toEqual({ linkedin_url: "linkedin_invalid" });
+    expect(fieldErrors(candidateInputSchema, result.error)).toEqual({
+      linkedin_url: "linkedin_invalid",
+    });
   });
 
   it("rejects a name that is too long", () => {
@@ -144,7 +146,7 @@ describe("candidate form", () => {
     });
     expect(result.success).toBe(false);
     if (result.success) return;
-    expect(fieldErrors(result.error)).toEqual({ full_name: "too_long" });
+    expect(fieldErrors(candidateInputSchema, result.error)).toEqual({ full_name: "too_long" });
   });
 });
 

@@ -53,9 +53,15 @@ function Candidates({ customerId }: { customerId: string }) {
       <div className="rounded-lg border bg-card">
         {cands.isLoading ? (
           <LoadingRows />
-        ) : cands.isError ? (
+        ) : cands.isError || apps.isError ? (
+          // The job counts come from the applications, so the table is incomplete without them.
           <div className="p-4">
-            <ErrorState onRetry={() => cands.refetch()} />
+            <ErrorState
+              onRetry={() => {
+                if (cands.isError) cands.refetch();
+                if (apps.isError) apps.refetch();
+              }}
+            />
           </div>
         ) : list.length === 0 ? (
           <div className="p-4">
@@ -74,7 +80,7 @@ function Candidates({ customerId }: { customerId: string }) {
             <TableBody>
               {list.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell>
+                  <TableCell className="wrap-anywhere">
                     <button
                       className="font-semibold text-primary hover:underline"
                       onClick={() => {
@@ -86,7 +92,7 @@ function Candidates({ customerId }: { customerId: string }) {
                     </button>
                     <div className="text-xs text-muted-foreground sm:hidden">{c.email}</div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">{c.email}</TableCell>
+                  <TableCell className="hidden wrap-anywhere sm:table-cell">{c.email}</TableCell>
                   <TableCell>
                     {c.linkedin_url ? (
                       <a

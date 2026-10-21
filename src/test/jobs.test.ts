@@ -46,7 +46,7 @@ describe("job form", () => {
     const result = jobInputSchema.safeParse({ ...input, title: "   ", location: "" });
     expect(result.success).toBe(false);
     if (result.success) return;
-    expect(fieldErrors(result.error)).toEqual({
+    expect(fieldErrors(jobInputSchema, result.error)).toEqual({
       title: "title_required",
       location: "location_required",
     });
@@ -59,7 +59,7 @@ describe("job form", () => {
     });
     expect(result.success).toBe(false);
     if (result.success) return;
-    expect(fieldErrors(result.error)).toEqual({ title: "too_long" });
+    expect(fieldErrors(jobInputSchema, result.error)).toEqual({ title: "too_long" });
   });
 
   it("accepts a title of exactly the maximum length", () => {

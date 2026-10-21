@@ -260,6 +260,10 @@ Tracked in #40.
 
 Tracked in #43.
 
+### ATS-26 · feat · Delete a job without candidates, and delete a candidate
+
+Tracked in #45.
+
 **Checkpoint — ship version 1 to the reviewers:** admin login, customer login and repo link, plus a short note on the status.
 
 ---
@@ -310,3 +314,7 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
+
+- [ ] `initials()` splits real names on `-` too, so "Anna-Lena Svensson" gives AL instead of AS; split on `.`, `_`, `+` and `-` only before the @ of an email — `src/lib/profile-name.ts` (PR #46, ATS-21)
+- [ ] `utf8Length` in `admin-create-user` has no comment pointing to its twin in `src/lib/validation.ts`, as the constants there do — `supabase/functions/admin-create-user/handler.ts` (PR #46, ATS-21)
+- [ ] `admin-create-user` must be deployed at merge for the server to check the password limit in bytes; until then only the form does — `supabase/functions/admin-create-user/handler.ts` (PR #46, ATS-21)

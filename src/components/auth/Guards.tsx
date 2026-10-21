@@ -1,5 +1,5 @@
-import { Navigate } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { Navigate, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -18,8 +18,18 @@ export function FullPageSpinner() {
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
+  // The page on screen, not a navigation in progress: this guard stays mounted while the router
+  // moves to /login, and would otherwise send /login itself as the page to return to.
+  const href = useRouterState({ select: (s) => (s.resolvedLocation ?? s.location).href });
+  // After a sign-out the page must not carry over to the next account that signs in here.
+  const [wasSignedIn, setWasSignedIn] = useState(false);
+  useEffect(() => {
+    if (user) setWasSignedIn(true);
+  }, [user]);
   if (isLoading) return <FullPageSpinner />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user && wasSignedIn) return <Navigate to="/login" replace />;
+  // A signed-out visit goes back to the page it asked for after login.
+  if (!user) return <Navigate to="/login" search={{ redirect: href }} replace />;
   return <>{children}</>;
 }
 

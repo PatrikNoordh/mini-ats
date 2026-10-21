@@ -1,6 +1,7 @@
-import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +9,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { errorCode } from "@/lib/errors";
 import { pageHead } from "@/lib/i18n";
+import { safeRedirect } from "@/lib/redirect";
 import { isEmail } from "@/lib/validation";
 
+const searchSchema = z.object({
+  // The page to return to after login. Anything but a path inside the app is dropped.
+  redirect: z.unknown().transform(safeRedirect),
+});
+
 export const Route = createFileRoute("/login")({
+  validateSearch: (s) => searchSchema.parse(s),
   head: ({ match }) => pageHead(match.context.language, "login"),
   component: LoginPage,
 });
@@ -23,12 +31,22 @@ function LoginPage() {
   const { t } = useTranslation();
   const { user, isLoading, signIn } = useAuth();
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<LoginError | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (!isLoading && user) return <Navigate to="/pipeline" replace />;
+  const signedIn = !isLoading && !!user;
+
+  // Runs on a visit while signed in and right after a successful sign-in.
+  useEffect(() => {
+    if (!signedIn) return;
+    if (redirect) navigate({ href: redirect, replace: true });
+    else navigate({ to: "/pipeline", replace: true });
+  }, [signedIn, redirect, navigate]);
+
+  if (signedIn) return null;
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -38,7 +56,6 @@ function LoginPage() {
     setBusy(true);
     try {
       await signIn(email, password);
-      navigate({ to: "/pipeline" });
     } catch (err) {
       setError({ kind: "error", code: errorCode(err) });
     } finally {

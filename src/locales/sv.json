@@ -78,6 +78,7 @@
     "email_invalid": "Ange en giltig e-postadress.",
     "email_taken": "Det finns redan ett konto med den e-postadressen.",
     "password_too_short": "Lösenordet måste ha minst {{min}} tecken.",
+    "password_too_long": "Lösenordet får ha högst {{max}} tecken, och bokstäver som å, ä och ö räknas som två.",
     "title_required": "Ange en titel.",
     "location_required": "Ange en ort.",
     "linkedin_invalid": "Ange en länk till en LinkedIn-profil, till exempel https://www.linkedin.com/in/namn.",

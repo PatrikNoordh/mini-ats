@@ -8,8 +8,10 @@ import {
   MAX_JOB_TITLE_LENGTH,
   MAX_NAME_LENGTH,
   MAX_NOTES_LENGTH,
+  MAX_PASSWORD_BYTES,
   MAX_PHONE_LENGTH,
   MAX_URL_LENGTH,
+  MIN_PASSWORD_LENGTH,
 } from "@/lib/constants";
 import { isLinkedInUrl } from "@/lib/stages";
 
@@ -29,19 +31,29 @@ export function isEmail(value: string): boolean {
 /** A form error is the key of a message in `validation.*`, translated where it is shown. */
 export type ValidationKey = keyof typeof sv.validation;
 
-function isValidationKey(value: string): value is ValidationKey {
-  return value in sv.validation;
+/** Own keys only, so a message like "constructor" or "toString" is not taken for a key. */
+export function isValidationKey(value: string): value is ValidationKey {
+  return Object.hasOwn(sv.validation, value);
 }
+
+/** The errors a form shows: at most one validation key per field of its schema. */
+export type FormErrors<T> = Partial<Record<keyof T & string, ValidationKey>>;
 
 /**
  * The first error of each field in a failed form schema. The schemas below use validation keys
- * as their messages, so the form can show them with `Field`.
+ * as their messages, so the form can show them with `Field`. The result is typed by the schema's
+ * fields, so a form that reads a field the schema does not have fails the type check.
  */
-export function fieldErrors(error: z.ZodError): Record<string, ValidationKey> {
-  const errors: Record<string, ValidationKey> = {};
+export function fieldErrors<Field extends string>(
+  schema: { shape: Record<Field, unknown> },
+  error: z.ZodError,
+): Partial<Record<Field, ValidationKey>> {
+  const isField = (key: unknown): key is Field =>
+    typeof key === "string" && Object.hasOwn(schema.shape, key);
+  const errors: Partial<Record<Field, ValidationKey>> = {};
   for (const issue of error.issues) {
     const field = issue.path[0];
-    if (typeof field !== "string" || field in errors || !isValidationKey(issue.message)) continue;
+    if (!isField(field) || errors[field] || !isValidationKey(issue.message)) continue;
     errors[field] = issue.message;
   }
   return errors;
@@ -73,3 +85,28 @@ export const candidateInputSchema = z.object({
 });
 
 export type CandidateInput = z.infer<typeof candidateInputSchema>;
+
+/** Length in bytes when encoded as UTF-8, the way Supabase Auth stores a password. */
+export function utf8Length(value: string): number {
+  return new TextEncoder().encode(value).length;
+}
+
+const requiredName = (message: ValidationKey) =>
+  z.string().trim().min(1, message).max(MAX_NAME_LENGTH, "too_long");
+
+/**
+ * The new-account form. The same rules as `newAccountSchema` in admin-create-user, so every
+ * error the function would return is shown under its field first.
+ */
+export const accountInputSchema = z.object({
+  role: roleSchema,
+  full_name: requiredName("name_required"),
+  company_name: requiredName("company_required"),
+  email: z.string().trim().max(MAX_EMAIL_LENGTH, "too_long").email("email_invalid"),
+  password: z
+    .string()
+    .min(MIN_PASSWORD_LENGTH, "password_too_short")
+    .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES, "password_too_long"),
+});
+
+export type AccountInput = z.infer<typeof accountInputSchema>;

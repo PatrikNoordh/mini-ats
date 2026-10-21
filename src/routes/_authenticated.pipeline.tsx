@@ -19,10 +19,10 @@ import { resolveJobFilter, STAGES } from "@/lib/stages";
 
 const searchSchema = z.object({
   job: z.string().optional().catch(undefined),
-  // The router reads a hand-typed ?q=123 as a number. Keep it as the text that was typed.
+  // Kept as the text that was typed, also ?q=1e3 or ?q=true (src/lib/search-params.ts).
   q: z
-    .union([z.string(), z.number()])
-    .transform((v) => String(v).slice(0, MAX_SEARCH_LENGTH))
+    .string()
+    .transform((v) => v.slice(0, MAX_SEARCH_LENGTH))
     .optional()
     .catch(undefined),
 });
@@ -77,7 +77,8 @@ function Pipeline({ customerId }: { customerId: string }) {
     <div>
       <PageHeader
         title={t("pipeline.title")}
-        meta={isLoading ? undefined : t("pipeline.cardCount", { count: cards.length })}
+        // No count while loading or failed: "0 cards" next to the error would not be true.
+        meta={isLoading || isError ? undefined : t("pipeline.cardCount", { count: cards.length })}
         action={<Button onClick={() => setCreating(true)}>{t("pipeline.newCandidate")}</Button>}
       />
       <BoardFilters jobs={jobs.data} job={job} q={q} onChange={setSearch} />

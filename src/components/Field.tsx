@@ -1,24 +1,8 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
-import { MIN_PASSWORD_LENGTH } from "@/lib/constants";
+import { MAX_PASSWORD_BYTES, MIN_PASSWORD_LENGTH } from "@/lib/constants";
 import type { ValidationKey } from "@/lib/validation";
-
-export type FormErrors = Partial<
-  Record<
-    | "full_name"
-    | "email"
-    | "phone"
-    | "linkedin_url"
-    | "company_name"
-    | "password"
-    | "title"
-    | "location"
-    | "description"
-    | "notes",
-    ValidationKey
-  >
->;
 
 /** The props that tie a control to its label, hint and error. Spread them on the control. */
 export interface FieldControlProps {
@@ -63,7 +47,7 @@ export function Field({
       )}
       {error && (
         <p id={errorId} className="text-xs text-destructive">
-          {t(`validation.${error}`, { min: MIN_PASSWORD_LENGTH })}
+          {t(`validation.${error}`, { min: MIN_PASSWORD_LENGTH, max: MAX_PASSWORD_BYTES })}
         </p>
       )}
     </div>

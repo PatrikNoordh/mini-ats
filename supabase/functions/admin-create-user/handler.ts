@@ -4,20 +4,25 @@ import { corsHeaders, json } from "../_shared/cors.ts";
 
 /** Same minimum as MIN_PASSWORD_LENGTH in src/lib/constants.ts, which the form checks first. */
 export const MIN_PASSWORD_LENGTH = 8;
-/** Supabase Auth hashes passwords with bcrypt, which only reads the first 72 bytes. */
-export const MAX_PASSWORD_LENGTH = 72;
+/** Supabase Auth hashes passwords with bcrypt, which only reads the first 72 bytes of UTF-8. */
+export const MAX_PASSWORD_BYTES = 72;
 /** The longest address SMTP allows. */
 export const MAX_EMAIL_LENGTH = 254;
 export const MAX_NAME_LENGTH = 200;
 
 const requiredText = z.string().trim().min(1).max(MAX_NAME_LENGTH);
 
+const utf8Length = (value: string) => new TextEncoder().encode(value).length;
+
 export const newAccountSchema = z.object({
   role: z.enum(["admin", "customer"]),
   full_name: requiredText,
   company_name: requiredText,
   email: z.string().trim().toLowerCase().max(MAX_EMAIL_LENGTH).email(),
-  password: z.string().min(MIN_PASSWORD_LENGTH).max(MAX_PASSWORD_LENGTH),
+  password: z
+    .string()
+    .min(MIN_PASSWORD_LENGTH)
+    .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES),
 });
 
 export type NewAccount = z.infer<typeof newAccountSchema>;

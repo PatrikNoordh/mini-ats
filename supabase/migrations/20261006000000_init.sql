@@ -12,7 +12,7 @@
 --   * cv_assessments is read-only for clients. Only the assess-cv Edge Function writes to it.
 --   * Trigger errors are codes (docs/error-codes.md), never user-facing text. The UI translates them.
 --
--- Tests: supabase/tests/rls_test.sql (13 checks, runs in one transaction and rolls back).
+-- Tests: supabase/tests/rls_test.sql (runs in one transaction and rolls back).
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------

@@ -22,9 +22,14 @@ describe("language", () => {
   });
 
   it("writes a cookie the reader understands", () => {
-    const cookie = languageCookie("en");
+    const cookie = languageCookie("en", false);
     expect(cookie).toMatch(/^lang=en; path=\/; max-age=\d+; samesite=lax$/);
     expect(languageFromCookies(cookie.split(";")[0])).toBe("en");
+  });
+
+  it("marks the cookie secure only over HTTPS", () => {
+    expect(languageCookie("en", true)).toMatch(/; secure$/);
+    expect(languageCookie("en", false)).not.toContain("secure");
   });
 });
 

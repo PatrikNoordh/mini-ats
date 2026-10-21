@@ -93,6 +93,13 @@ Deno.test("creates the account with a trimmed, lower-case email", async () => {
   ]);
 });
 
+Deno.test("accepts a password of exactly 72 bytes, even with å", async () => {
+  const { handler, created } = setup();
+  const res = await call(handler, post({ ...valid, password: "å".repeat(36) }));
+  assertEquals(res.status, 201);
+  assertEquals(created[0]?.password, "å".repeat(36));
+});
+
 Deno.test("an admin can create another admin", async () => {
   const { handler, created } = setup();
   const res = await call(handler, post({ ...valid, role: "admin" }));
@@ -116,6 +123,8 @@ Deno.test("names the invalid fields and creates nothing", async () => {
     [{ ...valid, email: "not-an-email" }, ["email"]],
     [{ ...valid, password: "short" }, ["password"]],
     [{ ...valid, password: "x".repeat(73) }, ["password"]],
+    // 37 characters, but 74 bytes: å takes two.
+    [{ ...valid, password: "å".repeat(37) }, ["password"]],
   ];
   for (const [body, fields] of cases) {
     const { handler, created } = setup();

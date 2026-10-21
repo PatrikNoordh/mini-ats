@@ -27,6 +27,8 @@ export function languageFromCookies(cookies: string | null | undefined): Languag
   return parseLanguage(match?.slice(LANGUAGE_COOKIE.length + 1));
 }
 
-export function languageCookie(language: Language): string {
-  return `${LANGUAGE_COOKIE}=${language}; path=/; max-age=${LANGUAGE_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
+/** `secure` is set when the page is served over HTTPS; browsers drop it on `http://localhost`. */
+export function languageCookie(language: Language, secure: boolean): string {
+  const cookie = `${LANGUAGE_COOKIE}=${language}; path=/; max-age=${LANGUAGE_COOKIE_MAX_AGE_SECONDS}; samesite=lax`;
+  return secure ? `${cookie}; secure` : cookie;
 }
