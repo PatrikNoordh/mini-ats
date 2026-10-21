@@ -31,7 +31,7 @@ export function UserMenu() {
           <span className="hidden rounded-full border px-2 py-0.5 text-xs text-muted-foreground md:inline">
             {t(`roles.${profile.role}`)}
           </span>
-          <span className="hidden text-sm font-medium md:inline">{name}</span>
+          <span className="hidden max-w-48 truncate text-sm font-medium md:inline">{name}</span>
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-bold">
             {initials(name)}
           </span>
@@ -39,9 +39,11 @@ export function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
-          <div className="font-semibold">{name}</div>
+          <div className="font-semibold wrap-anywhere">{name}</div>
           {name !== profile.email && (
-            <div className="text-xs font-normal text-muted-foreground">{profile.email}</div>
+            <div className="text-xs font-normal text-muted-foreground wrap-anywhere">
+              {profile.email}
+            </div>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
