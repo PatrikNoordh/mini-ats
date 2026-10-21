@@ -77,7 +77,8 @@ function Pipeline({ customerId }: { customerId: string }) {
     <div>
       <PageHeader
         title={t("pipeline.title")}
-        meta={isLoading ? undefined : t("pipeline.cardCount", { count: cards.length })}
+        // No count while loading or failed: "0 cards" next to the error would not be true.
+        meta={isLoading || isError ? undefined : t("pipeline.cardCount", { count: cards.length })}
         action={<Button onClick={() => setCreating(true)}>{t("pipeline.newCandidate")}</Button>}
       />
       <BoardFilters jobs={jobs.data} job={job} q={q} onChange={setSearch} />
