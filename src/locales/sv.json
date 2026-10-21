@@ -91,7 +91,6 @@
     "userMenu": "Användarmeny",
     "signOut": "Logga ut",
     "customerLabel": "Kund",
-    "chooseCustomer": "Välj kund",
     "chooseCustomerPlaceholder": "Välj kund…",
     "actingAs": "Du arbetar som <bold>{{company}}</bold>. Allt du skapar hamnar hos kunden.",
     "leaveCustomer": "Lämna kundläge"

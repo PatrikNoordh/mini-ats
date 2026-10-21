@@ -91,7 +91,6 @@
     "userMenu": "User menu",
     "signOut": "Sign out",
     "customerLabel": "Customer",
-    "chooseCustomer": "Choose customer",
     "chooseCustomerPlaceholder": "Choose customer…",
     "actingAs": "You are working as <bold>{{company}}</bold>. Everything you create belongs to the customer.",
     "leaveCustomer": "Leave customer mode"
