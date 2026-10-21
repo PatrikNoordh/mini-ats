@@ -42,7 +42,7 @@ An application links one candidate to one job and is one card on the kanban boar
 - Every query key that returns customer data includes the active customer id, for example `["jobs", customerId]`. Switching customer must never show the previous customer's cached data.
 - Moving a card uses an optimistic update and rolls back with a toast if the call fails. The database function `move_application` sets the stage and the card's position, last in its new column, in one call.
 - Components never call Supabase directly.
-- Mock data: 1 admin, 2 customers ("Nordkust Bygg AB" and "Studio Lumen"), 3–4 jobs each and about 15 candidates per customer spread across all stages. Only obviously fake people and `.test` email addresses.
+- Demo data (ATS-15): `npm run seed:demo -- --yes` creates 1 admin (`admin@mini-ats.test`) and 2 customers through the Auth admin API, so the profile trigger runs: "Exempelbygg AB" (`kund@exempelbygg.test`, the reviewers' customer login) with 4 jobs and 9 candidates in every stage, and "Studio Exempel" (`kund@studioexempel.test`) with 3 jobs and 6 candidates. Only obviously fake people: `.test` email addresses, phone numbers in the range reserved for fiction, no LinkedIn links. The data lives in `scripts/demo-data.ts`; every run rebuilds the demo customers' jobs, candidates and cards and touches no other rows. Passwords are generated or taken from `DEMO_<KEY>_PASSWORD`, printed once and never committed.
 
 ## Auth (Supabase Auth, from ATS-6)
 
