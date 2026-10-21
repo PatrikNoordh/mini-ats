@@ -30,6 +30,7 @@ describe("the app's query client while offline", () => {
   afterEach(() => {
     onlineManager.setOnline(true);
     vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("runs a mutation at once, so it rejects instead of staying paused", async () => {
@@ -62,6 +63,7 @@ describe("the app's query client while offline", () => {
 
   it("shows the job form's error at once and keeps the dialog and the input", async () => {
     mocks.createJob.mockRejectedValue(offlineError());
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     const onOpenChange = vi.fn();
     render(
       <I18nextProvider i18n={getI18n("en")}>
@@ -74,7 +76,11 @@ describe("the app's query client while offline", () => {
     fireEvent.change(screen.getByLabelText("Location"), { target: { value: "Göteborg" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
-    await waitFor(() => expect(mocks.toast.error).toHaveBeenCalledWith("Could not save the job."));
+    await waitFor(() =>
+      expect(mocks.toast.error).toHaveBeenCalledWith("Could not save the job.", {
+        description: "No internet connection. Check your network and try again.",
+      }),
+    );
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Title")).toHaveValue("Platschef");
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();

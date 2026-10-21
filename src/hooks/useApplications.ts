@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { useErrorToast } from "@/hooks/useErrorToast";
 import { addApplication, listApplications, moveApplication } from "@/lib/api/applications";
 import { queryKeys, withCardMoved, withCardRestored } from "@/lib/stages";
 import type { Application, Stage } from "@/types";
@@ -15,6 +15,7 @@ export function useApplications(customerId: string | null) {
 
 export function useMoveApplication(customerId: string | null) {
   const { t } = useTranslation();
+  const errorToast = useErrorToast();
   const qc = useQueryClient();
   const key = queryKeys.applications(customerId);
   const mutationKey = ["moveApplication", customerId] as const;
@@ -31,12 +32,12 @@ export function useMoveApplication(customerId: string | null) {
       qc.setQueryData<Application[]>(key, (old) => old && withCardMoved(old, id, stage));
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (err, _vars, ctx) => {
       const previous = ctx?.previous;
       if (previous) {
         qc.setQueryData<Application[]>(key, (old) => old && withCardRestored(old, previous));
       }
-      toast.error(t("pipeline.moveFailed"));
+      errorToast(t("pipeline.moveFailed"), err);
     },
     // Refetch once the last of several quick moves is done, so an earlier answer never shows a
     // card back in its old column while a later move is still on its way.

@@ -16,7 +16,7 @@ import { CustomerGate } from "@/components/layout/CustomerGate";
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from "@/components/States";
 import { JobDialog } from "@/components/jobs/JobDialog";
 import { useJobs, useSetJobStatus } from "@/hooks/useJobs";
-import { errorCode } from "@/lib/errors";
+import { useErrorToast } from "@/hooks/useErrorToast";
 import { pageHead } from "@/lib/i18n";
 import { useFormat } from "@/lib/format";
 import type { JobWithCount } from "@/types";
@@ -31,6 +31,7 @@ function Jobs({ customerId }: { customerId: string }) {
   const format = useFormat();
   const jobs = useJobs(customerId);
   const setStatus = useSetJobStatus(customerId);
+  const errorToast = useErrorToast();
   const [editing, setEditing] = useState<JobWithCount | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -40,8 +41,7 @@ function Jobs({ customerId }: { customerId: string }) {
       await setStatus.mutateAsync({ id: j.id, status });
       toast.success(status === "open" ? t("jobs.reopened") : t("jobs.closedToast"));
     } catch (err) {
-      const code = errorCode(err);
-      toast.error(code === "unknown" ? t("jobs.statusFailed") : t(`errors.${code}`));
+      errorToast(t("jobs.statusFailed"), err);
     }
   };
 

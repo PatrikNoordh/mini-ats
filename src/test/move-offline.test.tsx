@@ -60,10 +60,12 @@ describe("moving a card while offline", () => {
     act(() => root?.unmount());
     onlineManager.setOnline(true);
     vi.resetAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("tries the move at once and puts the card back when it fails", async () => {
     onlineManager.setOnline(false);
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     moveApplication.mockRejectedValue(new TypeError("Failed to fetch"));
     const { qc, move } = renderMove();
 
@@ -71,6 +73,9 @@ describe("moving a card while offline", () => {
 
     expect(moveApplication).toHaveBeenCalledTimes(1);
     expect(qc.getQueryData(queryKeys.applications(customerId))).toEqual([card]);
-    expect(toastError).toHaveBeenCalledWith("Could not move the card. The change has been undone.");
+    expect(toastError).toHaveBeenCalledWith(
+      "Could not move the card. The change has been undone.",
+      { description: "No internet connection. Check your network and try again." },
+    );
   });
 });

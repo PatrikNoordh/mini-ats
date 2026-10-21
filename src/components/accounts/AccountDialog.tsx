@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Field } from "@/components/Field";
 import { useCreateProfile } from "@/hooks/useProfiles";
+import { useErrorToast } from "@/hooks/useErrorToast";
 import {
   MAX_EMAIL_LENGTH,
   MAX_NAME_LENGTH,
@@ -46,6 +47,7 @@ export function AccountDialog({
 }) {
   const { t } = useTranslation();
   const create = useCreateProfile();
+  const errorToast = useErrorToast();
   const [role, setRole] = useState<Role>("customer");
   const [form, setForm] = useState(empty);
   const [errors, setErrors] = useState<FormErrors<AccountInput>>({});
@@ -77,7 +79,7 @@ export function AccountDialog({
         emailRef.current?.focus();
         return;
       }
-      toast.error(t(`errors.${code}`));
+      errorToast(t("accountDialog.createFailed"), err);
     }
   };
 

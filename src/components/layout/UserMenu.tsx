@@ -1,7 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,14 +10,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useErrorToast } from "@/hooks/useErrorToast";
 import { LanguageMenuItems } from "@/components/LanguageSwitcher";
-import { errorCode } from "@/lib/errors";
 import { displayName, initials } from "@/lib/profile-name";
 
 export function UserMenu() {
   const { t } = useTranslation();
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const errorToast = useErrorToast();
   if (!profile) return null;
   const name = displayName(profile);
   return (
@@ -55,7 +55,7 @@ export function UserMenu() {
               await signOut();
               navigate({ to: "/login" });
             } catch (err) {
-              toast.error(t(`errors.${errorCode(err)}`));
+              errorToast(t("shell.signOutFailed"), err);
             }
           }}
         >
