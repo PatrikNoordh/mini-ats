@@ -35,6 +35,9 @@ export const MAX_JOB_LOCATION_LENGTH = 200;
 /** Longest job description. */
 export const MAX_JOB_DESCRIPTION_LENGTH = 5000;
 
+/** Placeholder cards in the admin's customer chooser while the customers load. */
+export const CHOOSER_LOADING_CARDS = 4;
+
 /** Longest board search, in the field and in ?q=. */
 export const MAX_SEARCH_LENGTH = 200;
 
