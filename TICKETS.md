@@ -299,6 +299,7 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 - [ ] `npx prettier --check src` fails on `src/routes/README.md`, so the docs folder is not covered by a format check — `src/routes/README.md` (found in ATS-12)
 - [ ] The header of the first migration says `rls_test.sql` has 13 checks; it now has more, and the count goes stale with every new check — `supabase/migrations/20261006000000_init.sql` (found in ATS-12)
 - [ ] `@testing-library/react` is a dev dependency but its peer `@testing-library/dom` is missing, so it cannot be used; tests render with `react-dom/client` instead. Add the peer or drop the package — `package.json` (found in ATS-12)
+- [ ] Every mutation except the card move uses TanStack Query's default `networkMode: "online"`, so offline a save is paused without an error and the dialog stays pending. Consider `networkMode: "always"` as the default for mutations — `src/router.tsx` (found in ATS-12)
 
 ## Found while reviewing PRs
 

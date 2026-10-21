@@ -20,6 +20,9 @@ export function useMoveApplication(customerId: string | null) {
   const mutationKey = ["moveApplication", customerId] as const;
   return useMutation({
     mutationKey,
+    // Offline, the default pauses the move until the network is back while the board already
+    // shows the card moved. Run it at once instead, so it fails and the card goes back.
+    networkMode: "always",
     mutationFn: ({ id, stage }: { id: string; stage: Stage }) =>
       moveApplication(customerId!, id, stage),
     onMutate: async ({ id, stage }) => {
