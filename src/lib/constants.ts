@@ -35,6 +35,9 @@ export const MAX_JOB_LOCATION_LENGTH = 200;
 /** Longest job description. */
 export const MAX_JOB_DESCRIPTION_LENGTH = 5000;
 
+/** Longest board search, in the field and in ?q=. */
+export const MAX_SEARCH_LENGTH = 200;
+
 /** Longest candidate phone number. */
 export const MAX_PHONE_LENGTH = 50;
 /** Longest LinkedIn URL. */

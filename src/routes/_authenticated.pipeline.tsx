@@ -20,12 +20,18 @@ import { CandidateDialog } from "@/components/candidates/CandidateDialog";
 import { useApplications, useMoveApplication } from "@/hooks/useApplications";
 import { useCandidates } from "@/hooks/useCandidates";
 import { useJobs } from "@/hooks/useJobs";
+import { MAX_SEARCH_LENGTH } from "@/lib/constants";
 import { pageHead } from "@/lib/i18n";
 import { resolveJobFilter, STAGES } from "@/lib/stages";
 
 const searchSchema = z.object({
   job: z.string().optional().catch(undefined),
-  q: z.string().optional().catch(undefined),
+  // The router reads a hand-typed ?q=123 as a number. Keep it as the text that was typed.
+  q: z
+    .union([z.string(), z.number()])
+    .transform((v) => String(v).slice(0, MAX_SEARCH_LENGTH))
+    .optional()
+    .catch(undefined),
 });
 
 export const Route = createFileRoute("/_authenticated/pipeline")({
@@ -102,6 +108,7 @@ function Pipeline({ customerId }: { customerId: string }) {
           className="h-9 sm:w-search"
           placeholder={t("pipeline.search")}
           aria-label={t("pipeline.search")}
+          maxLength={MAX_SEARCH_LENGTH}
           value={q ?? ""}
           onChange={(e) => setSearch({ q: e.target.value || undefined })}
         />
