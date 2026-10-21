@@ -2,19 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { CustomerGate } from "@/components/layout/CustomerGate";
 import { EmptyState, ErrorState, PageHeader } from "@/components/States";
 import { Board, type BoardCard } from "@/components/pipeline/Board";
+import { BoardFilters, type BoardFilterValues } from "@/components/pipeline/BoardFilters";
 import { CandidateSheet } from "@/components/pipeline/CandidateSheet";
 import { CandidateDialog } from "@/components/candidates/CandidateDialog";
 import { useApplications, useMoveApplication } from "@/hooks/useApplications";
@@ -77,7 +70,7 @@ function Pipeline({ customerId }: { customerId: string }) {
 
   const isLoading = apps.isLoading || cands.isLoading || jobs.isLoading;
   const isError = apps.isError || cands.isError || jobs.isError;
-  const setSearch = (patch: { job?: string | undefined; q?: string | undefined }) =>
+  const setSearch = (patch: BoardFilterValues) =>
     navigate({ to: ".", search: (prev) => ({ ...prev, ...patch }), replace: true });
 
   return (
@@ -87,32 +80,7 @@ function Pipeline({ customerId }: { customerId: string }) {
         meta={isLoading ? undefined : t("pipeline.cardCount", { count: cards.length })}
         action={<Button onClick={() => setCreating(true)}>{t("pipeline.newCandidate")}</Button>}
       />
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row">
-        <Select
-          value={job ?? "all"}
-          onValueChange={(v) => setSearch({ job: v === "all" ? undefined : v })}
-        >
-          <SelectTrigger className="h-9 sm:w-filter" aria-label={t("pipeline.filterByJob")}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("pipeline.allJobs")}</SelectItem>
-            {jobs.data?.map((j) => (
-              <SelectItem key={j.id} value={j.id}>
-                {j.status === "closed" ? t("pipeline.closedJob", { title: j.title }) : j.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Input
-          className="h-9 sm:w-search"
-          placeholder={t("pipeline.search")}
-          aria-label={t("pipeline.search")}
-          maxLength={MAX_SEARCH_LENGTH}
-          value={q ?? ""}
-          onChange={(e) => setSearch({ q: e.target.value || undefined })}
-        />
-      </div>
+      <BoardFilters jobs={jobs.data} job={job} q={q} onChange={setSearch} />
 
       {isError ? (
         <ErrorState
