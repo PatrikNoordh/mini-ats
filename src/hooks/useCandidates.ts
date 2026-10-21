@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { listCandidates } from "@/lib/api/candidates";
+import { deleteCandidate, listCandidates } from "@/lib/api/candidates";
 import { saveCandidate, type SaveCandidateVars } from "@/lib/save-candidate";
 import { queryKeys } from "@/lib/stages";
 
@@ -17,6 +17,19 @@ export function useSaveCandidate(customerId: string | null) {
     mutationFn: (vars: SaveCandidateVars) => saveCandidate(customerId!, vars),
     // Also after a failed link: the candidate may be saved. Jobs show the number of candidates.
     onSettled: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.candidates(customerId) });
+      qc.invalidateQueries({ queryKey: queryKeys.applications(customerId) });
+      qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });
+    },
+  });
+}
+
+export function useDeleteCandidate(customerId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCandidate(customerId!, id),
+    // The candidate's cards go too, and jobs show the number of candidates.
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.candidates(customerId) });
       qc.invalidateQueries({ queryKey: queryKeys.applications(customerId) });
       qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });

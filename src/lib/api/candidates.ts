@@ -90,3 +90,19 @@ export async function updateCandidate(
   if (!data) throw new AppError("candidate_not_found");
   return parseCandidateRow(data);
 }
+
+/**
+ * Deletes one of the customer's candidates. Their applications (cards) and assessments go with
+ * them through the database's cascades.
+ */
+export async function deleteCandidate(customerId: string, id: string): Promise<void> {
+  const { data, error } = await supabase
+    .from("candidates")
+    .delete()
+    .eq("id", id)
+    .eq("customer_id", customerId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new AppError("candidate_not_found");
+}
