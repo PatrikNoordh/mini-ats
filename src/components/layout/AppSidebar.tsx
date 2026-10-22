@@ -28,7 +28,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader>
-        <Logo />
+        <Logo className="px-2 py-1.5" />
       </SidebarHeader>
       <SidebarContent className="px-2 pt-2">
         <SidebarMenu>

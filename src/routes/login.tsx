@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { Logo } from "@/components/layout/Logo";
 import { errorCode } from "@/lib/errors";
 import { pageHead } from "@/lib/i18n";
 import { safeRedirect } from "@/lib/redirect";
@@ -67,12 +68,7 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-sm md:p-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-              A
-            </span>
-            <span className="text-lg font-bold">{t("app.name")}</span>
-          </div>
+          <Logo />
           <LanguageSwitcher />
         </div>
         <h1 className="text-2xl font-bold tracking-tight">{t("login.title")}</h1>
