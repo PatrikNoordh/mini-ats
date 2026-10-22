@@ -87,7 +87,8 @@ async function refusal(
   if (account.id === callerId && (removesAdmin || request.action === "delete_now")) {
     return "cannot_change_self";
   }
-  // Two admins deleting each other at the same time must not leave none.
+  // An admin removed a moment ago is no longer an admin (getCaller), so it cannot remove the
+  // last one after that. Two calls at the very same moment can still both pass this count.
   if (removesAdmin && (await deps.countActiveAdmins(authorization)) <= 1) return "last_admin";
   return null;
 }

@@ -94,15 +94,15 @@ export function utf8Length(value: string): number {
 const requiredName = (message: ValidationKey) =>
   z.string().trim().min(1, message).max(MAX_NAME_LENGTH, "too_long");
 
-/**
- * The new-account form. The same rules as `newAccountSchema` in admin-create-user, so every
- * error the function would return is shown under its field first.
- */
 const passwordSchema = z
   .string()
   .min(MIN_PASSWORD_LENGTH, "password_too_short")
   .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES, "password_too_long");
 
+/**
+ * The new-account form. The same rules as `newAccountSchema` in admin-create-user, so every
+ * error the function would return is shown under its field first.
+ */
 export const accountInputSchema = z.object({
   role: roleSchema,
   full_name: requiredName("name_required"),
