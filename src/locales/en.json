@@ -94,7 +94,8 @@
     "location_required": "Enter a location.",
     "linkedin_invalid": "Enter a link to a LinkedIn profile, for example https://www.linkedin.com/in/name.",
     "login_required": "Enter both email and password.",
-    "too_long": "The text is too long."
+    "too_long": "The text is too long.",
+    "email_taken_deleted": "A deleted account has that email address. Restore it under Deleted accounts."
   },
   "shell": {
     "toggleSidebar": "Show or hide the menu",
@@ -261,7 +262,25 @@
     "company": "Company",
     "email": "Email",
     "role": "Role",
-    "created": "Created"
+    "created": "Created",
+    "actions": "Actions",
+    "edit": "Edit {{name}}",
+    "showDeleted": "Deleted accounts ({{count, number}})",
+    "hideDeleted": "Hide deleted accounts",
+    "deletedTitle": "Deleted accounts",
+    "deletedHint": "A deleted account cannot sign in but keeps all its content. It can be restored for {{days}} days and is then deleted for good.",
+    "deletedEmpty": "No deleted accounts",
+    "purgeColumn": "Deleted for good",
+    "purgeOn": "Deleted for good on {{date}}",
+    "restore": "Restore",
+    "restored": "The account is restored.",
+    "restoreFailed": "Could not restore the account.",
+    "deleteNow": "Delete for good",
+    "deleteNowTitle": "Delete the account for good?",
+    "deleteNowDescription": "{{name}} is deleted now with all its jobs, candidates and cards. This cannot be undone.",
+    "deleteNowType": "Type {{text}} to confirm.",
+    "deletedNow": "The account is deleted for good.",
+    "deleteNowFailed": "Could not delete the account."
   },
   "accountDialog": {
     "title": "New account",
@@ -274,7 +293,17 @@
     "submit": "Create account",
     "submitting": "Creating…",
     "created": "The account has been created.",
-    "createFailed": "Could not create the account."
+    "createFailed": "Could not create the account.",
+    "titleEdit": "Edit account",
+    "updated": "The account is updated.",
+    "updateFailed": "Could not save the account.",
+    "newPassword": "New password",
+    "newPasswordHint": "Leave empty to keep the password. Otherwise at least {{min}} characters.",
+    "selfRoleHint": "You cannot remove your own admin role.",
+    "deleteTitle": "Delete the account?",
+    "deleteDescription": "The account is hidden and cannot sign in. It is deleted for good on {{date}} with all its jobs, candidates and cards. Until then you can undo this under Deleted accounts.",
+    "deleted": "The account is deleted. You can restore it under Deleted accounts.",
+    "deleteFailed": "Could not delete the account."
   },
   "notFound": {
     "title": "Page not found",

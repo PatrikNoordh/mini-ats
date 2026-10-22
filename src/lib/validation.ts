@@ -98,15 +98,22 @@ const requiredName = (message: ValidationKey) =>
  * The new-account form. The same rules as `newAccountSchema` in admin-create-user, so every
  * error the function would return is shown under its field first.
  */
+const passwordSchema = z
+  .string()
+  .min(MIN_PASSWORD_LENGTH, "password_too_short")
+  .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES, "password_too_long");
+
 export const accountInputSchema = z.object({
   role: roleSchema,
   full_name: requiredName("name_required"),
   company_name: requiredName("company_required"),
   email: z.string().trim().max(MAX_EMAIL_LENGTH, "too_long").email("email_invalid"),
-  password: z
-    .string()
-    .min(MIN_PASSWORD_LENGTH, "password_too_short")
-    .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES, "password_too_long"),
+  password: passwordSchema,
 });
 
 export type AccountInput = z.infer<typeof accountInputSchema>;
+
+/** Editing an account: the same rules as admin-manage-account, and an empty password keeps it. */
+export const accountUpdateSchema = accountInputSchema.extend({
+  password: z.union([z.literal(""), passwordSchema]),
+});

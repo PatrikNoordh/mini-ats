@@ -14,9 +14,12 @@ import {
 import { RequireAdmin } from "@/components/auth/Guards";
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from "@/components/States";
 import { AccountDialog } from "@/components/accounts/AccountDialog";
+import { DeletedAccounts } from "@/components/accounts/DeletedAccounts";
 import { useProfiles } from "@/hooks/useProfiles";
+import { isActive } from "@/lib/accounts";
 import { useFormat } from "@/lib/format";
 import { pageHead } from "@/lib/i18n";
+import type { Profile } from "@/types";
 
 export const Route = createFileRoute("/_authenticated/admin/accounts")({
   head: ({ match }) => pageHead(match.context.language, "accounts"),
@@ -32,12 +35,20 @@ function Accounts() {
   const format = useFormat();
   const profiles = useProfiles();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Profile | null>(null);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const active = (profiles.data ?? []).filter(isActive);
+  const deleted = (profiles.data ?? []).filter((p) => !isActive(p));
+  const openDialog = (account: Profile | null) => {
+    setEditing(account);
+    setOpen(true);
+  };
   return (
     <div>
       <PageHeader
         title={t("accounts.title")}
         meta={t("accounts.adminOnly")}
-        action={<Button onClick={() => setOpen(true)}>{t("accounts.new")}</Button>}
+        action={<Button onClick={() => openDialog(null)}>{t("accounts.new")}</Button>}
       />
       <div className="rounded-lg border bg-card">
         {profiles.isLoading ? (
@@ -46,7 +57,7 @@ function Accounts() {
           <div className="p-4">
             <ErrorState onRetry={() => profiles.refetch()} />
           </div>
-        ) : !profiles.data?.length ? (
+        ) : active.length === 0 ? (
           <div className="p-4">
             <EmptyState title={t("accounts.empty")} />
           </div>
@@ -62,10 +73,16 @@ function Accounts() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {profiles.data.map((p) => (
+              {active.map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell>
-                    <div className="font-semibold">{p.full_name}</div>
+                  <TableCell className="wrap-anywhere">
+                    <button
+                      className="text-left font-semibold text-primary hover:underline"
+                      aria-label={t("accounts.edit", { name: p.full_name || p.email })}
+                      onClick={() => openDialog(p)}
+                    >
+                      {p.full_name || p.email}
+                    </button>
                     <div className="text-xs text-muted-foreground md:hidden">{p.company_name}</div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{p.company_name}</TableCell>
@@ -84,7 +101,27 @@ function Accounts() {
           </Table>
         )}
       </div>
-      <AccountDialog open={open} onOpenChange={setOpen} />
+      {profiles.isSuccess && (
+        <div className="mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            aria-expanded={showDeleted}
+            aria-controls="deleted-accounts-list"
+            onClick={() => setShowDeleted((shown) => !shown)}
+          >
+            {showDeleted
+              ? t("accounts.hideDeleted")
+              : t("accounts.showDeleted", { count: deleted.length })}
+          </Button>
+          {showDeleted && (
+            <div id="deleted-accounts-list">
+              <DeletedAccounts accounts={deleted} />
+            </div>
+          )}
+        </div>
+      )}
+      <AccountDialog open={open} onOpenChange={setOpen} account={editing} />
     </div>
   );
 }
