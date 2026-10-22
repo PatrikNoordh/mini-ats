@@ -264,6 +264,10 @@ Tracked in #43.
 
 Tracked in #45.
 
+### ATS-27 · feat · Edit, delete and restore accounts, with 30 days to undo a delete
+
+Tracked in #52.
+
 **Checkpoint — ship version 1 to the reviewers:** admin login, customer login and repo link, plus a short note on the status.
 
 ---
