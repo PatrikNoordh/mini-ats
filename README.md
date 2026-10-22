@@ -77,7 +77,7 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
 
 **For a customer (a recruiting company)**
 - **Jobs**: create, edit, close and reopen. A job can be deleted only while no candidates are linked to it, so a board is never emptied by mistake
-- **Candidates**: name, email, phone, LinkedIn and notes, linked to one or more jobs. Deleting a candidate removes their cards too, after a confirm that says how many
+- **Candidates**: name, email, phone, LinkedIn and notes, linked to one or more jobs. Untick a job to take the candidate off it, after a confirm. Deleting a candidate removes their cards too, after a confirm that says how many
 - **Pipeline**: a compact kanban board, `Ny → Screening → Intervju → Erbjudande → Anställd`, plus `Avböjd`
   - Small cards with the candidate's name, the job and the **days in the current stage**
   - **Drag and drop** with mouse, touch or keyboard, with optimistic moves that roll back on a failed save
@@ -215,7 +215,7 @@ The demo seed script also uses the key. It runs only on my machine and reads the
 
 ### How it was tested
 
-- [`supabase/tests/rls_test.sql`](supabase/tests/rls_test.sql) signs in as customer A, customer B, an admin and a signed-out user, and checks **28 rules**. Some examples:
+- [`supabase/tests/rls_test.sql`](supabase/tests/rls_test.sql) signs in as customer A, customer B, an admin and a signed-out user, and checks **29 rules**. Some examples:
   - B can't read, change, delete or create A's rows
   - a customer can't make itself admin
   - an application always gets its job's customer
