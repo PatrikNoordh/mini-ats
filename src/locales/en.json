@@ -72,6 +72,7 @@
     "application_not_found": "The application could not be found.",
     "already_linked": "The candidate is already linked to this job.",
     "links_failed": "The candidate was saved, but could not be linked to the jobs. Open the candidate and try again.",
+    "unlinks_failed": "The candidate was saved, but could not be removed from the jobs. Open the candidate and try again.",
     "unknown": "Something went wrong. Please try again.",
     "job_has_candidates": "This job has candidates. Remove them under Candidates first, so no cards on the board are deleted by mistake.",
     "offline": "No internet connection. Check your network and try again.",

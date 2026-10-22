@@ -72,6 +72,7 @@
     "application_not_found": "Ansökan hittades inte.",
     "already_linked": "Kandidaten är redan kopplad till det här jobbet.",
     "links_failed": "Kandidaten sparades, men kunde inte kopplas till jobben. Öppna kandidaten och försök igen.",
+    "unlinks_failed": "Kandidaten sparades, men kunde inte tas bort från jobben. Öppna kandidaten och försök igen.",
     "unknown": "Något gick fel. Försök igen.",
     "job_has_candidates": "Jobbet har kandidater. Ta bort dem under Kandidater först, så att inga kort på tavlan tas bort av misstag.",
     "offline": "Ingen internetanslutning. Kontrollera nätverket och försök igen.",

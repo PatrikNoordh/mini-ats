@@ -19,6 +19,7 @@ export const ERROR_CODES = [
   "job_candidate_customer_mismatch",
   "application_not_found",
   "links_failed",
+  "unlinks_failed",
   "already_linked",
   "job_has_candidates",
   "text_too_long",

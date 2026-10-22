@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { linkCandidate, parseApplicationRow } from "@/lib/api/applications";
+import { linkCandidate, parseApplicationRow, unlinkCandidate } from "@/lib/api/applications";
 import { createCandidate, parseCandidateRow, updateCandidate } from "@/lib/api/candidates";
 import { MAX_NAME_LENGTH } from "@/lib/constants";
 import { AppError, errorCode, fromDbError } from "@/lib/errors";
@@ -17,6 +17,7 @@ vi.mock("@/lib/api/candidates", async (importOriginal) => ({
 vi.mock("@/lib/api/applications", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api/applications")>()),
   linkCandidate: vi.fn(),
+  unlinkCandidate: vi.fn(),
 }));
 
 const CUSTOMER = "00000000-0000-0000-0000-0000000000a1";
@@ -165,6 +166,7 @@ describe("saving a candidate", () => {
     vi.mocked(createCandidate).mockReset().mockResolvedValue(candidate);
     vi.mocked(updateCandidate).mockReset().mockResolvedValue(candidate);
     vi.mocked(linkCandidate).mockReset().mockResolvedValue();
+    vi.mocked(unlinkCandidate).mockReset().mockResolvedValue();
   });
 
   it("creates the candidate, then links the new candidate to the chosen jobs", async () => {
@@ -186,9 +188,34 @@ describe("saving a candidate", () => {
     expect(createCandidate).toHaveBeenCalledTimes(1);
   });
 
+  it("adds and removes links in the same save", async () => {
+    const removed = "10000000-0000-0000-0000-0000000000a2";
+    await saveCandidate(CUSTOMER, {
+      id: candidate.id,
+      input,
+      newJobIds: [jobId],
+      removedJobIds: [removed],
+    });
+    expect(linkCandidate).toHaveBeenCalledWith(candidate.id, [jobId]);
+    expect(unlinkCandidate).toHaveBeenCalledWith(CUSTOMER, candidate.id, [removed]);
+  });
+
+  it("says unlinks_failed when the candidate is saved but removing links fails", async () => {
+    vi.mocked(unlinkCandidate).mockRejectedValue(new Error("network"));
+    const result = saveCandidate(CUSTOMER, {
+      id: candidate.id,
+      input,
+      newJobIds: [],
+      removedJobIds: [jobId],
+    });
+    await expect(result).rejects.toEqual(new AppError("unlinks_failed"));
+    expect(updateCandidate).toHaveBeenCalledTimes(1);
+  });
+
   it("does not try to link when saving the candidate fails", async () => {
     vi.mocked(createCandidate).mockRejectedValue(new Error("network"));
     await expect(saveCandidate(CUSTOMER, { input, newJobIds: [jobId] })).rejects.toThrow("network");
     expect(linkCandidate).not.toHaveBeenCalled();
+    expect(unlinkCandidate).not.toHaveBeenCalled();
   });
 });

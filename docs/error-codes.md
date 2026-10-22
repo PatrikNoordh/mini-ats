@@ -68,6 +68,7 @@ The data layer maps the message to an `AppError` with `fromDbError()` in `src/li
 | `job_candidate_customer_mismatch` | applications (trigger)                      | The job and the candidate belong to different customers    |
 | `application_not_found`           | cv_assessments (trigger)                    | The application the assessment points at does not exist    |
 | `links_failed`                    | candidates                                  | The candidate was saved, but linking it to jobs failed     |
+| `unlinks_failed`                  | candidates                                  | The candidate was saved, but unlinking it from jobs failed |
 | `already_linked`                  | applications                                | The candidate is already linked to that job                |
 | `job_has_candidates`              | jobs                                        | The job still has candidates, so it cannot be deleted      |
 | `text_too_long`                   | jobs, candidates (checks)                   | A text is over its length limit in the database            |
