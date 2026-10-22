@@ -51,19 +51,24 @@ Built as a code test for Devotion Ventures, in public: every ticket is a [GitHub
 
 ## Screenshots
 
+Shown in English, with the demo data. The app starts in Swedish and switches language from the sign-in page.
+
 **Pipeline**: the compact kanban board with a card per candidate and job, and days in the current stage
 ![The pipeline board with six stage columns and compact cards](docs/screenshots/pipeline.png)
 
-**Candidate panel**: details, LinkedIn, notes and the jobs the candidate is linked to
-![The side panel for a candidate on the pipeline](docs/screenshots/candidate-sheet.png)
+**New candidate**: name, contact details, notes and the jobs to link to; new links start in New
+![The new candidate dialog over the candidates list](docs/screenshots/candidate-dialog.png)
 
 | Jobs | Candidates |
 |---|---|
-| ![The jobs table with status and number of candidates](docs/screenshots/jobs.png) | ![The candidates table with email and LinkedIn](docs/screenshots/candidates.png) |
+| ![The jobs table with location, status and number of candidates](docs/screenshots/jobs.png) | ![The candidates table with email, LinkedIn and number of jobs](docs/screenshots/candidates.png) |
 
-| Admin: choose a customer | Admin: accounts |
+| Sign in | Admin: choose a customer |
 |---|---|
-| ![The customer chooser with one card per customer](docs/screenshots/customer-chooser.png) | ![Konton with the accounts table and Borttagna konton](docs/screenshots/accounts.png) |
+| ![The sign-in page with the language switch](docs/screenshots/login.png) | ![The customer chooser with one card per customer and its open jobs](docs/screenshots/customer-chooser.png) |
+
+**Admin: accounts**: every account with its company, email and role, and the deleted accounts behind their own button
+![The accounts table with the demo accounts and the Deleted accounts button](docs/screenshots/accounts.png)
 
 ---
 
