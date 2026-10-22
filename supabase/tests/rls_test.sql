@@ -461,4 +461,68 @@ begin
   raise notice 'OK 24: an account created as admin through Auth''s insert-then-update gets the admin role';
 end $$;
 
+-- ---------------------------------------------------------------- deleted accounts (ATS-27)
+reset role;
+do $$ declare
+  customer uuid := '00000000-0000-0000-0000-0000000000d1';
+  admin2 uuid := '00000000-0000-0000-0000-0000000000d2';
+  job uuid; blocked boolean := false;
+begin
+  insert into auth.users (id, email, raw_app_meta_data) values
+    (customer, 'deleted-customer@test.local', '{"role":"customer"}'),
+    (admin2, 'deleted-admin@test.local', '{"role":"admin"}');
+  insert into public.jobs (customer_id, title) values (customer, 'Kept job') returning id into job;
+
+  -- 25. A customer cannot mark or unmark itself as deleted: there is no client update on profiles.
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', customer), true);
+  begin
+    update public.profiles set deleted_at = now() where id = customer;
+  exception when insufficient_privilege then blocked := true;
+  end;
+  reset role;
+  if not blocked then raise exception 'FAIL 25: a customer could set its own deleted_at'; end if;
+  raise notice 'OK 25: a client cannot set or clear deleted_at';
+
+  -- 26. A deleted customer's token sees no rows and cannot write, but its data is kept.
+  update public.profiles set deleted_at = now() where id in (customer, admin2);
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', customer), true);
+  assert (select count(*) from public.jobs) = 0, 'deleted customer sees no jobs';
+  assert (select count(*) from public.profiles) = 0, 'deleted customer sees not even its own profile';
+  blocked := false;
+  begin
+    insert into public.jobs (customer_id, title) values (customer, 'After delete');
+  exception when insufficient_privilege then blocked := true;
+  end;
+  reset role;
+  if not blocked then raise exception 'FAIL 26: a deleted customer could still create a job'; end if;
+  assert exists (select 1 from public.jobs where id = job), 'the data is kept';
+  raise notice 'OK 26: a deleted customer''s token gets no rows, and its data is kept';
+
+  -- 27. A deleted admin is no admin; an active admin still sees the deleted account and its data.
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', admin2), true);
+  assert not public.is_admin(), 'a deleted admin is not an admin';
+  assert (select count(*) from public.jobs) = 0, 'a deleted admin sees nothing';
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
+  assert exists (select 1 from public.profiles where id = customer and deleted_at is not null), 'admin sees the deleted account';
+  assert exists (select 1 from public.jobs where id = job), 'admin sees its data, for restoring';
+  reset role;
+  raise notice 'OK 27: a deleted admin is not an admin, and an active admin still sees deleted accounts';
+
+  -- 28. The purge deletes only accounts deleted more than 30 days ago, with their data.
+  update public.profiles set deleted_at = now() - interval '29 days' where id = customer;
+  update public.profiles set deleted_at = now() - interval '31 days' where id = admin2;
+  assert public.purge_deleted_accounts() = 1, 'one account purged';
+  assert exists (select 1 from auth.users where id = customer), 'deleted 29 days ago: kept';
+  assert not exists (select 1 from auth.users where id = admin2), 'deleted 31 days ago: gone';
+  assert exists (select 1 from public.profiles where id = '00000000-0000-0000-0000-0000000000ad'), 'active admin untouched';
+  update public.profiles set deleted_at = now() - interval '31 days' where id = customer;
+  assert public.purge_deleted_accounts() = 1, 'the customer purged too';
+  assert not exists (select 1 from public.jobs where id = job), 'its jobs went with it';
+  assert not has_function_privilege('authenticated', 'public.purge_deleted_accounts()', 'execute'), 'no client can purge';
+  raise notice 'OK 28: the purge removes only accounts deleted more than 30 days ago, and no client can run it';
+end $$;
+
 rollback;
