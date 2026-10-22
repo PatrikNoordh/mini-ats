@@ -72,6 +72,7 @@
     "application_not_found": "Ansökan hittades inte.",
     "already_linked": "Kandidaten är redan kopplad till det här jobbet.",
     "links_failed": "Kandidaten sparades, men kunde inte kopplas till jobben. Öppna kandidaten och försök igen.",
+    "unlinks_failed": "Kandidaten sparades, men kunde inte tas bort från jobben. Öppna kandidaten och försök igen.",
     "unknown": "Något gick fel. Försök igen.",
     "job_has_candidates": "Jobbet har kandidater. Ta bort dem under Kandidater först, så att inga kort på tavlan tas bort av misstag.",
     "offline": "Ingen internetanslutning. Kontrollera nätverket och försök igen.",
@@ -181,7 +182,10 @@
     "adding": "Lägger till…",
     "noJobsToAdd": "Inga fler öppna jobb att lägga till.",
     "addedToast": "Kandidaten har lagts till i jobbet.",
-    "addFailed": "Kunde inte lägga till kandidaten i jobbet."
+    "addFailed": "Kunde inte lägga till kandidaten i jobbet.",
+    "removeFromJob": "Ta bort från {{job}}",
+    "removedToast": "Kandidaten är borttagen från {{job}}.",
+    "removeFailed": "Kunde inte ta bort kandidaten från jobbet."
   },
   "candidates": {
     "title": "Kandidater",
@@ -208,7 +212,7 @@
     "linkJobs": "Koppla till jobb",
     "noOpenJobs": "Inga öppna jobb.",
     "newLinksHint": "Nya kopplingar hamnar i steget Ny.",
-    "existingLinksHint": "Befintliga kopplingar kan inte tas bort här.",
+    "unlinkHint": "Avmarkera ett jobb för att ta bort kandidatens kort från det.",
     "created": "Kandidaten är tillagd.",
     "updated": "Kandidaten är uppdaterad.",
     "deleteTitle": "Ta bort kandidaten?",
@@ -217,7 +221,11 @@
     "deleteLinks_other": "Kandidaten är kopplad till {{count, number}} jobb.",
     "deleted": "Kandidaten är borttagen.",
     "saveFailed": "Kunde inte spara kandidaten.",
-    "deleteFailed": "Kunde inte ta bort kandidaten."
+    "deleteFailed": "Kunde inte ta bort kandidaten.",
+    "unlinkTitle": "Ta bort från jobb?",
+    "unlinkDescription_one": "{{name}} tas bort från {{jobs}}. Kortet på tavlan försvinner också, med eventuell CV-bedömning. Kandidaten finns kvar.",
+    "unlinkDescription_other": "{{name}} tas bort från {{jobs}}. Korten på tavlan försvinner också, med eventuella CV-bedömningar. Kandidaten finns kvar.",
+    "unlinkConfirm": "Ta bort"
   },
   "jobs": {
     "title": "Jobb",

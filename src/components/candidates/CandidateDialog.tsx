@@ -28,7 +28,7 @@ import {
   MAX_URL_LENGTH,
 } from "@/lib/constants";
 import { errorCode } from "@/lib/errors";
-import { cn } from "@/lib/utils";
+import { useFormat } from "@/lib/format";
 import {
   candidateInputSchema,
   fieldErrors,
@@ -51,6 +51,7 @@ export function CandidateDialog({
   candidate: Candidate | null;
 }) {
   const { t } = useTranslation();
+  const format = useFormat();
   const jobs = useJobs(customerId);
   const apps = useApplications(customerId);
   const save = useSaveCandidate(customerId);
@@ -58,12 +59,15 @@ export function CandidateDialog({
   const errorToast = useErrorToast();
   const [confirming, setConfirming] = useState(false);
   const [form, setForm] = useState(empty);
-  // Jobs picked in this dialog. The existing links come from the applications, not from here.
+  // Jobs ticked and unticked in this dialog. The existing links come from the applications.
   const [newJobIds, setNewJobIds] = useState<string[]>([]);
+  const [removedJobIds, setRemovedJobIds] = useState<string[]>([]);
+  // The validated form, held while the user confirms removing links.
+  const [pendingInput, setPendingInput] = useState<CandidateInput | null>(null);
   const [errors, setErrors] = useState<FormErrors<CandidateInput>>({});
 
-  // Jobs the candidate is already linked to. They can't be unlinked here, so they show as checked
-  // and disabled. Read from the query, so links that arrive after the dialog opened still show.
+  // Jobs the candidate is already linked to. Read from the query, so links that arrive after the
+  // dialog opened still show.
   const linkedJobIds = useMemo(
     () =>
       candidate
@@ -76,6 +80,8 @@ export function CandidateDialog({
     if (!open) return;
     setErrors({});
     setNewJobIds([]);
+    setRemovedJobIds([]);
+    setPendingInput(null);
     if (candidate) {
       const { full_name, email, phone, linkedin_url, notes } = candidate;
       setForm({ full_name, email, phone, linkedin_url, notes });
@@ -88,28 +94,47 @@ export function CandidateDialog({
   const set = (k: keyof typeof empty) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const parsed = candidateInputSchema.safeParse(form);
-    setErrors(parsed.success ? {} : fieldErrors(candidateInputSchema, parsed.error));
-    if (!parsed.success) return;
+  // Only links that still exist are removed, so one removed in another tab meanwhile is skipped.
+  const removing = removedJobIds.filter((id) => linkedJobIds.includes(id));
+
+  const saveCandidate = async (input: CandidateInput) => {
     try {
       await save.mutateAsync({
         id: candidate?.id,
-        input: parsed.data,
+        input,
         newJobIds: newJobIds.filter((id) => !linkedJobIds.includes(id)),
+        removedJobIds: removing,
       });
       toast.success(candidate ? t("candidateDialog.updated") : t("candidateDialog.created"));
       onOpenChange(false);
     } catch (err) {
       // The candidate is saved, so the form closes: saving it again would create a duplicate.
-      if (errorCode(err) === "links_failed") {
-        toast.error(t("errors.links_failed"));
+      const code = errorCode(err);
+      if (code === "links_failed" || code === "unlinks_failed") {
+        toast.error(t(`errors.${code}`));
         onOpenChange(false);
       } else {
         errorToast(t("candidateDialog.saveFailed"), err);
       }
+    } finally {
+      setPendingInput(null);
     }
+  };
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const parsed = candidateInputSchema.safeParse(form);
+    setErrors(parsed.success ? {} : fieldErrors(candidateInputSchema, parsed.error));
+    if (!parsed.success) return;
+    // Removing a link deletes its card, so it is confirmed first.
+    if (removing.length > 0) setPendingInput(parsed.data);
+    else await saveCandidate(parsed.data);
+  };
+
+  // Cancelling the confirm keeps every link: the unticked jobs are ticked again.
+  const onCancelUnlink = () => {
+    setPendingInput(null);
+    setRemovedJobIds([]);
   };
 
   const onDelete = async () => {
@@ -129,8 +154,22 @@ export function CandidateDialog({
   const linksLoading = jobs.isLoading || (!!candidate && apps.isLoading);
   const linksError = jobs.isError || (!!candidate && apps.isError);
   const isLinked = (jobId: string) => linkedJobIds.includes(jobId);
-  const isChecked = (jobId: string) => isLinked(jobId) || newJobIds.includes(jobId);
-  const visibleJobs = (jobs.data ?? []).filter((j) => j.status === "open" || isChecked(j.id));
+  const isChecked = (jobId: string) =>
+    isLinked(jobId) ? !removedJobIds.includes(jobId) : newJobIds.includes(jobId);
+  // A closed job stays listed while the candidate is linked to it, so it can be unticked and ticked
+  // back.
+  const visibleJobs = (jobs.data ?? []).filter(
+    (j) => j.status === "open" || isLinked(j.id) || newJobIds.includes(j.id),
+  );
+  const toggle = (jobId: string, checked: boolean) => {
+    const update = (ids: string[], add: boolean) =>
+      add ? [...ids, jobId] : ids.filter((x) => x !== jobId);
+    if (isLinked(jobId)) setRemovedJobIds((ids) => update(ids, !checked));
+    else setNewJobIds((ids) => update(ids, checked));
+  };
+  const removingTitles = (jobs.data ?? [])
+    .filter((j) => removing.includes(j.id))
+    .map((j) => j.title);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -216,21 +255,10 @@ export function CandidateDialog({
                 )}
                 <div className="space-y-1.5">
                   {visibleJobs.map((j) => (
-                    <label
-                      key={j.id}
-                      className={cn(
-                        "flex items-center gap-2 text-sm",
-                        isLinked(j.id) && "text-muted-foreground",
-                      )}
-                    >
+                    <label key={j.id} className="flex items-center gap-2 text-sm">
                       <Checkbox
                         checked={isChecked(j.id)}
-                        disabled={isLinked(j.id)}
-                        onCheckedChange={(c) =>
-                          setNewJobIds((ids) =>
-                            c ? [...ids, j.id] : ids.filter((x) => x !== j.id),
-                          )
-                        }
+                        onCheckedChange={(c) => toggle(j.id, c === true)}
                       />
                       {j.title} <span className="text-muted-foreground">· {j.location}</span>
                     </label>
@@ -238,7 +266,7 @@ export function CandidateDialog({
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {t("candidateDialog.newLinksHint")}
-                  {linkedJobIds.length > 0 && ` ${t("candidateDialog.existingLinksHint")}`}
+                  {linkedJobIds.length > 0 && ` ${t("candidateDialog.unlinkHint")}`}
                 </p>
               </>
             )}
@@ -264,6 +292,21 @@ export function CandidateDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+      {candidate && (
+        <ConfirmDeleteDialog
+          open={pendingInput !== null}
+          onOpenChange={(o) => !o && onCancelUnlink()}
+          title={t("candidateDialog.unlinkTitle")}
+          description={t("candidateDialog.unlinkDescription", {
+            name: pendingInput?.full_name ?? candidate.full_name,
+            jobs: format.list(removingTitles),
+            count: removing.length,
+          })}
+          confirmLabel={t("candidateDialog.unlinkConfirm")}
+          busy={save.isPending}
+          onConfirm={() => pendingInput && saveCandidate(pendingInput)}
+        />
+      )}
       {candidate && (
         <ConfirmDeleteDialog
           open={confirming}

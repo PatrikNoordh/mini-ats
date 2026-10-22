@@ -372,7 +372,7 @@ end $$;
 
 -- The grants are exactly what the app uses. A change here is a deliberate change to this list.
 do $$ declare actual text; expected text :=
-  'applications:INSERT,SELECT,UPDATE candidates:DELETE,INSERT,SELECT,UPDATE '
+  'applications:DELETE,INSERT,SELECT,UPDATE candidates:DELETE,INSERT,SELECT,UPDATE '
   'cv_assessments:SELECT jobs:DELETE,INSERT,SELECT,UPDATE profiles:SELECT';
 begin
   select string_agg(table_name || ':' || privileges, ' ' order by table_name) into actual
@@ -523,6 +523,73 @@ begin
   assert not exists (select 1 from public.jobs where id = job), 'its jobs went with it';
   assert not has_function_privilege('authenticated', 'public.purge_deleted_accounts()', 'execute'), 'no client can purge';
   raise notice 'OK 28: the purge removes only accounts deleted more than 30 days ago, and no client can run it';
+end $$;
+
+-- ---------------------------------------------------------------- removing a job link (ATS-30)
+-- Its own customers: customer A is deleted by check 19.
+reset role;
+do $$ declare
+  owner uuid := gen_random_uuid(); other uuid := gen_random_uuid(); gone uuid := gen_random_uuid();
+  job1 uuid; job2 uuid; cand uuid; app1 uuid; app2 uuid; n integer; blocked boolean := false;
+begin
+  insert into auth.users (id, email, raw_app_meta_data) values
+    (owner, 'owner-30@test.local', '{"role":"customer"}'),
+    (other, 'other-30@test.local', '{"role":"customer"}'),
+    (gone, 'gone-30@test.local', '{"role":"customer"}');
+  insert into public.jobs (customer_id, title) values (owner, 'Job 1') returning id into job1;
+  insert into public.jobs (customer_id, title) values (owner, 'Job 2') returning id into job2;
+  insert into public.candidates (customer_id, full_name) values (owner, 'Linked twice') returning id into cand;
+  insert into public.applications (job_id, candidate_id) values (job1, cand) returning id into app1;
+  insert into public.applications (job_id, candidate_id) values (job2, cand) returning id into app2;
+  insert into public.cv_assessments (application_id, score) values (app1, 7);
+
+  -- Another customer cannot remove the owner's link: 0 rows.
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', other), true);
+  delete from public.applications where id = app1;
+  get diagnostics n = row_count;
+  assert n = 0, 'another customer removed the link';
+
+  -- The owner removes its own link; the assessment goes with it, the candidate and job stay.
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', owner), true);
+  delete from public.applications where id = app1;
+  get diagnostics n = row_count;
+  assert n = 1, 'the owner could not remove its own link';
+  reset role;
+  assert not exists (select 1 from public.cv_assessments where application_id = app1), 'the assessment went with the card';
+  assert exists (select 1 from public.candidates where id = cand), 'the candidate stays';
+  assert exists (select 1 from public.jobs where id = job1), 'the job stays';
+
+  -- An admin acting for the owner removes its other link.
+  set local role authenticated;
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
+  delete from public.applications where id = app2;
+  get diagnostics n = row_count;
+  assert n = 1, 'the admin could not remove the owner''s link';
+
+  -- A deleted account (ATS-27) cannot remove its links, even with its old token.
+  reset role;
+  insert into public.jobs (customer_id, title) values (gone, 'Gone job') returning id into job1;
+  insert into public.candidates (customer_id, full_name) values (gone, 'Gone cand') returning id into cand;
+  insert into public.applications (job_id, candidate_id) values (job1, cand) returning id into app1;
+  update public.profiles set deleted_at = now() where id = gone;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', gone), true);
+  delete from public.applications where id = app1;
+  get diagnostics n = row_count;
+  reset role;
+  assert n = 0, 'a deleted account removed a link';
+
+  -- Signed out: no privilege at all.
+  set local role anon;
+  begin
+    delete from public.applications where id = app1;
+  exception when insufficient_privilege then blocked := true;
+  end;
+  reset role;
+  if not blocked then raise exception 'FAIL 29: anon could delete an application'; end if;
+  assert exists (select 1 from public.applications where id = app1), 'the deleted account''s card is kept';
+  raise notice 'OK 29: a customer and an admin remove a job link with its assessment; another customer, a deleted account and anon cannot';
 end $$;
 
 rollback;

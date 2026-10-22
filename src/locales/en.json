@@ -72,6 +72,7 @@
     "application_not_found": "The application could not be found.",
     "already_linked": "The candidate is already linked to this job.",
     "links_failed": "The candidate was saved, but could not be linked to the jobs. Open the candidate and try again.",
+    "unlinks_failed": "The candidate was saved, but could not be removed from the jobs. Open the candidate and try again.",
     "unknown": "Something went wrong. Please try again.",
     "job_has_candidates": "This job has candidates. Remove them under Candidates first, so no cards on the board are deleted by mistake.",
     "offline": "No internet connection. Check your network and try again.",
@@ -181,7 +182,10 @@
     "adding": "Adding…",
     "noJobsToAdd": "No more open jobs to add.",
     "addedToast": "The candidate has been added to the job.",
-    "addFailed": "Could not add the candidate to the job."
+    "addFailed": "Could not add the candidate to the job.",
+    "removeFromJob": "Remove from {{job}}",
+    "removedToast": "The candidate has been removed from {{job}}.",
+    "removeFailed": "Could not remove the candidate from the job."
   },
   "candidates": {
     "title": "Candidates",
@@ -208,7 +212,7 @@
     "linkJobs": "Link to jobs",
     "noOpenJobs": "No open jobs.",
     "newLinksHint": "New links start in the New stage.",
-    "existingLinksHint": "Existing links cannot be removed here.",
+    "unlinkHint": "Untick a job to remove the candidate's card from it.",
     "created": "The candidate has been added.",
     "updated": "The candidate has been updated.",
     "deleteTitle": "Delete the candidate?",
@@ -217,7 +221,11 @@
     "deleteLinks_other": "The candidate is linked to {{count, number}} jobs.",
     "deleted": "The candidate is deleted.",
     "saveFailed": "Could not save the candidate.",
-    "deleteFailed": "Could not delete the candidate."
+    "deleteFailed": "Could not delete the candidate.",
+    "unlinkTitle": "Remove from jobs?",
+    "unlinkDescription_one": "{{name}} is removed from {{jobs}}. The card on the board goes too, with any CV assessment. The candidate is kept.",
+    "unlinkDescription_other": "{{name}} is removed from {{jobs}}. The cards on the board go too, with any CV assessments. The candidate is kept.",
+    "unlinkConfirm": "Remove"
   },
   "jobs": {
     "title": "Jobs",

@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useErrorToast } from "@/hooks/useErrorToast";
-import { addApplication, listApplications, moveApplication } from "@/lib/api/applications";
+import {
+  addApplication,
+  listApplications,
+  moveApplication,
+  unlinkCandidate,
+} from "@/lib/api/applications";
 import { queryKeys, withCardMoved, withCardRestored } from "@/lib/stages";
 import type { Application, Stage } from "@/types";
 
@@ -57,6 +62,22 @@ export function useAddApplication(customerId: string | null) {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: queryKeys.applications(customerId) });
       qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });
+    },
+  });
+}
+
+/** Removes one card: the candidate's link to one job, with any assessment of it (ATS-30). */
+export function useRemoveApplication(customerId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ candidateId, jobId }: { candidateId: string; jobId: string }) =>
+      unlinkCandidate(customerId!, candidateId, [jobId]),
+    // Also after a failure: the card may already be gone in another tab. Jobs and candidates show
+    // how many links they have.
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.applications(customerId) });
+      qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });
+      qc.invalidateQueries({ queryKey: queryKeys.candidates(customerId) });
     },
   });
 }

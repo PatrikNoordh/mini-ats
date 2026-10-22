@@ -57,6 +57,26 @@ export async function linkCandidate(candidateId: string, jobIds: readonly string
   if (error) throw fromDbError(error);
 }
 
+/**
+ * Removes a candidate's links to jobs: their cards leave the board, and each card's assessment goes
+ * with it (foreign key cascade). A link already removed, for example in another tab, is no error.
+ * The filter on customer_id matters for admins, whom RLS lets delete any customer's rows.
+ */
+export async function unlinkCandidate(
+  customerId: string,
+  candidateId: string,
+  jobIds: readonly string[],
+): Promise<void> {
+  if (jobIds.length === 0) return;
+  const { error } = await supabase
+    .from("applications")
+    .delete()
+    .eq("customer_id", customerId)
+    .eq("candidate_id", candidateId)
+    .in("job_id", jobIds);
+  if (error) throw fromDbError(error);
+}
+
 /** A failed link of one candidate to one job. A link that already exists is `already_linked`. */
 export function addApplicationError(error: Error & { code: string }): Error {
   return error.code === PG_UNIQUE_VIOLATION ? new AppError("already_linked") : fromDbError(error);
