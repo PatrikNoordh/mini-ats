@@ -38,8 +38,8 @@ async function createUser(account: NewAccount): Promise<CreateResult> {
     email: account.email,
     password: account.password,
     email_confirm: true,
-    // The profile trigger copies these at insert: the role from app_metadata (server only),
-    // name and company from user_metadata.
+    // The profile triggers copy these: name and company from user_metadata at insert, and the
+    // role from app_metadata (server only), which Auth sets in an update right after (ATS-28).
     user_metadata: { full_name: account.full_name, company_name: account.company_name },
     app_metadata: { role: account.role },
   });
