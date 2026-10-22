@@ -76,7 +76,12 @@
     "job_has_candidates": "This job has candidates. Remove them under Candidates first, so no cards on the board are deleted by mistake.",
     "offline": "No internet connection. Check your network and try again.",
     "network_error": "Could not reach the server. Check your connection and try again.",
-    "text_too_long": "One of the texts is too long. Shorten it and try again."
+    "text_too_long": "One of the texts is too long. Shorten it and try again.",
+    "account_not_found": "The account does not exist.",
+    "account_deleted": "The account has been deleted. Contact the administrator to have it restored.",
+    "account_not_deleted": "The account is not deleted.",
+    "cannot_change_self": "You cannot delete your own account or remove your own admin role.",
+    "last_admin": "There must be at least one admin left."
   },
   "validation": {
     "name_required": "Enter a name.",

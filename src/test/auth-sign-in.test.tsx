@@ -28,6 +28,7 @@ const profile: Profile = {
   company_name: "Nordkust",
   email: "anna@test.local",
   created_at: "2026-10-01T00:00:00Z",
+  deleted_at: null,
 };
 
 function renderAuth() {

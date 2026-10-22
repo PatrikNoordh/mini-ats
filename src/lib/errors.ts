@@ -22,6 +22,11 @@ export const ERROR_CODES = [
   "already_linked",
   "job_has_candidates",
   "text_too_long",
+  "account_not_found",
+  "account_deleted",
+  "account_not_deleted",
+  "cannot_change_self",
+  "last_admin",
   "offline",
   "network_error",
 ] as const;

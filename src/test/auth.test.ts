@@ -19,8 +19,13 @@ describe("auth error codes", () => {
 
   it("leaves network failures and other errors to the unknown message", () => {
     expect(authErrorCode(new AuthRetryableFetchError("Failed to fetch", 0))).toBeNull();
-    expect(authErrorCode(new AuthApiError("Banned", 400, "user_banned"))).toBeNull();
     expect(authErrorCode(new Error("boom"))).toBeNull();
+  });
+
+  it("maps a deleted account's blocked login", () => {
+    expect(authErrorCode(new AuthApiError("User is banned", 400, "user_banned"))).toBe(
+      "account_deleted",
+    );
   });
 });
 
@@ -32,6 +37,7 @@ describe("profile row", () => {
     company_name: "Nordkust Bygg AB",
     email: "karin@nordkust.test",
     created_at: "2026-10-20T08:00:00+00:00",
+    deleted_at: null,
   };
 
   it("reads the role from the row", () => {
@@ -42,6 +48,12 @@ describe("profile row", () => {
   it("shows missing names and email as empty text", () => {
     const profile = parseProfileRow({ ...row, full_name: null, company_name: null, email: null });
     expect(profile).toMatchObject({ full_name: "", company_name: "", email: "" });
+  });
+
+  it("reads when the account was deleted", () => {
+    expect(parseProfileRow(row).deleted_at).toBeNull();
+    const deleted = "2026-10-22T10:00:00+00:00";
+    expect(parseProfileRow({ ...row, deleted_at: deleted }).deleted_at).toBe(deleted);
   });
 
   it("rejects a role the app does not know", () => {

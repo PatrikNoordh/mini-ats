@@ -12,6 +12,8 @@ export interface AuthUser {
 export function authErrorCode(error: unknown): ErrorCode | null {
   if (!isAuthError(error)) return null;
   if (error.code === "invalid_credentials") return "invalid_credentials";
+  // A deleted account is banned until it is restored (ATS-27).
+  if (error.code === "user_banned") return "account_deleted";
   if (error.code === "over_request_rate_limit" || error.status === 429) return "too_many_attempts";
   return null;
 }

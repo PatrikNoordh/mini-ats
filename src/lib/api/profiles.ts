@@ -5,7 +5,7 @@ import type { Profile, Role } from "@/types";
 import { roleSchema } from "@/lib/validation";
 import { invokeFunction } from "./functions";
 
-const PROFILE_COLUMNS = "id, role, full_name, company_name, email, created_at";
+const PROFILE_COLUMNS = "id, role, full_name, company_name, email, created_at, deleted_at";
 
 const profileRowSchema = z.object({
   id: z.string(),
@@ -14,6 +14,7 @@ const profileRowSchema = z.object({
   company_name: z.string().nullable(),
   email: z.string().nullable(),
   created_at: z.string(),
+  deleted_at: z.string().nullable(),
 });
 
 /** A `profiles` row as the app's Profile. Throws on a role the app does not know. */
@@ -26,6 +27,7 @@ export function parseProfileRow(row: unknown): Profile {
     company_name: p.company_name ?? "",
     email: p.email ?? "",
     created_at: p.created_at,
+    deleted_at: p.deleted_at,
   };
 }
 
@@ -95,4 +97,40 @@ const createdSchema = z.object({ id: z.string() });
  */
 export async function createProfile(input: CreateProfileInput): Promise<string> {
   return createdSchema.parse(await invokeFunction("admin-create-user", input)).id;
+}
+
+export interface UpdateProfileInput {
+  id: string;
+  role: Role;
+  full_name: string;
+  company_name: string;
+  email: string;
+  /** Left out to keep the password. */
+  password?: string;
+}
+
+/**
+ * Account changes go through the admin-manage-account Edge Function, which checks that the caller
+ * is an admin and never lets an admin delete or demote itself or the last admin.
+ */
+export async function updateProfile({ password, ...input }: UpdateProfileInput): Promise<void> {
+  await invokeFunction("admin-manage-account", {
+    action: "update",
+    ...input,
+    ...(password ? { password } : {}),
+  });
+}
+
+/** Hides the account and blocks its login. Its data is kept, and it can be restored. */
+export async function deleteProfile(id: string): Promise<void> {
+  await invokeFunction("admin-manage-account", { action: "delete", id });
+}
+
+export async function restoreProfile(id: string): Promise<void> {
+  await invokeFunction("admin-manage-account", { action: "restore", id });
+}
+
+/** Deletes a deleted account for good, with all its data, before its 30 days are up. */
+export async function deleteProfileNow(id: string): Promise<void> {
+  await invokeFunction("admin-manage-account", { action: "delete_now", id });
 }

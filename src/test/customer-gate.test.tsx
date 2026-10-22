@@ -27,6 +27,7 @@ function customer(id: string, company: string): Profile {
     company_name: company,
     email: "",
     created_at: "2026-10-01T08:00:00.000Z",
+    deleted_at: null,
   };
 }
 

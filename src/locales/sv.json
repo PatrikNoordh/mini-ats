@@ -76,7 +76,12 @@
     "job_has_candidates": "Jobbet har kandidater. Ta bort dem under Kandidater först, så att inga kort på tavlan tas bort av misstag.",
     "offline": "Ingen internetanslutning. Kontrollera nätverket och försök igen.",
     "network_error": "Kunde inte nå servern. Kontrollera anslutningen och försök igen.",
-    "text_too_long": "En av texterna är för lång. Korta den och försök igen."
+    "text_too_long": "En av texterna är för lång. Korta den och försök igen.",
+    "account_not_found": "Kontot finns inte.",
+    "account_deleted": "Kontot är borttaget. Kontakta administratören om det ska återställas.",
+    "account_not_deleted": "Kontot är inte borttaget.",
+    "cannot_change_self": "Du kan inte ta bort ditt eget konto eller ta bort din egen adminroll.",
+    "last_admin": "Det måste finnas minst en admin kvar."
   },
   "validation": {
     "name_required": "Ange namn.",
