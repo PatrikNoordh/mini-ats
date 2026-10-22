@@ -200,6 +200,19 @@ describe("saving a candidate", () => {
     expect(unlinkCandidate).toHaveBeenCalledWith(CUSTOMER, candidate.id, [removed]);
   });
 
+  it("still removes the unticked links when adding the new ones fails", async () => {
+    const removed = "10000000-0000-0000-0000-0000000000a2";
+    vi.mocked(linkCandidate).mockRejectedValue(new Error("network"));
+    const result = saveCandidate(CUSTOMER, {
+      id: candidate.id,
+      input,
+      newJobIds: [jobId],
+      removedJobIds: [removed],
+    });
+    await expect(result).rejects.toEqual(new AppError("links_failed"));
+    expect(unlinkCandidate).toHaveBeenCalledWith(CUSTOMER, candidate.id, [removed]);
+  });
+
   it("says unlinks_failed when the candidate is saved but removing links fails", async () => {
     vi.mocked(unlinkCandidate).mockRejectedValue(new Error("network"));
     const result = saveCandidate(CUSTOMER, {
