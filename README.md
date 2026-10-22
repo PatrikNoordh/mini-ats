@@ -125,7 +125,7 @@ flowchart LR
     API -- "anon key + user JWT" --> PG[(Postgres<br/>RLS)]
     API -- "user JWT" --> EF["Edge Functions<br/>supabase/functions"]
     EF -- "caller's JWT: reads" --> PG
-    EF -- "service role: the one privileged write" --> Auth[(Supabase Auth)]
+    EF -- "service role: only the account writes" --> Auth[(Supabase Auth)]
 ```
 
 | Layer | Folder | Rule |
@@ -208,7 +208,7 @@ The service role key bypasses RLS. Anything in the browser can be read by anyone
 Two things need more power than a user has: creating accounts and changing or deleting them in Auth. Each is an Edge Function that:
 1. **checks the caller first**: `is_admin()`, run with the caller's own JWT,
 2. **reads with the caller's JWT**, so RLS still applies,
-3. uses the **service role only for the one write** it exists for,
+3. uses the **service role only for the account writes** it exists for,
 4. validates the body with zod and returns error codes, never internal messages.
 
 The demo seed script also uses the key. It runs only on my machine and reads the key from the shell or from a gitignored file, never from `.env.local`, which the app reads.
