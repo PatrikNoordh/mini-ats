@@ -63,7 +63,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 
 ## Security rules — never break these
 
-1. **The service role key is only used in Edge Functions.** Never import it, read it or reference it in `src/`.
+1. **The service role key is only used in Edge Functions**, and in the local demo seed script (`scripts/seed-demo.ts`, ATS-15), which reads it from your shell or `.env.seed.local` and is never run in CI or deployed. Never import it, read it or reference it in `src/`.
 2. **Edge Functions read with the caller's JWT.** Use the service role key only for the one privileged action the function exists for (creating a user, saving an assessment). Never use it to read data on behalf of a user.
 3. **Public sign-up is disabled.** Accounts are only created by an admin through the `admin-create-user` Edge Function, which checks that the caller is an admin before doing anything.
 4. **`profiles.role` is the role that counts.** RLS reads it through `public.is_admin()`, and the app reads it from the user's own profile. `app_metadata.role` is set when the account is created so the trigger can copy it. Never read the role from `user_metadata`.
