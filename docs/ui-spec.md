@@ -76,7 +76,10 @@ An application links one candidate to one job and is one card on the kanban boar
    - The board scrolls horizontally on mobile.
 3. **`/jobs`:** table with title, location, status and number of candidates. Create and edit in a dialog. Close and reopen a job. Delete a job from its edit dialog, after a confirm, only while no candidates are linked to it: otherwise a toast says to remove its candidates under Kandidater first (`job_has_candidates`), and the database refuses too.
 4. **`/candidates`:** table with name, email and LinkedIn. Create and edit in a dialog: name, email, phone, LinkedIn URL (must be a linkedin.com URL), notes, and one or more jobs to link to. A new link starts in "Ny". Delete a candidate from its edit dialog, after a confirm that names them and how many jobs they are linked to. Their cards on the board and their assessments go with them.
-5. **`/admin/accounts`:** admin only. Table with name, company, email, role and created date. A dialog to create an account: role, name, company, email and a temporary password.
+5. **`/admin/accounts`:** admin only. Table with name, company, email, role and created date of the active accounts. A dialog to create an account: role, name, company, email and a temporary password. Clicking an account opens the same dialog to edit it: name, company, email, role and an optional new password (empty keeps it). Everything goes through the `admin-manage-account` Edge Function (ATS-27).
+   - **Ta bort** asks first and names the date the account is deleted for good. A deleted account is hidden from the table, the customer chooser and the header picker, cannot sign in (the login page says the account is deleted) and gets no data even with an old session, but keeps all its jobs, candidates and cards.
+   - **Borttagna konton (n)** shows the deleted accounts, each with "Raderas för gott <date>" (30 days after the delete, `ACCOUNT_DELETE_GRACE_DAYS`), **Återställ**, which brings it back with everything in it, and **Radera för gott**, which deletes it now after the admin types its company name (the email for an admin). A daily job deletes accounts whose 30 days are up.
+   - An admin cannot delete or remove the admin role from its own account or the last active admin. Everything else is allowed, also for other admins.
 
 ## Layout and design
 
