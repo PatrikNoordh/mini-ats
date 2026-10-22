@@ -47,7 +47,7 @@ An application links one candidate to one job and is one card on the kanban boar
 ## Auth (Supabase Auth, from ATS-6)
 
 - `src/contexts/AuthContext.tsx` with `useAuth()` exposing: `user`, `profile`, `role`, `isLoading`, `signIn(email, password)`, `signOut()`. The Supabase calls live in `src/lib/api/auth.ts`.
-- The role comes from the user's own `profiles` row. A user whose profile is missing, or fails to load at sign-in, is signed out again.
+- The role comes from the user's own `profiles` row. A user whose profile is missing, or fails to load at sign-in, is signed out again. The row gets its role from `app_metadata.role`, also when Auth sets it right after creating the user, as the Auth admin API does (ATS-28).
 - The session is read in the browser only, so the server renders the loading state for protected pages.
 - Route guards: `RequireAuth` redirects signed-out users to `/login?redirect=<the page they asked for>`, and login returns them there. Only a path inside the app is accepted (`src/lib/redirect.ts`). After a sign-out the guard goes to a bare `/login`, so the next account to sign in starts on `/pipeline`. `RequireAdmin` redirects customers to `/pipeline`.
 - `signOut()` signs out on this device and clears the TanStack Query cache. The cache is also cleared whenever the signed-in user changes, for example after a sign-out in another tab.
