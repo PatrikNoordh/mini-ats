@@ -429,4 +429,36 @@ begin
   raise notice 'OK 23: every job and candidate text is stored at its limit and refused one character over';
 end $$;
 
+-- ---------------------------------------------------------------- role from app_metadata (ATS-28)
+-- Auth's admin API inserts the user without app_metadata and sets it in a later update. The
+-- profile must end up with the role from that update.
+reset role;
+do $$ declare
+  account uuid := '00000000-0000-0000-0000-0000000000c2';
+begin
+  insert into auth.users (id, email, raw_app_meta_data)
+  values (account, 'new-admin@test.local', '{"provider":"email","providers":["email"]}');
+  assert (select role from public.profiles where id = account) = 'customer', 'no role yet at insert';
+
+  update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}' where id = account;
+  assert (select role from public.profiles where id = account) = 'admin', 'role copied from app_metadata';
+
+  update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"owner"}' where id = account;
+  assert (select role from public.profiles where id = account) = 'admin', 'an unknown role changes nothing';
+
+  update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"admin","provider":"github"}'
+  where id = account;
+  assert (select role from public.profiles where id = account) = 'admin', 'other keys change nothing';
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', account), true);
+  assert public.is_admin(), 'is_admin() is true for the new admin';
+  reset role;
+
+  update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"customer"}' where id = account;
+  assert (select role from public.profiles where id = account) = 'customer', 'a role change is copied too';
+  delete from auth.users where id = account;
+  raise notice 'OK 24: an account created as admin through Auth''s insert-then-update gets the admin role';
+end $$;
+
 rollback;
