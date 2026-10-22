@@ -268,6 +268,10 @@ Tracked in #45.
 
 Tracked in #52.
 
+### ATS-28 · fix · Give accounts created as admin the admin role
+
+Tracked in #54.
+
 **Checkpoint — ship version 1 to the reviewers:** admin login, customer login and repo link, plus a short note on the status.
 
 ---
@@ -311,8 +315,6 @@ Gives the recruiter a quick first read of a CV against a job. A suggestion, neve
 Small problems and improvements noticed while working on a ticket but outside its scope. Add one line per finding as soon as it is found, with the ticket where it was found. At each epic checkpoint the list is triaged and emptied: a finding becomes an extra AC on the open ticket that touches the same code, or goes into one hygiene ticket for the epic, or is dropped. The AC says where it came from, for example "(found while building ATS-2)". `/ats-epic-close` does the triage and records where each line went in `docs/review-epic-<N>.md`.
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
-
-- [ ] An admin created through the Auth admin API gets `profiles.role = customer`: creating "TestAdmin" on Konton and `admin@mini-ats.test` with the seed script both gave Kund. Likely cause, to confirm with SQL: Auth inserts the user before it sets `app_metadata`, so `handle_new_user` sees no role and falls back to customer. Fix with a migration that copies the role when Auth sets `app_metadata.role`, an RLS check that follows Auth's insert-then-update order, and a fix for the admins already created as customers. Blocks ATS-15 AC4 (the reviewers' admin login) — `supabase/migrations/20261006000000_init.sql` (`handle_new_user`), `supabase/functions/admin-create-user` (found in ATS-15)
 
 ## Found while reviewing PRs
 
