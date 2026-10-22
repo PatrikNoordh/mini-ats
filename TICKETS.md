@@ -276,6 +276,10 @@ Tracked in #54.
 
 Tracked in #57.
 
+### ATS-30 · feat · Remove a candidate's job link
+
+Tracked in #59.
+
 **Checkpoint — ship version 1 to the reviewers:** admin login, customer login and repo link, plus a short note on the status.
 
 ---
