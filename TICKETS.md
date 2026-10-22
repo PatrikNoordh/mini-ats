@@ -312,6 +312,8 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] An admin created through the Auth admin API gets `profiles.role = customer`: creating "TestAdmin" on Konton and `admin@mini-ats.test` with the seed script both gave Kund. Likely cause, to confirm with SQL: Auth inserts the user before it sets `app_metadata`, so `handle_new_user` sees no role and falls back to customer. Fix with a migration that copies the role when Auth sets `app_metadata.role`, an RLS check that follows Auth's insert-then-update order, and a fix for the admins already created as customers. Blocks ATS-15 AC4 (the reviewers' admin login) — `supabase/migrations/20261006000000_init.sql` (`handle_new_user`), `supabase/functions/admin-create-user` (found in ATS-15)
+
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
