@@ -272,6 +272,14 @@ Tracked in #52.
 
 Tracked in #54.
 
+### ATS-29 · feat · Use the Mini-ATS mark as the app logo and favicon
+
+Tracked in #57.
+
+### ATS-30 · feat · Remove a candidate's job link
+
+Tracked in #59.
+
 **Checkpoint — ship version 1 to the reviewers:** admin login, customer login and repo link, plus a short note on the status.
 
 ---
