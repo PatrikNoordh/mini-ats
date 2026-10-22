@@ -76,7 +76,12 @@
     "job_has_candidates": "Jobbet har kandidater. Ta bort dem under Kandidater först, så att inga kort på tavlan tas bort av misstag.",
     "offline": "Ingen internetanslutning. Kontrollera nätverket och försök igen.",
     "network_error": "Kunde inte nå servern. Kontrollera anslutningen och försök igen.",
-    "text_too_long": "En av texterna är för lång. Korta den och försök igen."
+    "text_too_long": "En av texterna är för lång. Korta den och försök igen.",
+    "account_not_found": "Kontot finns inte.",
+    "account_deleted": "Kontot är borttaget. Kontakta administratören om det ska återställas.",
+    "account_not_deleted": "Kontot är inte borttaget.",
+    "cannot_change_self": "Du kan inte ta bort ditt eget konto eller ta bort din egen adminroll.",
+    "last_admin": "Det måste finnas minst en admin kvar."
   },
   "validation": {
     "name_required": "Ange namn.",
@@ -89,7 +94,8 @@
     "location_required": "Ange en ort.",
     "linkedin_invalid": "Ange en länk till en LinkedIn-profil, till exempel https://www.linkedin.com/in/namn.",
     "login_required": "Fyll i både e-post och lösenord.",
-    "too_long": "Texten är för lång."
+    "too_long": "Texten är för lång.",
+    "email_taken_deleted": "Ett borttaget konto har den e-postadressen. Återställ det under Borttagna konton."
   },
   "shell": {
     "toggleSidebar": "Visa eller dölj menyn",
@@ -256,7 +262,25 @@
     "company": "Företag",
     "email": "E-post",
     "role": "Roll",
-    "created": "Skapad"
+    "created": "Skapad",
+    "actions": "Åtgärder",
+    "edit": "Redigera {{name}}",
+    "showDeleted": "Borttagna konton ({{count, number}})",
+    "hideDeleted": "Dölj borttagna konton",
+    "deletedTitle": "Borttagna konton",
+    "deletedHint": "Ett borttaget konto kan inte logga in men behåller allt innehåll. Det kan återställas i {{days}} dagar och raderas sedan för gott.",
+    "deletedEmpty": "Inga borttagna konton",
+    "purgeColumn": "Raderas för gott",
+    "purgeOn": "Raderas för gott {{date}}",
+    "restore": "Återställ",
+    "restored": "Kontot är återställt.",
+    "restoreFailed": "Kunde inte återställa kontot.",
+    "deleteNow": "Radera för gott",
+    "deleteNowTitle": "Radera kontot för gott?",
+    "deleteNowDescription": "{{name}} raderas nu med alla jobb, kandidater och kort. Det går inte att ångra.",
+    "deleteNowType": "Skriv {{text}} för att bekräfta.",
+    "deletedNow": "Kontot är raderat för gott.",
+    "deleteNowFailed": "Kunde inte radera kontot."
   },
   "accountDialog": {
     "title": "Nytt konto",
@@ -269,7 +293,17 @@
     "submit": "Skapa konto",
     "submitting": "Skapar…",
     "created": "Kontot är skapat.",
-    "createFailed": "Kunde inte skapa kontot."
+    "createFailed": "Kunde inte skapa kontot.",
+    "titleEdit": "Redigera konto",
+    "updated": "Kontot är uppdaterat.",
+    "updateFailed": "Kunde inte spara kontot.",
+    "newPassword": "Nytt lösenord",
+    "newPasswordHint": "Lämna tomt för att behålla lösenordet. Annars minst {{min}} tecken.",
+    "selfRoleHint": "Du kan inte ta bort din egen adminroll.",
+    "deleteTitle": "Ta bort kontot?",
+    "deleteDescription": "Kontot döljs och kan inte logga in. Det raderas för gott {{date}} med alla jobb, kandidater och kort. Fram till dess kan du ångra under Borttagna konton.",
+    "deleted": "Kontot är borttaget. Du kan återställa det under Borttagna konton.",
+    "deleteFailed": "Kunde inte ta bort kontot."
   },
   "notFound": {
     "title": "Sidan hittades inte",

@@ -14,7 +14,11 @@ import {
   readStoredCustomer,
   storeCustomer,
 } from "@/lib/active-customer-storage";
+import { isActive } from "@/lib/accounts";
 import type { Profile } from "@/types";
+
+/** A deleted customer is hidden from the chooser and the picker, and drops a stored choice. */
+const isActiveCustomer = (p: Profile) => p.role === "customer" && isActive(p);
 
 interface ActiveCustomerValue {
   /** Customer whose data is shown. null = admin hasn't picked one. */
@@ -57,7 +61,7 @@ export function ActiveCustomerProvider({ children }: { children: ReactNode }) {
 
   // A stored customer the admin cannot see (deleted, or never valid) is dropped once the list
   // is in. While the list loads, the choice waits for it.
-  const customerIds = profiles.data?.filter((p) => p.role === "customer").map((p) => p.id);
+  const customerIds = profiles.data?.filter(isActiveCustomer).map((p) => p.id);
   const isStale = !!selected && !!customerIds && !customerIds.includes(selected);
   useEffect(() => {
     if (!isStale) return;
@@ -94,7 +98,7 @@ export function ActiveCustomerProvider({ children }: { children: ReactNode }) {
         isRestoring: false,
         setCustomerId,
       };
-    const customers = (profiles.data ?? []).filter((p) => p.role === "customer");
+    const customers = (profiles.data ?? []).filter(isActiveCustomer);
     const customer = customers.find((c) => c.id === selected) ?? null;
     return {
       customerId: customer?.id ?? null,

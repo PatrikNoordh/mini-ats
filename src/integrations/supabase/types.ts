@@ -209,6 +209,7 @@ export type Database = {
         Row: {
           company_name: string | null;
           created_at: string;
+          deleted_at: string | null;
           email: string | null;
           full_name: string | null;
           id: string;
@@ -217,6 +218,7 @@ export type Database = {
         Insert: {
           company_name?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           email?: string | null;
           full_name?: string | null;
           id: string;
@@ -225,6 +227,7 @@ export type Database = {
         Update: {
           company_name?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           email?: string | null;
           full_name?: string | null;
           id?: string;
@@ -237,6 +240,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      account_is_active: { Args: never; Returns: boolean };
       is_admin: { Args: never; Returns: boolean };
       move_application: {
         Args: { application_id: string; customer_id: string; new_stage: string };
@@ -258,6 +262,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      purge_deleted_accounts: { Args: never; Returns: number };
     };
     Enums: {
       [_ in never]: never;

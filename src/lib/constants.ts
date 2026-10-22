@@ -64,3 +64,9 @@ export const PG_UNIQUE_VIOLATION = "23505";
 export const PG_FOREIGN_KEY_VIOLATION = "23503";
 /** Postgres error code for a failed check constraint, for example a text over its length limit. */
 export const PG_CHECK_VIOLATION = "23514";
+
+/**
+ * Days a deleted account is kept, so an admin can restore it, before it is deleted for good.
+ * Same as purge_deleted_accounts() in supabase/migrations/20261022180000_account_soft_delete.sql.
+ */
+export const ACCOUNT_DELETE_GRACE_DAYS = 30;

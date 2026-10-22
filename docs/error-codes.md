@@ -53,24 +53,29 @@ The data layer maps the message to an `AppError` with `fromDbError()` in `src/li
 
 ## Codes
 
-| Code                              | Where                         | Meaning                                                   |
-| --------------------------------- | ----------------------------- | --------------------------------------------------------- |
-| `card_not_found`                  | `move_application` (function) | The card does not exist for this customer                 |
-| `job_not_found`                   | jobs                          | The job does not exist for this customer                  |
-| `candidate_not_found`             | candidates                    | The candidate does not exist for this customer            |
-| `email_exists`                    | profiles, `admin-create-user` | An account with that email already exists                 |
-| `invalid_input`                   | `admin-create-user`           | The request body failed validation (`fields` names which) |
-| `not_authenticated`               | Edge Functions                | No valid JWT: signed out or the session expired           |
-| `forbidden`                       | `admin-create-user`           | The caller is signed in but not an admin                  |
-| `invalid_credentials`             | auth                          | Wrong email or password                                   |
-| `too_many_attempts`               | auth                          | Too many sign-in attempts in a short time                 |
-| `profile_not_found`               | auth                          | The account has no `profiles` row                         |
-| `job_candidate_customer_mismatch` | applications (trigger)        | The job and the candidate belong to different customers   |
-| `application_not_found`           | cv_assessments (trigger)      | The application the assessment points at does not exist   |
-| `links_failed`                    | candidates                    | The candidate was saved, but linking it to jobs failed    |
-| `already_linked`                  | applications                  | The candidate is already linked to that job               |
-| `job_has_candidates`              | jobs                          | The job still has candidates, so it cannot be deleted     |
-| `text_too_long`                   | jobs, candidates (checks)     | A text is over its length limit in the database           |
-| `offline`                         | any request (browser)         | No answer, and the browser has no internet connection     |
-| `network_error`                   | any request (browser)         | No answer from the server, although the browser is online |
-| `unknown`                         | anywhere                      | Fallback for errors without a known code                  |
+| Code                              | Where                                       | Meaning                                                    |
+| --------------------------------- | ------------------------------------------- | ---------------------------------------------------------- |
+| `card_not_found`                  | `move_application` (function)               | The card does not exist for this customer                  |
+| `job_not_found`                   | jobs                                        | The job does not exist for this customer                   |
+| `candidate_not_found`             | candidates                                  | The candidate does not exist for this customer             |
+| `email_exists`                    | `admin-create-user`, `admin-manage-account` | An account with that email already exists                  |
+| `invalid_input`                   | `admin-create-user`, `admin-manage-account` | The request body failed validation (`fields` names which)  |
+| `not_authenticated`               | Edge Functions                              | No valid JWT: signed out or the session expired            |
+| `forbidden`                       | `admin-create-user`, `admin-manage-account` | The caller is signed in but not an admin                   |
+| `invalid_credentials`             | auth                                        | Wrong email or password                                    |
+| `too_many_attempts`               | auth                                        | Too many sign-in attempts in a short time                  |
+| `profile_not_found`               | auth                                        | The account has no `profiles` row                          |
+| `job_candidate_customer_mismatch` | applications (trigger)                      | The job and the candidate belong to different customers    |
+| `application_not_found`           | cv_assessments (trigger)                    | The application the assessment points at does not exist    |
+| `links_failed`                    | candidates                                  | The candidate was saved, but linking it to jobs failed     |
+| `already_linked`                  | applications                                | The candidate is already linked to that job                |
+| `job_has_candidates`              | jobs                                        | The job still has candidates, so it cannot be deleted      |
+| `text_too_long`                   | jobs, candidates (checks)                   | A text is over its length limit in the database            |
+| `account_not_found`               | `admin-manage-account`                      | The account does not exist                                 |
+| `account_deleted`                 | `admin-manage-account`, auth                | The account is deleted (also a deleted account signing in) |
+| `account_not_deleted`             | `admin-manage-account`                      | Restore or delete for good on an account not deleted       |
+| `cannot_change_self`              | `admin-manage-account`                      | An admin tried to delete or demote its own account         |
+| `last_admin`                      | `admin-manage-account`                      | The change would leave no active admin                     |
+| `offline`                         | any request (browser)                       | No answer, and the browser has no internet connection      |
+| `network_error`                   | any request (browser)                       | No answer from the server, although the browser is online  |
+| `unknown`                         | anywhere                                    | Fallback for errors without a known code                   |

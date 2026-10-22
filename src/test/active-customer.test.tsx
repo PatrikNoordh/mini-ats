@@ -14,6 +14,7 @@ function account(id: string, role: Profile["role"]): Profile {
     company_name: `${id} AB`,
     email: `${id}@test.local`,
     created_at: "2026-10-01T08:00:00Z",
+    deleted_at: null,
   };
 }
 
@@ -160,5 +161,25 @@ describe("a customer account", () => {
     expect(getItem).not.toHaveBeenCalled();
     expect(setItem).not.toHaveBeenCalled();
     vi.restoreAllMocks();
+  });
+});
+
+describe("a deleted customer", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    signIn(admin);
+  });
+
+  it("is hidden from the chooser and drops the admin's choice", () => {
+    listLoaded(admin, nordkust, lumen);
+    const view = renderActive();
+    act(() => view.result.current.setCustomerId(nordkust.id));
+    expect(view.result.current.customers.map((c) => c.id)).toEqual([nordkust.id, lumen.id]);
+
+    listLoaded(admin, { ...nordkust, deleted_at: "2026-10-22T10:00:00Z" }, lumen);
+    view.rerender();
+    expect(view.result.current.customers.map((c) => c.id)).toEqual([lumen.id]);
+    expect(view.result.current.customerId).toBeNull();
+    expect(stored()).toBeNull();
   });
 });

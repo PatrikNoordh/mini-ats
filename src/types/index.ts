@@ -7,6 +7,8 @@ export interface Profile {
   company_name: string;
   email: string;
   created_at: string;
+  /** Set when an admin deleted the account; it is deleted for good ACCOUNT_DELETE_GRACE_DAYS later. */
+  deleted_at: string | null;
 }
 
 export type JobStatus = "open" | "closed";
