@@ -86,6 +86,7 @@ An application links one candidate to one job and is one card on the kanban boar
 - Follow `docs/prototype.html` for layout, density and visual style.
 - Left sidebar: Pipeline, Jobb, Kandidater, and for admins Konton. Collapses to a menu on mobile.
 - Header: the active customer picker (admins only) and a user menu with logout.
+- Logo: the Mini-ATS mark (`docs/brand/`) next to the product name, in the sidebar and on the login page. `Logo.tsx` draws it with the theme colours; `public/favicon.svg` is the same mark, with `favicon.ico` as the fallback.
 - Calm B2B look: light neutral background, white surfaces, one accent color used sparingly, good contrast. No gradients.
 - Desktop first, but every page works at 390 px wide.
 - Every list and the board have loading, empty and error states.
