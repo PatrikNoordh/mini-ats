@@ -1,4 +1,9 @@
-<h1 align="center">Mini-ATS</h1>
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-dark.svg">
+    <img src="docs/brand/logo-light.svg" alt="Mini-ATS" height="64">
+  </picture>
+</h1>
 
 <p align="center">
   A small applicant tracking system for companies that recruit.<br>
@@ -366,6 +371,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 - **Admins create every account**, and give the customer their login in person. There are no email invites.
 - A candidate belongs to **one customer**, and can be in several of that customer's jobs.
 - The AI assessment of a CV is **a suggestion for the recruiter**, never a decision.
+- The product is called **Mini-ATS**, as in the brief. The name lives in one translation key (`app.name`), so it can change in one place when the product gets a real name. Each customer sees their own company name in the header, taken from their account.
 
 ---
 
