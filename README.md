@@ -25,7 +25,7 @@
   <img src="https://img.shields.io/badge/Supabase-RLS-3FCF8E?logo=supabase&logoColor=white" alt="Supabase with RLS">
 </p>
 
-Built as a code test for Devotion Ventures, in public: every ticket is a [GitHub issue](../../issues) and every change a [pull request](../../pulls).
+Built as a code test, in public: every ticket is a [GitHub issue](../../issues) and every change a [pull request](../../pulls).
 
 ---
 
@@ -407,7 +407,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 
 ## Credits and attribution
 
-Mini-ATS is a code test (2026) by [Patrik Noordh](https://github.com/PatrikNoordh), built for Devotion Ventures. I wrote the spec and the rules, made the product decisions and tested every change. The UI was first built with [Lovable](https://lovable.dev), and the code since then with [Claude Code](https://claude.com/claude-code) (see [How it was built](#how-it-was-built)).
+Mini-ATS is a code test (2026) by [Patrik Noordh](https://github.com/PatrikNoordh). I wrote the spec and the rules, made the product decisions and tested every change. The UI was first built with [Lovable](https://lovable.dev), and the code since then with [Claude Code](https://claude.com/claude-code) (see [How it was built](#how-it-was-built)).
 
 Built on open source:
 - [TanStack](https://tanstack.com) Start, Router and Query (MIT)
