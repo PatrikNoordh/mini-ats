@@ -46,6 +46,7 @@ Built as a code test for Devotion Ventures, in public: every ticket is a [GitHub
 - [Assumptions](#assumptions)
 - [Out of scope](#out-of-scope)
 - [What I would do next](#what-i-would-do-next)
+- [Credits and attribution](#credits-and-attribution)
 
 ---
 
@@ -401,3 +402,21 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 | **Teams** | Several users per company with a members table, which changes `customer_id = auth.uid()` to a membership check in RLS |
 | **Audit log** | Who moved, changed or deleted what, and when |
 | **Email** | Invites and password reset through Supabase Auth, once accounts aren't handed out in person |
+
+---
+
+## Credits and attribution
+
+Mini-ATS is a code test (2026) by [Patrik Noordh](https://github.com/PatrikNoordh), built for Devotion Ventures. I wrote the spec and the rules, made the product decisions and tested every change. The UI was first built with [Lovable](https://lovable.dev), and the code since then with [Claude Code](https://claude.com/claude-code) (see [How it was built](#how-it-was-built)).
+
+Built on open source:
+- [TanStack](https://tanstack.com) Start, Router and Query (MIT)
+- [Supabase](https://supabase.com): Postgres, Auth, Storage and Edge Functions (`supabase-js`, MIT)
+- [shadcn/ui](https://ui.shadcn.com) and [Radix UI](https://www.radix-ui.com) components (MIT)
+- Drag and drop by [dnd-kit](https://dndkit.com) (MIT)
+- Icons by [Lucide](https://lucide.dev) (ISC)
+- Toasts by [Sonner](https://sonner.emilkowal.ski) (MIT)
+- Translations with [i18next](https://www.i18next.com) (MIT)
+- Typefaces [Public Sans](https://public-sans.digital.gov) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/) (SIL Open Font License), from Google Fonts
+
+All people, companies, jobs and candidates in the demo and the screenshots are made up. Any likeness to real ones is a coincidence.
