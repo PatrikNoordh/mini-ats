@@ -209,7 +209,7 @@
     "linkJobs": "Link to jobs",
     "noOpenJobs": "No open jobs.",
     "newLinksHint": "New links start in the New stage.",
-    "existingLinksHint": "Existing links cannot be removed here.",
+    "unlinkHint": "Untick a job to remove the candidate's card from it.",
     "created": "The candidate has been added.",
     "updated": "The candidate has been updated.",
     "deleteTitle": "Delete the candidate?",
@@ -218,7 +218,11 @@
     "deleteLinks_other": "The candidate is linked to {{count, number}} jobs.",
     "deleted": "The candidate is deleted.",
     "saveFailed": "Could not save the candidate.",
-    "deleteFailed": "Could not delete the candidate."
+    "deleteFailed": "Could not delete the candidate.",
+    "unlinkTitle": "Remove from jobs?",
+    "unlinkDescription_one": "{{name}} is removed from {{jobs}}. The card on the board goes too, with any CV assessment. The candidate is kept.",
+    "unlinkDescription_other": "{{name}} is removed from {{jobs}}. The cards on the board go too, with any CV assessments. The candidate is kept.",
+    "unlinkConfirm": "Remove"
   },
   "jobs": {
     "title": "Jobs",

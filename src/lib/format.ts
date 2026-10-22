@@ -16,6 +16,11 @@ export function formatNumber(value: number, language: Language): string {
   return new Intl.NumberFormat(LOCALES[language]).format(value);
 }
 
+/** Names joined the way the language does it: "Platschef och Snickare", "A, B and C". */
+export function formatList(items: readonly string[], language: Language): string {
+  return new Intl.ListFormat(LOCALES[language], { type: "conjunction" }).format(items);
+}
+
 /** Sorts user data (names, titles) the way the active language expects. */
 export function compareText(a: string, b: string, language: Language): number {
   return a.localeCompare(b, LOCALES[language]);
@@ -29,6 +34,7 @@ export function useFormat() {
     language,
     date: (iso: string) => formatDate(iso, language),
     number: (value: number) => formatNumber(value, language),
+    list: (items: readonly string[]) => formatList(items, language),
     compare: (a: string, b: string) => compareText(a, b, language),
   };
 }
