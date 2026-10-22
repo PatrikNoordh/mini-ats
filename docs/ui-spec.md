@@ -70,7 +70,7 @@ An application links one candidate to one job and is one card on the kanban boar
    - Compact cards: candidate name, job title, and days in the current stage computed from `stage_changed_at`. Small enough that many fit on screen.
    - Drag a card to another column to change its stage. Changing stage sets `stage_changed_at` to now.
    - With the keyboard: Tab to a card, Enter opens it, space picks it up, the left and right arrow keys move it one column, and space drops it. Escape cancels. Screen readers hear the moves in the chosen language.
-   - Clicking a card opens a side sheet with the candidate's details, LinkedIn link (new tab), notes, and the jobs they are linked to.
+   - Clicking a card opens a side sheet with the candidate's details, LinkedIn link (new tab), notes, and the jobs they are linked to. Each linked job has a remove button that, after the same confirm as the candidate dialog, removes that card and keeps the candidate (ATS-30).
    - Filters above the board: a job dropdown (all jobs or one job) and a name search that filters as you type. Both live in the URL as `?job=<job id>&q=<text>`. A hand-typed numeric search such as `?q=123` is kept as text, and each filter has a visually hidden label.
    - A clear empty state when no cards match.
    - The board scrolls horizontally on mobile.

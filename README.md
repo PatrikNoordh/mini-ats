@@ -82,7 +82,7 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
   - Small cards with the candidate's name, the job and the **days in the current stage**
   - **Drag and drop** with mouse, touch or keyboard, with optimistic moves that roll back on a failed save
   - **Filters** for the job and the name, kept in the URL (`?job=&q=`) so a reload or a shared link shows the same board
-  - A side panel with the candidate's details and jobs
+  - A side panel with the candidate's details and jobs, where a job can be added or removed
 
 **For the admin (runs the platform)**
 - **Accounts** (`Konton`): create admin and customer accounts; edit name, company, email, role and password
