@@ -182,7 +182,10 @@
     "adding": "Adding…",
     "noJobsToAdd": "No more open jobs to add.",
     "addedToast": "The candidate has been added to the job.",
-    "addFailed": "Could not add the candidate to the job."
+    "addFailed": "Could not add the candidate to the job.",
+    "removeFromJob": "Remove from {{job}}",
+    "removedToast": "The candidate has been removed from {{job}}.",
+    "removeFailed": "Could not remove the candidate from the job."
   },
   "candidates": {
     "title": "Candidates",

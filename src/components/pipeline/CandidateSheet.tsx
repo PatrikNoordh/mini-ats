@@ -1,5 +1,7 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
@@ -8,7 +10,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { AddToJob } from "@/components/pipeline/AddToJob";
+import { useRemoveApplication } from "@/hooks/useApplications";
+import { useErrorToast } from "@/hooks/useErrorToast";
 import { useFormat } from "@/lib/format";
 import { daysSince } from "@/lib/stages";
 import type { Application, Candidate, Job } from "@/types";
@@ -28,7 +34,25 @@ export function CandidateSheet({
 }) {
   const { t } = useTranslation();
   const format = useFormat();
+  const remove = useRemoveApplication(customerId);
+  const errorToast = useErrorToast();
+  // The card the user is asked about before it is removed.
+  const [removing, setRemoving] = useState<Application | null>(null);
   const links = candidate ? applications.filter((a) => a.candidate_id === candidate.id) : [];
+  const jobTitle = (a: Application) =>
+    jobs.find((j) => j.id === a.job_id)?.title ?? t("pipeline.unknownJob");
+
+  const onRemove = async () => {
+    if (!candidate || !removing) return;
+    try {
+      await remove.mutateAsync({ candidateId: candidate.id, jobId: removing.job_id });
+      toast.success(t("candidateSheet.removedToast", { job: jobTitle(removing) }));
+    } catch (err) {
+      errorToast(t("candidateSheet.removeFailed"), err);
+    } finally {
+      setRemoving(null);
+    }
+  };
   return (
     <Sheet open={!!candidate} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-md">
@@ -101,14 +125,23 @@ export function CandidateSheet({
                       key={a.id}
                       className="flex items-center justify-between rounded-md border px-3 py-2"
                     >
-                      <span className="font-medium">
-                        {jobs.find((j) => j.id === a.job_id)?.title ?? t("pipeline.unknownJob")}
-                      </span>
-                      <span className="flex items-center gap-2">
+                      <span className="min-w-0 truncate font-medium">{jobTitle(a)}</span>
+                      <span className="flex shrink-0 items-center gap-2">
                         <Badge variant="secondary">{t(`stages.${a.stage}`)}</Badge>
                         <span className="font-mono text-xs text-muted-foreground">
                           {t("pipeline.days", { count: daysSince(a.stage_changed_at) })}
                         </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          aria-label={t("candidateSheet.removeFromJob", { job: jobTitle(a) })}
+                          disabled={remove.isPending}
+                          onClick={() => setRemoving(a)}
+                        >
+                          <X className="h-4 w-4" aria-hidden="true" />
+                        </Button>
                       </span>
                     </div>
                   ))}
@@ -124,6 +157,19 @@ export function CandidateSheet({
                 jobs={jobs}
               />
             </div>
+            <ConfirmDeleteDialog
+              open={removing !== null}
+              onOpenChange={(o) => !o && setRemoving(null)}
+              title={t("candidateDialog.unlinkTitle")}
+              description={t("candidateDialog.unlinkDescription", {
+                name: candidate.full_name,
+                jobs: removing ? jobTitle(removing) : "",
+                count: 1,
+              })}
+              confirmLabel={t("candidateDialog.unlinkConfirm")}
+              busy={remove.isPending}
+              onConfirm={onRemove}
+            />
           </>
         )}
       </SheetContent>

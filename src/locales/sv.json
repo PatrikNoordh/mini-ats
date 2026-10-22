@@ -182,7 +182,10 @@
     "adding": "Lägger till…",
     "noJobsToAdd": "Inga fler öppna jobb att lägga till.",
     "addedToast": "Kandidaten har lagts till i jobbet.",
-    "addFailed": "Kunde inte lägga till kandidaten i jobbet."
+    "addFailed": "Kunde inte lägga till kandidaten i jobbet.",
+    "removeFromJob": "Ta bort från {{job}}",
+    "removedToast": "Kandidaten är borttagen från {{job}}.",
+    "removeFailed": "Kunde inte ta bort kandidaten från jobbet."
   },
   "candidates": {
     "title": "Kandidater",
