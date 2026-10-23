@@ -39,6 +39,8 @@ Return the code as JSON with a fitting status, never a message. `json()` in `sup
 return json({ error: "email_exists" }, 409);
 ```
 
+`method_not_allowed` (405) is the one code the UI never shows: the app only sends POST, so it can only come from a request made outside the app. It is not in `ERROR_CODES` and has no text.
+
 The app calls functions through `invokeFunction()` in `src/lib/api/functions.ts`. It reads `error` from the body and throws `new AppError(code)` when the code is in `ERROR_CODES`. Any 401 becomes `not_authenticated`, because the Supabase gateway answers a missing or invalid JWT itself, with a body of its own. Unknown codes become `errors.unknown`.
 
 ## Database (from epic 1)
@@ -70,7 +72,7 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 | `too_many_attempts`               | auth                                        | Too many sign-in attempts in a short time                  |
 | `profile_not_found`               | auth                                        | The account has no `profiles` row                          |
 | `job_candidate_customer_mismatch` | applications (trigger)                      | The job and the candidate belong to different customers    |
-| `application_not_found`           | cv_assessments (trigger)                    | The application the assessment points at does not exist    |
+| `application_not_found`           | cv_assessments (trigger), `assess-cv`       | The application does not exist for the caller              |
 | `links_failed`                    | candidates                                  | The candidate was saved, but linking it to jobs failed     |
 | `unlinks_failed`                  | candidates                                  | The candidate was saved, but unlinking it from jobs failed |
 | `already_linked`                  | applications                                | The candidate is already linked to that job                |
@@ -84,7 +86,14 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 | `cv_not_pdf`                      | CV upload (`cvs` bucket)                    | The chosen file is not a PDF                               |
 | `cv_too_large`                    | CV upload (`cvs` bucket)                    | The file is over 5 MB                                      |
 | `cv_upload_failed`                | candidates                                  | The candidate was saved, but uploading its CV failed       |
-| `cv_not_found`                    | CV (`cvs` bucket)                           | The CV file is missing, so it cannot be opened             |
+| `cv_not_found`                    | CV (`cvs` bucket), `assess-cv`              | The CV file is missing, so it cannot be opened or assessed |
+| `cv_missing`                      | `assess-cv`                                 | The candidate has no CV to assess (409)                    |
+| `cv_unreadable`                   | `assess-cv`                                 | The CV file is not a readable PDF (422)                    |
+| `cv_no_text`                      | `assess-cv`                                 | The PDF has too little text, for example a scan (422)      |
+| `cv_too_long`                     | `assess-cv`                                 | The CV text is over the limit; it is never cut (422)       |
+| `assessment_too_soon`             | `assess-cv`                                 | The application was assessed less than a minute ago (429)  |
+| `assessment_failed`               | `assess-cv`                                 | The model declined or gave no valid answer (502)           |
+| `assessment_unavailable`          | `assess-cv`                                 | The model API is down, overloaded or rate limited (503)    |
 | `offline`                         | any request (browser)                       | No answer, and the browser has no internet connection      |
 | `network_error`                   | any request (browser)                       | No answer from the server, although the browser is online  |
 | `unknown`                         | anywhere                                    | Fallback for errors without a known code                   |

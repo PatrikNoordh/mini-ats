@@ -205,17 +205,19 @@ The security lives in the database, not in the frontend. Hiding a button is UX; 
 
 The service role key bypasses RLS. Anything in the browser can be read by anyone, so the key never reaches `src/` or the bundle; the frontend only has the public anon key, and RLS limits what it can do.
 
-Two things need more power than a user has: creating accounts and changing or deleting them in Auth. Each is an Edge Function that:
-1. **checks the caller first**: `is_admin()`, run with the caller's own JWT,
-2. **reads with the caller's JWT**, so RLS still applies,
-3. uses the **service role only for the account writes** it exists for,
+Three things need more power than a user has: creating accounts, changing or deleting them in Auth, and saving an AI assessment of a CV, which clients may only read. Each is an Edge Function that:
+1. **checks the caller first**: `is_admin()` for the account functions, a valid session for `assess-cv`, run with the caller's own JWT,
+2. **reads with the caller's JWT**, so RLS still applies: `assess-cv` reads the application and downloads the CV as the caller,
+3. uses the **service role only for the write** it exists for,
 4. validates the body with zod and returns error codes, never internal messages.
+
+`assess-cv` sends only the CV's text and the job to the model (the photo never leaves the PDF), tells it to ignore name, age, gender and anything else not relevant to the job, and checks the JSON answer with zod before saving it.
 
 The demo seed script also uses the key. It runs only on my machine and reads the key from the shell or from a gitignored file, never from `.env.local`, which the app reads.
 
 ### How it was tested
 
-- [`supabase/tests/rls_test.sql`](supabase/tests/rls_test.sql) signs in as customer A, customer B, an admin and a signed-out user, and checks **29 rules**. Some examples:
+- [`supabase/tests/rls_test.sql`](supabase/tests/rls_test.sql) signs in as customer A, customer B, an admin and a signed-out user, and checks **31 rules**. Some examples:
   - B can't read, change, delete or create A's rows
   - a customer can't make itself admin
   - an application always gets its job's customer
@@ -262,6 +264,8 @@ npx supabase functions deploy admin-create-user
 npx supabase functions deploy admin-manage-account
 npx supabase functions deploy purge-deleted-accounts
 npx supabase secrets set PURGE_CRON_SECRET=<a long random value, e.g. from openssl rand -hex 32>
+npx supabase functions deploy assess-cv
+npx supabase secrets set ANTHROPIC_API_KEY=<your Anthropic API key>
 ```
 
 The daily purge runs in the `purge-deleted-accounts` Edge Function, because only the Storage API can remove the CV files. `pg_cron` calls it through `pg_net`, with three Vault secrets. Set them once in the **SQL Editor**:
@@ -406,7 +410,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 
 | | |
 |---|---|
-| **AI CV assessment** (epic 6) | CV upload is done. Next, have an Edge Function score it against the job (1–10, summary, strengths, gaps), told to ignore name, age, gender and photo, and clearly labelled as a suggestion. In progress |
+| **AI CV assessment** (epic 6) | CV upload and the `assess-cv` function are done: it scores a CV against the job (1–10, summary, strengths, gaps), told to ignore name, age, gender and photo. Next, show it in the candidate panel, clearly labelled as a suggestion. In progress |
 | **End-to-end tests** | Playwright runs of sign-in, the board and acting for a customer, against a preview database |
 | **Teams** | Several users per company with a members table, which changes `customer_id = auth.uid()` to a membership check in RLS |
 | **Audit log** | Who moved, changed or deleted what, and when |
