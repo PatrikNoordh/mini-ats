@@ -67,7 +67,7 @@ export const PG_CHECK_VIOLATION = "23514";
 
 /**
  * Days a deleted account is kept, so an admin can restore it, before it is deleted for good.
- * Same as purge_deleted_accounts() in supabase/migrations/20261022180000_account_soft_delete.sql.
+ * Same as accounts_due_for_purge() in supabase/migrations/20261023200000_purge_with_cv_files.sql.
  */
 export const ACCOUNT_DELETE_GRACE_DAYS = 30;
 
