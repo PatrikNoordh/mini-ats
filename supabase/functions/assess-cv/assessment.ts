@@ -4,8 +4,12 @@ import { z } from "npm:zod@3.25.76/v4";
 
 /** The model that assesses. The saved row records the model that actually answered. */
 export const ASSESSMENT_MODEL = "claude-opus-5-5";
-/** Room for the JSON answer; an assessment is a few hundred tokens. */
-export const ASSESSMENT_MAX_TOKENS = 4000;
+/**
+ * Room for the model's thinking and the JSON answer. Thinking is always on for this model and
+ * counts toward the cap, so a tight cap can cut the answer off on a long CV. Only tokens used
+ * are billed.
+ */
+export const ASSESSMENT_MAX_TOKENS = 16_000;
 
 export const MIN_SCORE = 1;
 export const MAX_SCORE = 10;
