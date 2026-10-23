@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { AddToJob } from "@/components/pipeline/AddToJob";
+import { CandidateCv } from "@/components/pipeline/CandidateCv";
 import { useRemoveApplication } from "@/hooks/useApplications";
 import { useErrorToast } from "@/hooks/useErrorToast";
 import { useFormat } from "@/lib/format";
@@ -110,6 +111,7 @@ export function CandidateSheet({
                   )}
                 </dd>
               </div>
+              <CandidateCv customerId={customerId} candidate={candidate} />
               <div>
                 <dt className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {t("candidateSheet.linkedJobs")}
