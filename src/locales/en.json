@@ -356,5 +356,24 @@
     "description": "Something went wrong. Try again or go to the start page.",
     "retry": "Try again",
     "home": "Go to the start page"
+  },
+  "assessment": {
+    "title": "AI assessment of the CV",
+    "badge": "AI suggestion",
+    "disclaimer": "A suggestion from AI to support you, not a decision. Always read the CV yourself. Name, age, gender, photo and anything else not related to the job should not affect the assessment.",
+    "assess": "Assess CV",
+    "assessAgain": "Assess again",
+    "assessing": "Assessing…",
+    "assessingHint": "This can take up to half a minute.",
+    "notAssessed": "Not assessed yet.",
+    "noCv": "Upload a CV above to assess it.",
+    "noLinks": "Link the candidate to a job to assess the CV against it.",
+    "strengths": "Strengths",
+    "gaps": "Gaps",
+    "outOf": "out of {{max}}",
+    "assessedAt": "Assessed {{date}}",
+    "done": "The CV is assessed against {{job}}.",
+    "failed": "Could not assess the CV.",
+    "forJob": "{{action}} – {{job}}"
   }
 }

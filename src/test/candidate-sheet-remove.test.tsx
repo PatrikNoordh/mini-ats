@@ -16,6 +16,10 @@ vi.mock("@/hooks/useApplications", () => ({
   useAddApplication: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useRemoveApplication: () => ({ mutateAsync: mocks.remove, isPending: false }),
 }));
+vi.mock("@/hooks/useAssessments", () => ({
+  useAssessments: () => ({ data: [], isLoading: false, isError: false }),
+  useAssessCv: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
 vi.mock("@/hooks/useCvs", () => ({
   useCvUrl: () => ({ data: undefined, isError: false }),
   useUploadCv: () => ({ mutateAsync: vi.fn(), isPending: false }),

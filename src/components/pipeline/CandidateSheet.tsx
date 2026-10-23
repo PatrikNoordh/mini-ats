@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { AddToJob } from "@/components/pipeline/AddToJob";
+import { CandidateAssessment } from "@/components/pipeline/CandidateAssessment";
 import { CandidateCv } from "@/components/pipeline/CandidateCv";
 import { useRemoveApplication } from "@/hooks/useApplications";
 import { useErrorToast } from "@/hooks/useErrorToast";
@@ -157,6 +158,14 @@ export function CandidateSheet({
                 candidateId={candidate.id}
                 applications={applications}
                 jobs={jobs}
+              />
+            </div>
+            <div className="px-4 pb-4 text-sm">
+              <CandidateAssessment
+                customerId={customerId}
+                candidate={candidate}
+                links={links}
+                jobTitle={jobTitle}
               />
             </div>
             <ConfirmDeleteDialog
