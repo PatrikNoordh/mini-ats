@@ -30,7 +30,7 @@ export const ERROR_CODES = [
   "last_admin",
   "cv_not_pdf",
   "cv_too_large",
-  "cv_empty",
+  "cv_upload_failed",
   "cv_not_found",
   "offline",
   "network_error",

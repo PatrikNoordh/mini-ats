@@ -15,7 +15,6 @@ import {
   MAX_URL_LENGTH,
   MIN_PASSWORD_LENGTH,
 } from "@/lib/constants";
-import { toErrorCode, type ErrorCode } from "@/lib/errors";
 import { isLinkedInUrl } from "@/lib/stages";
 
 /** The roles an account can have. The same values as the check on `profiles.role`. */
@@ -122,17 +121,18 @@ export const accountUpdateSchema = accountInputSchema.extend({
 });
 
 /**
- * A CV file the cvs bucket accepts: a PDF with content, of at most MAX_CV_BYTES (ATS-17). There
- * is no form field to show these under, so the messages are error codes, shown in a toast.
+ * A CV file the cvs bucket accepts: a PDF with content, of at most MAX_CV_BYTES (ATS-17). The
+ * candidate form shows the message under its CV field, the candidate panel in a toast.
  */
 const cvFileSchema = z.object({
   type: z.literal(CV_MIME_TYPE, { message: "cv_not_pdf" }),
   size: z.number().min(1, "cv_empty").max(MAX_CV_BYTES, "cv_too_large"),
 });
 
-/** Why a chosen file cannot be a CV, or null when it can. */
-export function cvFileError(file: { type: string; size: number }): ErrorCode | null {
+/** Why a chosen file cannot be a CV, as a validation key, or null when it can. */
+export function cvFileError(file: { type: string; size: number }): ValidationKey | null {
   const result = cvFileSchema.safeParse({ type: file.type, size: file.size });
   if (result.success) return null;
-  return toErrorCode(result.error.issues[0]?.message) ?? "cv_not_pdf";
+  const message = result.error.issues[0]?.message ?? "";
+  return isValidationKey(message) ? message : "cv_not_pdf";
 }

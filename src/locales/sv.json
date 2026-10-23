@@ -85,8 +85,8 @@
     "last_admin": "Det måste finnas minst en admin kvar.",
     "cv_not_pdf": "CV:t måste vara en PDF-fil.",
     "cv_too_large": "CV:t får vara högst {{maxCvMegabytes}} MB.",
-    "cv_empty": "Filen är tom.",
-    "cv_not_found": "CV-filen hittades inte. Ladda upp den igen."
+    "cv_not_found": "CV-filen hittades inte. Ladda upp den igen.",
+    "cv_upload_failed": "Kandidaten sparades, men CV:t kunde inte laddas upp. Öppna kandidaten och försök igen."
   },
   "validation": {
     "name_required": "Ange namn.",
@@ -100,7 +100,10 @@
     "linkedin_invalid": "Ange en länk till en LinkedIn-profil, till exempel https://www.linkedin.com/in/namn.",
     "login_required": "Fyll i både e-post och lösenord.",
     "too_long": "Texten är för lång.",
-    "email_taken_deleted": "Ett borttaget konto har den e-postadressen. Återställ det under Borttagna konton."
+    "email_taken_deleted": "Ett borttaget konto har den e-postadressen. Återställ det under Borttagna konton.",
+    "cv_not_pdf": "CV:t måste vara en PDF-fil.",
+    "cv_too_large": "CV:t får vara högst {{maxCvMegabytes}} MB.",
+    "cv_empty": "Filen är tom."
   },
   "shell": {
     "toggleSidebar": "Visa eller dölj menyn",
@@ -245,7 +248,10 @@
     "unlinkTitle": "Ta bort från jobb?",
     "unlinkDescription_one": "{{name}} tas bort från {{jobs}}. Kortet på tavlan försvinner också, med eventuell CV-bedömning. Kandidaten finns kvar.",
     "unlinkDescription_other": "{{name}} tas bort från {{jobs}}. Korten på tavlan försvinner också, med eventuella CV-bedömningar. Kandidaten finns kvar.",
-    "unlinkConfirm": "Ta bort"
+    "unlinkConfirm": "Ta bort",
+    "cv": "CV (PDF)",
+    "cvHintNew": "Valfritt. PDF, högst {{maxCvMegabytes}} MB.",
+    "cvHintReplace": "Kandidaten har ett CV. En ny fil ersätter det. PDF, högst {{maxCvMegabytes}} MB."
   },
   "jobs": {
     "title": "Jobb",

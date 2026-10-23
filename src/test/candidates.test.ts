@@ -4,6 +4,7 @@ import { linkCandidate, parseApplicationRow, unlinkCandidate } from "@/lib/api/a
 import { createCandidate, parseCandidateRow, updateCandidate } from "@/lib/api/candidates";
 import { MAX_NAME_LENGTH } from "@/lib/constants";
 import { AppError, errorCode, fromDbError } from "@/lib/errors";
+import { uploadCandidateCv } from "@/lib/candidate-cv";
 import { saveCandidate } from "@/lib/save-candidate";
 import { stageSchema, STAGES } from "@/lib/stages";
 import { candidateInputSchema, fieldErrors } from "@/lib/validation";
@@ -14,6 +15,7 @@ vi.mock("@/lib/api/candidates", async (importOriginal) => ({
   createCandidate: vi.fn(),
   updateCandidate: vi.fn(),
 }));
+vi.mock("@/lib/candidate-cv", () => ({ uploadCandidateCv: vi.fn() }));
 vi.mock("@/lib/api/applications", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api/applications")>()),
   linkCandidate: vi.fn(),
@@ -168,6 +170,24 @@ describe("saving a candidate", () => {
     vi.mocked(updateCandidate).mockReset().mockResolvedValue(candidate);
     vi.mocked(linkCandidate).mockReset().mockResolvedValue();
     vi.mocked(unlinkCandidate).mockReset().mockResolvedValue();
+    vi.mocked(uploadCandidateCv).mockReset().mockResolvedValue();
+  });
+
+  it("uploads a CV for the saved candidate, and none when no file is chosen", async () => {
+    const file = new File(["%PDF-1.7"], "cv.pdf", { type: "application/pdf" });
+    await saveCandidate(CUSTOMER, { input, newJobIds: [], cvFile: file });
+    expect(uploadCandidateCv).toHaveBeenCalledWith(CUSTOMER, candidate.id, file);
+    vi.mocked(uploadCandidateCv).mockClear();
+    await saveCandidate(CUSTOMER, { input, newJobIds: [] });
+    expect(uploadCandidateCv).not.toHaveBeenCalled();
+  });
+
+  it("says cv_upload_failed when the candidate is saved and linked but the CV fails", async () => {
+    vi.mocked(uploadCandidateCv).mockRejectedValue(new Error("network"));
+    const file = new File(["%PDF-1.7"], "cv.pdf", { type: "application/pdf" });
+    const result = saveCandidate(CUSTOMER, { input, newJobIds: [jobId], cvFile: file });
+    await expect(result).rejects.toEqual(new AppError("cv_upload_failed"));
+    expect(linkCandidate).toHaveBeenCalledWith(candidate.id, [jobId]);
   });
 
   it("creates the candidate, then links the new candidate to the chosen jobs", async () => {

@@ -7,7 +7,7 @@ import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { useCvUrl, useRemoveCv, useUploadCv } from "@/hooks/useCvs";
 import { useErrorToast } from "@/hooks/useErrorToast";
 import { CV_MIME_TYPE } from "@/lib/constants";
-import { AppError, errorCode } from "@/lib/errors";
+import { errorCode } from "@/lib/errors";
 import { cvFileError } from "@/lib/validation";
 import type { Candidate } from "@/types";
 
@@ -38,7 +38,9 @@ export function CandidateCv({
     if (!file) return;
     const invalid = cvFileError(file);
     if (invalid) {
-      errorToast(t("candidateSheet.cvUploadFailed"), new AppError(invalid));
+      toast.error(t("candidateSheet.cvUploadFailed"), {
+        description: t(`validation.${invalid}`),
+      });
       return;
     }
     try {

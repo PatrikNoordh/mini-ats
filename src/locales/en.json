@@ -85,8 +85,8 @@
     "last_admin": "There must be at least one admin left.",
     "cv_not_pdf": "The CV must be a PDF file.",
     "cv_too_large": "The CV can be at most {{maxCvMegabytes}} MB.",
-    "cv_empty": "The file is empty.",
-    "cv_not_found": "The CV file could not be found. Upload it again."
+    "cv_not_found": "The CV file could not be found. Upload it again.",
+    "cv_upload_failed": "The candidate was saved, but the CV could not be uploaded. Open the candidate and try again."
   },
   "validation": {
     "name_required": "Enter a name.",
@@ -100,7 +100,10 @@
     "linkedin_invalid": "Enter a link to a LinkedIn profile, for example https://www.linkedin.com/in/name.",
     "login_required": "Enter both email and password.",
     "too_long": "The text is too long.",
-    "email_taken_deleted": "A deleted account has that email address. Restore it under Deleted accounts."
+    "email_taken_deleted": "A deleted account has that email address. Restore it under Deleted accounts.",
+    "cv_not_pdf": "The CV must be a PDF file.",
+    "cv_too_large": "The CV can be at most {{maxCvMegabytes}} MB.",
+    "cv_empty": "The file is empty."
   },
   "shell": {
     "toggleSidebar": "Show or hide the menu",
@@ -245,7 +248,10 @@
     "unlinkTitle": "Remove from jobs?",
     "unlinkDescription_one": "{{name}} is removed from {{jobs}}. The card on the board goes too, with any CV assessment. The candidate is kept.",
     "unlinkDescription_other": "{{name}} is removed from {{jobs}}. The cards on the board go too, with any CV assessments. The candidate is kept.",
-    "unlinkConfirm": "Remove"
+    "unlinkConfirm": "Remove",
+    "cv": "CV (PDF)",
+    "cvHintNew": "Optional. PDF, at most {{maxCvMegabytes}} MB.",
+    "cvHintReplace": "The candidate has a CV. A new file replaces it. PDF, at most {{maxCvMegabytes}} MB."
   },
   "jobs": {
     "title": "Jobs",
