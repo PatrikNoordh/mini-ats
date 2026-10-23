@@ -82,7 +82,8 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
   - Small cards with the candidate's name, the job and the **days in the current stage**
   - **Drag and drop** with mouse, touch or keyboard, with optimistic moves that roll back on a failed save
   - **Filters** for the job and the name, kept in the URL (`?job=&q=`) so a reload or a shared link shows the same board
-  - A side panel with the candidate's details and jobs, where a job can be added or removed
+  - A side panel with the candidate's details and jobs, where a job can be added or removed, and a CV (PDF) uploaded, opened, replaced or removed
+  - **AI assessment of the CV** for each job the candidate is linked to: a score from 1 to 10, a summary, strengths and gaps, labelled as an AI suggestion, never a decision
 
 **For the admin (runs the platform)**
 - **Accounts** (`Konton`): create admin and customer accounts; edit name, company, email, role and password
@@ -410,7 +411,6 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 
 | | |
 |---|---|
-| **AI CV assessment** (epic 6) | CV upload and the `assess-cv` function are done: it scores a CV against the job (1–10, summary, strengths, gaps), told to ignore name, age, gender and photo. Next, show it in the candidate panel, clearly labelled as a suggestion. In progress |
 | **End-to-end tests** | Playwright runs of sign-in, the board and acting for a customer, against a preview database |
 | **Teams** | Several users per company with a members table, which changes `customer_id = auth.uid()` to a membership check in RLS |
 | **Audit log** | Who moved, changed or deleted what, and when |

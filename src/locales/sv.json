@@ -356,5 +356,24 @@
     "description": "Något gick fel. Försök igen eller gå till startsidan.",
     "retry": "Försök igen",
     "home": "Till startsidan"
+  },
+  "assessment": {
+    "title": "AI-bedömning av CV",
+    "badge": "AI-förslag",
+    "disclaimer": "Ett förslag från AI som stöd för dig, inte ett beslut. Läs alltid CV:t själv. Namn, ålder, kön, foto och annat som inte rör jobbet ska inte påverka bedömningen.",
+    "assess": "Bedöm CV",
+    "assessAgain": "Bedöm igen",
+    "assessing": "Bedömer…",
+    "assessingHint": "Det kan ta upp till en halv minut.",
+    "notAssessed": "Inte bedömt ännu.",
+    "noCv": "Ladda upp ett CV ovan för att kunna bedöma det.",
+    "noLinks": "Koppla kandidaten till ett jobb för att bedöma CV:t mot det.",
+    "strengths": "Styrkor",
+    "gaps": "Luckor",
+    "outOf": "av {{max}}",
+    "assessedAt": "Bedömt {{date}}",
+    "done": "CV:t är bedömt mot {{job}}.",
+    "failed": "Kunde inte bedöma CV:t.",
+    "forJob": "{{action}} – {{job}}"
   }
 }

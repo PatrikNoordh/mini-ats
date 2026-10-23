@@ -341,6 +341,7 @@ Small problems and improvements noticed while working on a ticket but outside it
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
 - [ ] An edit that saves a customer's role still demotes through the ATS-28 role trigger without the last-admin lock, so an account promoted to admin a moment before the edit is read is demoted unchecked. It cannot leave zero admins on its own, since the two admins involved stay active — `supabase/functions/admin-manage-account/index.ts` (found in ATS-33)
+- [ ] The CV field in the candidate dialog is unclear when the candidate already has a CV: the browser's own file input says "Välj fil · Ingen fil har valts", and only a small grey hint below says a CV exists and a new file replaces it. Show the current CV clearly (for example "Nuvarande CV" with a link to open it) and make the replace action obvious — `src/components/candidates/CandidateDialog.tsx`, /candidates (found in ATS-19, from ATS-17)
 
 ## Found while reviewing PRs
 
@@ -352,3 +353,4 @@ Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 - [ ] Deleting a candidate removes its CV file first; if the candidate delete then fails, the candidate keeps a `cv_path` to a missing file (shown as `cv_not_found`). Doing both in one server-side step would close it — `src/lib/api/candidates.ts` (PR #68, ATS-17)
 - [ ] Two `assess-cv` calls at the same moment can both pass the one-minute cooldown, since it is read before the save; costs one extra model call, never wrong data — `supabase/functions/assess-cv/handler.ts` (PR #69, ATS-18)
 - [ ] The comment on `SYSTEM_PROMPT` says the prompt cache reuses it, but the request sets no `cache_control` and the prompt is likely below the minimum cacheable length — `supabase/functions/assess-cv/assessment.ts` (PR #69, ATS-18)
+- [ ] After a CV is replaced, the old AI assessment still shows as the newest with nothing saying it was made from the previous CV; only the date hints at it. Marking it would need the CV upload time — `src/components/pipeline/CandidateAssessment.tsx` (PR #70, ATS-19)

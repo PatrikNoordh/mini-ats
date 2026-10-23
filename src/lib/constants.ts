@@ -82,3 +82,8 @@ export const MAX_CV_BYTES = 5 * 1024 * 1024;
 export const CV_SIGNED_URL_SECONDS = 5 * 60;
 /** A new link is fetched this long before the old one stops working. */
 export const CV_SIGNED_URL_MARGIN_SECONDS = 60;
+/**
+ * The highest score of an AI assessment; the lowest is 1. Same as MAX_SCORE in
+ * supabase/functions/assess-cv/assessment.ts and the check on cv_assessments.score.
+ */
+export const MAX_ASSESSMENT_SCORE = 10;
