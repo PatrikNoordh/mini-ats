@@ -314,6 +314,18 @@ Gives the recruiter a quick first read of a CV against a job. A suggestion, neve
 - [ ] AC2: Shows score, summary, strengths and gaps
 - [ ] AC3: Clearly labelled as an AI suggestion
 
+### ATS-31 · feat · Offer to reject a hired candidate's other open applications
+
+Tracked in #62.
+
+### ATS-32 · chore · Small hygiene fixes from epic 5
+
+Tracked in #63.
+
+### ATS-33 · fix · Make the last-admin check safe against two admins at once
+
+Tracked in #64.
+
 **Checkpoint — ship version 2 to the reviewers:** Loom demo (5 min) and the assumptions email, updated to match what was built. If the AI feature is not done, explain the approach in the demo instead.
 
 ---
@@ -324,17 +336,9 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
-- [ ] Moving a card to Hired leaves the candidate's other open cards as they are, so someone hired as Frontendutvecklare can still sit in Ny for UX-designer. Offer a soft prompt on the move ("Max Demo also has 1 other open application. Move it to Rejected?"), not a hard rule: one person can be hired for two roles, or apply again later — `src/components/pipeline/Board.tsx`, `src/hooks/useApplications.ts` (found in ATS-30)
-
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
-
-- [ ] `initials()` splits real names on `-` too, so "Anna-Lena Svensson" gives AL instead of AS; split on `.`, `_`, `+` and `-` only before the @ of an email — `src/lib/profile-name.ts` (PR #46, ATS-21)
-- [ ] `utf8Length` in `admin-create-user` has no comment pointing to its twin in `src/lib/validation.ts`, as the constants there do — `supabase/functions/admin-create-user/handler.ts` (PR #46, ATS-21)
-- [ ] `admin-create-user` must be deployed at merge for the server to check the password limit in bytes; until then only the form does — `supabase/functions/admin-create-user/handler.ts` (PR #46, ATS-21)
-- [ ] The last-admin check counts and then writes, so two admins deleting or demoting each other at the same moment can both pass and leave no admin (recoverable only in the Dashboard); hold the check and the write in one locked database function — `supabase/functions/admin-manage-account/handler.ts` (ATS-27 branch review)
-- [ ] Deleting an account for good (now or after 30 days) cascades through the tables but leaves its files in Storage; once ATS-17 stores CVs, remove the account's `cvs/<id>/` files too, so "Radera för gott" really erases its data — `supabase/migrations/20261022180000_account_soft_delete.sql` (ATS-27 branch review)
