@@ -30,6 +30,7 @@ const candidateRow = {
   phone: "070-000 00 10",
   linkedin_url: "https://www.linkedin.com/in/alva-exempel",
   notes: "Stark referens.",
+  cv_path: null,
   created_at: "2026-10-20T08:00:00+00:00",
 };
 

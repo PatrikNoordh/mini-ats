@@ -82,7 +82,11 @@
     "account_deleted": "Kontot är borttaget. Kontakta administratören om det ska återställas.",
     "account_not_deleted": "Kontot är inte borttaget.",
     "cannot_change_self": "Du kan inte ta bort ditt eget konto eller ta bort din egen adminroll.",
-    "last_admin": "Det måste finnas minst en admin kvar."
+    "last_admin": "Det måste finnas minst en admin kvar.",
+    "cv_not_pdf": "CV:t måste vara en PDF-fil.",
+    "cv_too_large": "CV:t får vara högst {{maxCvMegabytes}} MB.",
+    "cv_empty": "Filen är tom.",
+    "cv_not_found": "CV-filen hittades inte. Ladda upp den igen."
   },
   "validation": {
     "name_required": "Ange namn.",
@@ -185,7 +189,23 @@
     "addFailed": "Kunde inte lägga till kandidaten i jobbet.",
     "removeFromJob": "Ta bort från {{job}}",
     "removedToast": "Kandidaten är borttagen från {{job}}.",
-    "removeFailed": "Kunde inte ta bort kandidaten från jobbet."
+    "removeFailed": "Kunde inte ta bort kandidaten från jobbet.",
+    "cv": "CV",
+    "noCv": "Inget CV uppladdat.",
+    "cvHint": "PDF, högst {{maxCvMegabytes}} MB.",
+    "uploadCv": "Ladda upp CV",
+    "replaceCv": "Byt CV",
+    "removeCv": "Ta bort CV",
+    "openCv": "Öppna CV",
+    "uploading": "Laddar upp…",
+    "chooseCvFile": "Välj en PDF-fil som CV för {{name}}",
+    "cvUploaded": "CV:t är uppladdat.",
+    "cvUploadFailed": "Kunde inte ladda upp CV:t.",
+    "cvRemoved": "CV:t är borttaget.",
+    "cvRemoveFailed": "Kunde inte ta bort CV:t.",
+    "cvOpenFailed": "Kunde inte hämta CV:t.",
+    "removeCvTitle": "Ta bort CV?",
+    "removeCvDescription": "CV:t för {{name}} tas bort för gott."
   },
   "candidates": {
     "title": "Kandidater",
@@ -216,7 +236,7 @@
     "created": "Kandidaten är tillagd.",
     "updated": "Kandidaten är uppdaterad.",
     "deleteTitle": "Ta bort kandidaten?",
-    "deleteDescription": "{{name}} tas bort för gott, med alla sina kort på tavlan.",
+    "deleteDescription": "{{name}} tas bort för gott, med sitt CV och alla sina kort på tavlan.",
     "deleteLinks_one": "Kandidaten är kopplad till {{count, number}} jobb.",
     "deleteLinks_other": "Kandidaten är kopplad till {{count, number}} jobb.",
     "deleted": "Kandidaten är borttagen.",

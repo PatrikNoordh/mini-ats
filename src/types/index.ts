@@ -36,6 +36,8 @@ export interface Candidate {
   phone: string;
   linkedin_url: string;
   notes: string;
+  /** Where the CV is in the cvs bucket, or null when the candidate has none (ATS-17). */
+  cv_path: string | null;
   created_at: string;
 }
 

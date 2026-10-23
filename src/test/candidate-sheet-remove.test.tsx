@@ -16,6 +16,11 @@ vi.mock("@/hooks/useApplications", () => ({
   useAddApplication: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useRemoveApplication: () => ({ mutateAsync: mocks.remove, isPending: false }),
 }));
+vi.mock("@/hooks/useCvs", () => ({
+  useCvUrl: () => ({ data: undefined, isError: false }),
+  useUploadCv: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useRemoveCv: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
 
 const CUSTOMER = "00000000-0000-0000-0000-0000000000a1";
 const job = (id: string, title: string): Job => ({
@@ -46,6 +51,7 @@ const candidate: Candidate = {
   phone: "",
   linkedin_url: "",
   notes: "",
+  cv_path: null,
   created_at: "2026-09-21T08:00:00Z",
 };
 

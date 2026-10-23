@@ -57,6 +57,7 @@ const candidate: Candidate = {
   phone: "",
   linkedin_url: "",
   notes: "",
+  cv_path: null,
   created_at: "2026-10-20T08:00:00Z",
 };
 
@@ -125,7 +126,7 @@ describe("deleting a candidate", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     const confirm = await screen.findByRole("alertdialog");
     expect(confirm).toHaveTextContent(
-      "Alva Provsson will be deleted for good, with all their cards on the board. The candidate is linked to 2 jobs.",
+      "Alva Provsson will be deleted for good, with their CV and all their cards on the board. The candidate is linked to 2 jobs.",
     );
     fireEvent.click(screen.getAllByRole("button", { name: "Delete" }).at(-1)!);
     await waitFor(() => expect(mocks.deleteCandidate).toHaveBeenCalledWith("c1"));

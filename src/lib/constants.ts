@@ -70,3 +70,15 @@ export const PG_CHECK_VIOLATION = "23514";
  * Same as purge_deleted_accounts() in supabase/migrations/20261022180000_account_soft_delete.sql.
  */
 export const ACCOUNT_DELETE_GRACE_DAYS = 30;
+
+/** The only file type a CV may have. The cvs bucket allows only this type too. */
+export const CV_MIME_TYPE = "application/pdf";
+/**
+ * Largest CV file, 5 MB. Same as the limit on the cvs bucket in
+ * supabase/migrations/20261023180000_cv_bucket_limits.sql: change both.
+ */
+export const MAX_CV_BYTES = 5 * 1024 * 1024;
+/** How long a link to open a CV works. Short, so a copied link soon stops working. */
+export const CV_SIGNED_URL_SECONDS = 5 * 60;
+/** A new link is fetched this long before the old one stops working. */
+export const CV_SIGNED_URL_MARGIN_SECONDS = 60;

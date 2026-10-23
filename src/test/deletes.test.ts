@@ -16,10 +16,22 @@ const db = vi.hoisted(() => {
     };
   }
   builder["maybeSingle"] = () => Promise.resolve(result);
-  return { calls, result, builder };
+  // Removing the candidate's CV file (ATS-17).
+  const storageResult: { error: unknown } = { error: null };
+  const storage = {
+    from: (bucket: string) => ({
+      remove: (paths: string[]) => {
+        calls.push(["remove", bucket, paths]);
+        return Promise.resolve({ data: [], error: storageResult.error });
+      },
+    }),
+  };
+  return { calls, result, builder, storage, storageResult };
 });
 
-vi.mock("@/integrations/supabase/client", () => ({ supabase: db.builder }));
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: { ...db.builder, storage: db.storage },
+}));
 
 const CUSTOMER = "00000000-0000-0000-0000-0000000000a1";
 const ID = "10000000-0000-0000-0000-0000000000a1";
@@ -29,6 +41,7 @@ describe("deleting", () => {
     db.calls.length = 0;
     db.result.data = { id: ID };
     db.result.error = null;
+    db.storageResult.error = null;
   });
 
   it("deletes a job scoped to the customer", async () => {
@@ -56,10 +69,18 @@ describe("deleting", () => {
     await expect(deleteJob(CUSTOMER, ID)).rejects.toBe(error);
   });
 
-  it("deletes a candidate scoped to the customer", async () => {
+  it("deletes a candidate scoped to the customer, removing its CV file first", async () => {
     await expect(deleteCandidate(CUSTOMER, ID)).resolves.toBeUndefined();
+    expect(db.calls[0]).toEqual(["remove", "cvs", [`${CUSTOMER}/${ID}.pdf`]]);
     expect(db.calls).toContainEqual(["from", "candidates"]);
     expect(db.calls).toContainEqual(["eq", "customer_id", CUSTOMER]);
+  });
+
+  it("deletes no candidate when its CV file cannot be removed", async () => {
+    const error = new Error("storage down");
+    db.storageResult.error = error;
+    await expect(deleteCandidate(CUSTOMER, ID)).rejects.toBe(error);
+    expect(db.calls).not.toContainEqual(["from", "candidates"]);
   });
 
   it("reports a candidate that is not there for this customer as candidate_not_found", async () => {
