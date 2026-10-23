@@ -660,4 +660,61 @@ begin
   raise notice 'OK 30: the last active admin cannot be deleted or demoted, and no client can run the function';
 end $$;
 
+-- ---------------------------------------------------------------- CV bucket (ATS-17)
+-- The bucket refuses big files and anything but PDF on the server. A CV is replaced in place
+-- (upsert), which needs the update policy: own folder while active, or an admin.
+reset role;
+do $$ declare
+  owner uuid := gen_random_uuid(); other uuid := gen_random_uuid(); gone uuid := gen_random_uuid();
+  n integer; blocked boolean := false;
+begin
+  assert (select file_size_limit from storage.buckets where id = 'cvs') = 5 * 1024 * 1024, 'cvs limit is 5 MB';
+  assert (select allowed_mime_types from storage.buckets where id = 'cvs') = array['application/pdf'], 'cvs takes only PDF';
+
+  insert into auth.users (id, email, raw_app_meta_data) values
+    (owner, 'owner-17@test.local', '{"role":"customer"}'),
+    (other, 'other-17@test.local', '{"role":"customer"}'),
+    (gone, 'gone-17@test.local', '{"role":"customer"}');
+  insert into storage.objects (bucket_id, name) values
+    ('cvs', owner || '/cv-owner.pdf'), ('cvs', other || '/cv-other.pdf'), ('cvs', gone || '/cv-gone.pdf');
+  update public.profiles set deleted_at = now() where id = gone;
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', owner), true);
+  update storage.objects set name = name where bucket_id = 'cvs' and name = owner || '/cv-owner.pdf';
+  get diagnostics n = row_count;
+  assert n = 1, 'the owner could not replace its own CV';
+  update storage.objects set name = name where bucket_id = 'cvs' and name = other || '/cv-other.pdf';
+  get diagnostics n = row_count;
+  assert n = 0, 'a customer replaced another customer''s CV';
+  begin
+    update storage.objects set name = other || '/moved.pdf' where bucket_id = 'cvs' and name = owner || '/cv-owner.pdf';
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL 31: a customer moved its CV into another customer''s folder'; end if;
+
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', gone), true);
+  update storage.objects set name = name where bucket_id = 'cvs' and name = gone || '/cv-gone.pdf';
+  get diagnostics n = row_count;
+  assert n = 0, 'a deleted account replaced its CV';
+
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
+  update storage.objects set name = name where bucket_id = 'cvs' and name = other || '/cv-other.pdf';
+  get diagnostics n = row_count;
+  assert n = 1, 'the admin could not replace a customer''s CV';
+
+  -- Signed out: refused by the grants (CI) or by RLS (Supabase grants anon on storage).
+  reset role;
+  set local role anon;
+  n := 0; blocked := false;
+  begin
+    update storage.objects set name = name where bucket_id = 'cvs' and name = owner || '/cv-owner.pdf';
+    get diagnostics n = row_count;
+  exception when insufficient_privilege then blocked := true;
+  end;
+  reset role;
+  if not blocked and n <> 0 then raise exception 'FAIL 31: anon replaced a CV'; end if;
+  raise notice 'OK 31: the cvs bucket takes PDFs up to 5 MB, and only the owner while active or an admin replaces a CV';
+end $$;
+
 rollback;
