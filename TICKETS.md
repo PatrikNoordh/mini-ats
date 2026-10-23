@@ -326,6 +326,10 @@ Tracked in #63.
 
 Tracked in #64.
 
+### ATS-34 · feat · Let a signed-in user change their own password
+
+Tracked in #67.
+
 **Checkpoint — ship version 2 to the reviewers:** Loom demo (5 min) and the assumptions email, updated to match what was built. If the AI feature is not done, explain the approach in the demo instead.
 
 ---
