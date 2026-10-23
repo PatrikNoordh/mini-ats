@@ -86,7 +86,7 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
 
 **For the admin (runs the platform)**
 - **Accounts** (`Konton`): create admin and customer accounts; edit name, company, email, role and password
-- **Delete with 30 days to undo**: a deleted account is hidden, can't sign in and gets no data, but keeps everything. **Borttagna konton** lists it with **Återställ** and **Radera för gott**, and a daily job deletes it for good after 30 days
+- **Delete with 30 days to undo**: a deleted account is hidden, can't sign in and gets no data, but keeps everything. **Borttagna konton** lists it with **Återställ** and **Radera för gott**, and a daily job deletes it for good after 30 days, CV files included
 - **Act as a customer**: choose a customer and use every customer screen on their behalf, with a banner saying who you work as. The choice survives a reload
 
 **Everywhere**
@@ -260,11 +260,21 @@ npx supabase link --project-ref <your-project-ref>
 npx supabase db push                                    # schema, RLS, triggers
 npx supabase functions deploy admin-create-user
 npx supabase functions deploy admin-manage-account
+npx supabase functions deploy purge-deleted-accounts
+npx supabase secrets set PURGE_CRON_SECRET=<a long random value, e.g. from openssl rand -hex 32>
+```
+
+The daily purge runs in the `purge-deleted-accounts` Edge Function, because only the Storage API can remove the CV files. `pg_cron` calls it through `pg_net`, with three Vault secrets. Set them once in the **SQL Editor**:
+
+```sql
+select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url');
+select vault.create_secret('<the anon key>', 'anon_key');
+select vault.create_secret('<the same value as PURGE_CRON_SECRET>', 'purge_cron_secret');
 ```
 
 In the Supabase Dashboard:
 - **Authentication → Sign In / Providers → Email**: turn off **Allow new users to sign up**.
-- **Database → Extensions**: `pg_cron` runs the daily purge of deleted accounts. The migration turns it on where it's available.
+- **Database → Extensions**: `pg_cron` and `pg_net` run the daily purge of deleted accounts. The migration turns them on where they're available.
 
 ### 4. Add your keys
 
@@ -396,8 +406,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 
 | | |
 |---|---|
-| **AI CV assessment** (epic 6) | Upload a CV, and have an Edge Function score it against the job (1–10, summary, strengths, gaps), told to ignore name, age, gender and photo, and clearly labelled as a suggestion. In progress |
-| **Harden account admin** | Do the last-admin check and the write in one locked database function, and remove a deleted account's CV files when it's deleted for good (both logged in `TICKETS.md`) |
+| **AI CV assessment** (epic 6) | CV upload is done. Next, have an Edge Function score it against the job (1–10, summary, strengths, gaps), told to ignore name, age, gender and photo, and clearly labelled as a suggestion. In progress |
 | **End-to-end tests** | Playwright runs of sign-in, the board and acting for a customer, against a preview database |
 | **Teams** | Several users per company with a members table, which changes `customer_id = auth.uid()` to a membership check in RLS |
 | **Audit log** | Who moved, changed or deleted what, and when |
