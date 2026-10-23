@@ -27,6 +27,11 @@ interface AuthValue {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<Profile>;
   signOut: () => Promise<void>;
+  /**
+   * Signs out on this device if Auth says the session was ended elsewhere. Never throws. Runs by
+   * itself on sign-in and when the tab is shown; the app also runs it on every page change.
+   */
+  checkSession: () => Promise<void>;
 }
 
 /** A signed-in user always comes with their profile, which holds the role. */
@@ -116,26 +121,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [resolveUser]);
 
   // A session ended elsewhere (a password change signs out the other devices) still has a valid
-  // access token here until it expires. So ask Auth when a user is signed in and each time the
-  // tab is shown again, and sign out on this device if the session is gone (ATS-34, AC5).
+  // access token here until it expires. So ask Auth, and sign out on this device if the session is
+  // gone (ATS-34, AC5). A check that fails, for example offline, leaves the user signed in.
+  const checkSession = useCallback(async () => {
+    if (!committed.current) return;
+    try {
+      if (await sessionIsGone()) await signOut();
+    } catch {
+      // Ignored on purpose; the next check, or the token's own expiry, signs the user out.
+    }
+  }, [signOut]);
+
+  // When a user is signed in, and each time the tab is shown again.
   const userId = state?.user.id ?? null;
   useEffect(() => {
     if (!userId) return;
-    // Never throws: a check that fails leaves the user signed in.
-    const check = async () => {
-      try {
-        if (await sessionIsGone()) await signOut();
-      } catch {
-        // Ignored on purpose; the next check, or the token's own expiry, signs the user out.
-      }
-    };
     const onVisible = () => {
-      if (document.visibilityState === "visible") void check();
+      if (document.visibilityState === "visible") void checkSession();
     };
-    void check();
+    void checkSession();
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [userId, signOut]);
+  }, [userId, checkSession]);
 
   const value = useMemo<AuthValue>(
     () => ({
@@ -145,8 +152,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: state === undefined,
       signIn,
       signOut,
+      checkSession,
     }),
-    [state, signIn, signOut],
+    [state, signIn, signOut, checkSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
