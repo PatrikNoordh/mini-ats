@@ -1,6 +1,12 @@
 import { assertEquals } from "jsr:@std/assert@1.0.13";
 
-import { createHandler, type Account, type Caller, type Deps } from "./handler.ts";
+import {
+  createHandler,
+  type Account,
+  type Caller,
+  type Deps,
+  type RemovalRefusal,
+} from "./handler.ts";
 
 const ADMIN_ID = "00000000-0000-4000-8000-0000000000ad";
 const CUSTOMER_ID = "00000000-0000-4000-8000-0000000000c1";
@@ -26,7 +32,8 @@ function setup(
   options: {
     caller?: Caller;
     accounts?: Record<string, Account>;
-    activeAdmins?: number;
+    /** What soft_delete_or_demote_account answers, for a delete or a demotion. */
+    removal?: RemovalRefusal | null;
     updateResult?: { error: "email_exists" } | null;
   } = {},
 ) {
@@ -35,12 +42,12 @@ function setup(
   const deps: Deps = {
     getCaller: () => Promise.resolve(options.caller ?? { kind: "admin", id: ADMIN_ID }),
     getAccount: (_, id) => Promise.resolve(known[id] ?? null),
-    countActiveAdmins: () => Promise.resolve(options.activeAdmins ?? 2),
-    updateAccount: (u) => {
-      ran.push(`update ${u.id} ${u.email} ${u.password ?? "-"}`);
-      return Promise.resolve(options.updateResult ?? null);
+    updateAccount: (u, demote) => {
+      ran.push(`update ${u.id} ${u.email} ${u.password ?? "-"}${demote ? " demote" : ""}`);
+      const refused = demote ? options.removal : null;
+      return Promise.resolve(refused ? { error: refused } : (options.updateResult ?? null));
     },
-    softDelete: (id) => (ran.push(`delete ${id}`), Promise.resolve()),
+    softDelete: (id) => (ran.push(`delete ${id}`), Promise.resolve(options.removal ?? null)),
     restore: (id) => (ran.push(`restore ${id}`), Promise.resolve()),
     deleteNow: (id) => (ran.push(`delete_now ${id}`), Promise.resolve()),
   };
@@ -184,32 +191,53 @@ Deno.test("an admin cannot delete or demote itself, but can edit its own details
 });
 
 Deno.test("can delete and demote another admin, but never the last active one", async () => {
-  const two = setup({ activeAdmins: 2 });
-  assertEquals(
-    (await call(two.handler, post({ action: "delete", id: OTHER_ADMIN_ID }))).status,
-    200,
-  );
-  const demote = await call(two.handler, post({ ...update, id: OTHER_ADMIN_ID, role: "customer" }));
-  assertEquals(demote.status, 200);
-
-  const last = setup({ activeAdmins: 1 });
-  for (const body of [
+  const removals = [
     { action: "delete", id: OTHER_ADMIN_ID },
     { ...update, id: OTHER_ADMIN_ID, role: "customer" },
-  ]) {
-    const res = await call(last.handler, post(body));
-    assertEquals([res.status, res.body.error], [409, "last_admin"]);
+  ];
+  const two = setup();
+  for (const body of removals) assertEquals((await call(two.handler, post(body))).status, 200);
+  assertEquals(two.ran, [
+    `delete ${OTHER_ADMIN_ID}`,
+    `update ${OTHER_ADMIN_ID} kund@exempelbygg.test - demote`,
+  ]);
+
+  // The database refuses under its lock (ATS-33); the handler passes the code on.
+  for (const [removal, status] of [
+    ["last_admin", 409],
+    ["account_deleted", 409],
+    ["account_not_found", 404],
+  ] as const) {
+    const refused = setup({ removal });
+    for (const body of removals) {
+      const res = await call(refused.handler, post(body));
+      assertEquals([res.status, res.body.error], [status, removal]);
+    }
   }
-  assertEquals(last.ran, []);
+});
+
+Deno.test("only a demotion of an admin runs the last-admin check", async () => {
+  const { handler, ran } = setup({ removal: "last_admin" });
+  for (const body of [
+    { ...update, id: OTHER_ADMIN_ID, role: "admin" },
+    { ...update, id: CUSTOMER_ID, role: "admin" },
+    { ...update, id: CUSTOMER_ID, role: "customer" },
+  ]) {
+    assertEquals((await call(handler, post(body))).status, 200);
+  }
+  assertEquals(ran, [
+    `update ${OTHER_ADMIN_ID} kund@exempelbygg.test -`,
+    `update ${CUSTOMER_ID} kund@exempelbygg.test -`,
+    `update ${CUSTOMER_ID} kund@exempelbygg.test -`,
+  ]);
 });
 
 Deno.test("hides unexpected errors behind the unknown code", async () => {
   const failing = createHandler({
     getCaller: () => Promise.resolve({ kind: "admin", id: ADMIN_ID }),
     getAccount: () => Promise.reject(new Error("database down")),
-    countActiveAdmins: () => Promise.resolve(2),
     updateAccount: () => Promise.resolve(null),
-    softDelete: () => Promise.resolve(),
+    softDelete: () => Promise.resolve(null),
     restore: () => Promise.resolve(),
     deleteNow: () => Promise.resolve(),
   });

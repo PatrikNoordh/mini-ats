@@ -592,4 +592,72 @@ begin
   raise notice 'OK 29: a customer and an admin remove a job link with its assessment; another customer, a deleted account and anon cannot';
 end $$;
 
+-- ---------------------------------------------------------------- last admin (ATS-33)
+-- The Edge Function runs soft_delete_or_demote_account with the service role. Every other active
+-- admin is marked deleted here (rolled back at the end), so the check works in the SQL Editor
+-- against a project with real admins too. Two concurrent calls: last_admin_concurrency.sh.
+reset role;
+do $$ declare
+  admin_id uuid := '00000000-0000-0000-0000-0000000000ad';
+  second uuid := gen_random_uuid(); third uuid := gen_random_uuid(); customer uuid := gen_random_uuid();
+  blocked boolean; client_role text; change_name text;
+begin
+  insert into auth.users (id, email, raw_app_meta_data) values
+    (second, 'second-33@test.local', '{"role":"admin"}'),
+    (third, 'third-33@test.local', '{"role":"admin"}'),
+    (customer, 'customer-33@test.local', '{"role":"customer"}');
+  update public.profiles set deleted_at = now()
+  where role = 'admin' and deleted_at is null and id not in (admin_id, second, third);
+
+  -- No client can run it: not signed out, not signed in, not even as an admin.
+  foreach client_role in array array['anon', 'authenticated'] loop
+    assert not has_function_privilege(client_role, 'public.soft_delete_or_demote_account(uuid, text)', 'execute'),
+      client_role || ' can execute soft_delete_or_demote_account';
+  end loop;
+  blocked := false;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', admin_id), true);
+  begin
+    perform public.soft_delete_or_demote_account(second, 'soft_delete');
+  exception when insufficient_privilege then blocked := true;
+  end;
+  reset role;
+  if not blocked then raise exception 'FAIL 30: an admin''s token could run soft_delete_or_demote_account'; end if;
+
+  -- Three active admins: one is deleted and one demoted; the last one stays.
+  set local role service_role;
+  perform public.soft_delete_or_demote_account(second, 'soft_delete');
+  perform public.soft_delete_or_demote_account(third, 'demote');
+  perform public.soft_delete_or_demote_account(customer, 'soft_delete');
+  reset role;
+  assert (select deleted_at is not null from public.profiles where id = second), 'second admin deleted';
+  assert (select role from public.profiles where id = third) = 'customer', 'third admin demoted';
+  assert (select deleted_at is not null from public.profiles where id = customer), 'customer deleted';
+
+  set local role service_role;
+  foreach change_name in array array['soft_delete', 'demote'] loop
+    begin
+      perform public.soft_delete_or_demote_account(admin_id, change_name);
+      raise exception 'FAIL 30: the last active admin could be removed (%)', change_name;
+    exception when raise_exception then
+      if sqlerrm <> 'last_admin' then raise; end if;
+    end;
+  end loop;
+  begin
+    perform public.soft_delete_or_demote_account(second, 'soft_delete');
+    raise exception 'FAIL 30: a deleted account was deleted again';
+  exception when raise_exception then
+    if sqlerrm <> 'account_deleted' then raise; end if;
+  end;
+  begin
+    perform public.soft_delete_or_demote_account(gen_random_uuid(), 'demote');
+    raise exception 'FAIL 30: an unknown account was changed';
+  exception when raise_exception then
+    if sqlerrm <> 'account_not_found' then raise; end if;
+  end;
+  reset role;
+  assert (select role = 'admin' and deleted_at is null from public.profiles where id = admin_id), 'the last admin is untouched';
+  raise notice 'OK 30: the last active admin cannot be deleted or demoted, and no client can run the function';
+end $$;
+
 rollback;

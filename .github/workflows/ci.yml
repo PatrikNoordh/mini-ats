@@ -63,3 +63,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_test.sql
       - name: Concurrent card moves
         run: bash supabase/tests/move_application_concurrency.sh
+      - name: Concurrent removals of the last admins
+        run: bash supabase/tests/last_admin_concurrency.sh

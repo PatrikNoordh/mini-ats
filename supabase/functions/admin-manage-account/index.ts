@@ -2,7 +2,13 @@
 // A delete is kept for 30 days (ATS-27): the account is banned and marked deleted, its data stays.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.118.0";
 
-import { createHandler, type Account, type Caller, type Update } from "./handler.ts";
+import {
+  createHandler,
+  type Account,
+  type Caller,
+  type RemovalRefusal,
+  type Update,
+} from "./handler.ts";
 
 function env(name: string): string {
   const value = Deno.env.get(name);
@@ -58,27 +64,61 @@ async function getAccount(authorization: string, id: string): Promise<Account | 
   return { id: data.id, role: data.role, deleted: data.deleted_at !== null };
 }
 
-async function countActiveAdmins(authorization: string): Promise<number> {
-  const { count, error } = await asCaller(authorization)
-    .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .eq("role", "admin")
-    .is("deleted_at", null);
-  if (error) throw error;
-  return count ?? 0;
+const REMOVAL_REFUSALS: readonly RemovalRefusal[] = [
+  "account_not_found",
+  "account_deleted",
+  "last_admin",
+];
+
+/**
+ * Marks the profile deleted or demotes it, in one locked database call that refuses to remove
+ * the last active admin (ATS-33). Runs before the Auth change, which cannot join that
+ * transaction, and is undone if the Auth change fails.
+ */
+async function softDeleteOrDemote(
+  service: SupabaseClient,
+  id: string,
+  change: "soft_delete" | "demote",
+): Promise<RemovalRefusal | null> {
+  const { error } = await service.rpc("soft_delete_or_demote_account", {
+    account_id: id,
+    change,
+  });
+  if (!error) return null;
+  const refusal = REMOVAL_REFUSALS.find((code) => code === error.message);
+  if (refusal) return refusal;
+  throw error;
 }
 
-async function updateAccount(update: Update): Promise<{ error: "email_exists" } | null> {
+async function setProfile(
+  service: SupabaseClient,
+  id: string,
+  values: { role: "admin" } | { deleted_at: string | null },
+): Promise<void> {
+  const { error } = await service.from("profiles").update(values).eq("id", id);
+  if (error) throw error;
+}
+
+async function updateAccount(
+  update: Update,
+  demote: boolean,
+): Promise<{ error: "email_exists" | RemovalRefusal } | null> {
   const service = admin();
+  if (demote) {
+    const refusal = await softDeleteOrDemote(service, update.id, "demote");
+    if (refusal) return { error: refusal };
+  }
   const { error } = await service.auth.admin.updateUserById(update.id, {
     email: update.email,
     email_confirm: true,
     ...(update.password ? { password: update.password } : {}),
     user_metadata: { full_name: update.full_name, company_name: update.company_name },
-    // The role trigger (ATS-28) copies this to profiles.role; it is set below too, at once.
+    // The role trigger (ATS-28) copies this to profiles.role; it is set below too, at once. A
+    // demotion has already set it above, under the last-admin lock.
     app_metadata: { role: update.role },
   });
   if (error) {
+    if (demote) await setProfile(service, update.id, { role: "admin" });
     if (error.code === "email_exists") return { error: "email_exists" };
     throw error;
   }
@@ -95,24 +135,27 @@ async function updateAccount(update: Update): Promise<{ error: "email_exists" } 
   return null;
 }
 
-/** Banned first: if marking it then fails, the account is blocked rather than left open. */
-async function softDelete(id: string): Promise<void> {
+/**
+ * Marked first, under the last-admin lock. A marked account already gets no rows and is no
+ * admin; the ban then blocks its login. If the ban fails, the mark is undone.
+ */
+async function softDelete(id: string): Promise<RemovalRefusal | null> {
   const service = admin();
+  const refusal = await softDeleteOrDemote(service, id, "soft_delete");
+  if (refusal) return refusal;
   const ban = await service.auth.admin.updateUserById(id, { ban_duration: BAN_WHILE_DELETED });
-  if (ban.error) throw ban.error;
-  const mark = await service
-    .from("profiles")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id);
-  if (mark.error) throw mark.error;
+  if (ban.error) {
+    await setProfile(service, id, { deleted_at: null });
+    throw ban.error;
+  }
+  return null;
 }
 
 async function restore(id: string): Promise<void> {
   const service = admin();
   const unban = await service.auth.admin.updateUserById(id, { ban_duration: NO_BAN });
   if (unban.error) throw unban.error;
-  const unmark = await service.from("profiles").update({ deleted_at: null }).eq("id", id);
-  if (unmark.error) throw unmark.error;
+  await setProfile(service, id, { deleted_at: null });
 }
 
 /** The Auth user goes, and the cascades remove the profile and all its data. */
@@ -125,7 +168,6 @@ Deno.serve(
   createHandler({
     getCaller,
     getAccount,
-    countActiveAdmins,
     updateAccount,
     softDelete,
     restore,

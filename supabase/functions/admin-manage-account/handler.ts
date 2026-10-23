@@ -49,36 +49,42 @@ export interface Account {
 }
 
 /**
+ * Why soft_delete_or_demote_account refused. It checks the account again, under the lock that
+ * makes removals of admins wait for each other (ATS-33).
+ */
+export type RemovalRefusal = "account_not_found" | "account_deleted" | "last_admin";
+
+/**
  * The Supabase actions, passed in so the flow can be tested without a project. Reads use the
  * caller's JWT; only the writes use the service role (CLAUDE.md, security rule 2).
  */
 export interface Deps {
   getCaller: (authorization: string) => Promise<Caller>;
   getAccount: (authorization: string, id: string) => Promise<Account | null>;
-  countActiveAdmins: (authorization: string) => Promise<number>;
-  updateAccount: (update: Update) => Promise<{ error: "email_exists" } | null>;
-  softDelete: (id: string) => Promise<void>;
+  /** demote: the account is an admin and becomes a customer, so the last-admin check runs. */
+  updateAccount: (
+    update: Update,
+    demote: boolean,
+  ) => Promise<{ error: "email_exists" | RemovalRefusal } | null>;
+  softDelete: (id: string) => Promise<RemovalRefusal | null>;
   restore: (id: string) => Promise<void>;
   deleteNow: (id: string) => Promise<void>;
 }
 
-type Refusal = "account_deleted" | "account_not_deleted" | "cannot_change_self" | "last_admin";
+type Refusal = "account_deleted" | "account_not_deleted" | "cannot_change_self";
 
 /**
  * Why the action may not run, or null. The only limits are the ones that would leave no admin
- * able to sign in: an admin cannot delete or demote itself, nor the last active admin.
+ * able to sign in: an admin cannot delete or demote itself, nor the last active admin. The last
+ * one is checked by the write itself, in the database, so two admins removing each other at the
+ * same moment cannot both pass it.
  */
-async function refusal(
-  deps: Deps,
-  authorization: string,
+function refusal(
   callerId: string,
   account: Account,
   request: z.infer<typeof requestSchema>,
-): Promise<Refusal | null> {
-  const removesAdmin =
-    account.role === "admin" &&
-    (request.action === "delete" || (request.action === "update" && request.role !== "admin"));
-
+  removesAdmin: boolean,
+): Refusal | null {
   if (request.action === "update" || request.action === "delete") {
     if (account.deleted) return "account_deleted";
   } else if (!account.deleted) {
@@ -87,11 +93,11 @@ async function refusal(
   if (account.id === callerId && (removesAdmin || request.action === "delete_now")) {
     return "cannot_change_self";
   }
-  // An admin removed a moment ago is no longer an admin (getCaller), so it cannot remove the
-  // last one after that. Two calls at the very same moment can still both pass this count.
-  if (removesAdmin && (await deps.countActiveAdmins(authorization)) <= 1) return "last_admin";
   return null;
 }
+
+const refused = (error: "email_exists" | RemovalRefusal) =>
+  json({ error }, error === "account_not_found" ? 404 : 409);
 
 export function createHandler(deps: Deps) {
   return async (req: Request): Promise<Response> => {
@@ -118,18 +124,23 @@ export function createHandler(deps: Deps) {
 
       const account = await deps.getAccount(authorization, request.id);
       if (!account) return json({ error: "account_not_found" }, 404);
-      const refused = await refusal(deps, authorization, caller.id, account, request);
-      if (refused) return json({ error: refused }, 409);
+      const demote =
+        account.role === "admin" && request.action === "update" && request.role !== "admin";
+      const removesAdmin = demote || (account.role === "admin" && request.action === "delete");
+      const refusedBefore = refusal(caller.id, account, request, removesAdmin);
+      if (refusedBefore) return json({ error: refusedBefore }, 409);
 
       switch (request.action) {
         case "update": {
-          const result = await deps.updateAccount(request);
-          if (result) return json({ error: result.error }, 409);
+          const result = await deps.updateAccount(request, demote);
+          if (result) return refused(result.error);
           break;
         }
-        case "delete":
-          await deps.softDelete(request.id);
+        case "delete": {
+          const result = await deps.softDelete(request.id);
+          if (result) return refused(result);
           break;
+        }
         case "restore":
           await deps.restore(request.id);
           break;
