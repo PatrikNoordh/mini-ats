@@ -70,6 +70,9 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 | `forbidden`                       | `admin-create-user`, `admin-manage-account` | The caller is signed in but not an admin                   |
 | `invalid_credentials`             | auth                                        | Wrong email or password                                    |
 | `too_many_attempts`               | auth                                        | Too many sign-in attempts in a short time                  |
+| `wrong_current_password`          | auth (change password)                      | The current password typed to change it is not correct     |
+| `same_password`                   | auth (change password)                      | Auth refused a new password equal to the current one       |
+| `weak_password`                   | auth (change password)                      | Auth refused the new password as too weak                  |
 | `profile_not_found`               | auth                                        | The account has no `profiles` row                          |
 | `job_candidate_customer_mismatch` | applications (trigger)                      | The job and the candidate belong to different customers    |
 | `application_not_found`           | cv_assessments (trigger), `assess-cv`       | The application does not exist for the caller              |
