@@ -86,7 +86,14 @@
     "cv_not_pdf": "CV:t måste vara en PDF-fil.",
     "cv_too_large": "CV:t får vara högst {{maxCvMegabytes}} MB.",
     "cv_not_found": "CV-filen hittades inte. Ladda upp den igen.",
-    "cv_upload_failed": "Kandidaten sparades, men CV:t kunde inte laddas upp. Öppna kandidaten och försök igen."
+    "cv_upload_failed": "Kandidaten sparades, men CV:t kunde inte laddas upp. Öppna kandidaten och försök igen.",
+    "cv_missing": "Kandidaten har inget CV. Ladda upp ett först.",
+    "cv_unreadable": "CV-filen kunde inte läsas. Ladda upp den som en vanlig PDF.",
+    "cv_no_text": "CV:t innehåller ingen text att bedöma. Är det en inskannad bild? Ladda upp en PDF med text.",
+    "cv_too_long": "CV:t är för långt för att bedömas.",
+    "assessment_too_soon": "CV:t bedömdes nyss. Vänta en minut och försök igen.",
+    "assessment_failed": "AI-bedömningen gav inget giltigt svar. Försök igen.",
+    "assessment_unavailable": "AI-bedömningen är inte tillgänglig just nu. Försök igen om en stund."
   },
   "validation": {
     "name_required": "Ange namn.",
