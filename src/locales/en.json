@@ -93,7 +93,10 @@
     "cv_too_long": "The CV is too long to be assessed.",
     "assessment_too_soon": "The CV was just assessed. Wait a minute and try again.",
     "assessment_failed": "The AI assessment gave no valid answer. Try again.",
-    "assessment_unavailable": "The AI assessment is not available right now. Try again in a while."
+    "assessment_unavailable": "The AI assessment is not available right now. Try again in a while.",
+    "wrong_current_password": "The current password is not correct.",
+    "same_password": "The new password must be different from the current one.",
+    "weak_password": "The password is too weak. Choose a longer one."
   },
   "validation": {
     "name_required": "Enter a name.",
@@ -110,7 +113,10 @@
     "email_taken_deleted": "A deleted account has that email address. Restore it under Deleted accounts.",
     "cv_not_pdf": "The CV must be a PDF file.",
     "cv_too_large": "The CV can be at most {{maxCvMegabytes}} MB.",
-    "cv_empty": "The file is empty."
+    "cv_empty": "The file is empty.",
+    "current_password_required": "Enter your current password.",
+    "password_mismatch": "The passwords do not match.",
+    "password_same": "The new password must be different from the current one."
   },
   "shell": {
     "toggleSidebar": "Show or hide the menu",
@@ -375,5 +381,17 @@
     "done": "The CV is assessed against {{job}}.",
     "failed": "Could not assess the CV.",
     "forJob": "{{action}} – {{job}}"
+  },
+  "changePassword": {
+    "menuItem": "Change password",
+    "title": "Change password",
+    "description": "For the account {{email}}. After the change only you know the password, and your other devices are signed out.",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Repeat the new password",
+    "hint": "At least {{min}} characters, at most {{max}} bytes (å, ä and ö count as two).",
+    "submit": "Change password",
+    "done": "The password is changed. Your other devices will be signed out.",
+    "doneOthersKept": "The password is changed, but your other devices could not be signed out."
   }
 }

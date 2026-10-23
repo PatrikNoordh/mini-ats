@@ -91,6 +91,7 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
 - **Act as a customer**: choose a customer and use every customer screen on their behalf, with a banner saying who you work as. The choice survives a reload
 
 **Everywhere**
+- **Change your own password** from the user menu, after typing the current one. Only you know it then, and your other devices are signed out
 - **Swedish and English**, Swedish by default
 - Every list and the board have **loading, empty and error** states. Errors say what failed and why, for example no internet connection
 - Works from a **390 px** phone to a wide desktop

@@ -136,3 +136,24 @@ export function cvFileError(file: { type: string; size: number }): ValidationKey
   const message = result.error.issues[0]?.message ?? "";
   return isValidationKey(message) ? message : "cv_not_pdf";
 }
+
+/**
+ * Changing your own password (ATS-34). The new password follows the same rules as a password an
+ * admin sets, must be typed twice, and must differ from the current one.
+ */
+export const passwordChangeSchema = z
+  .object({
+    current_password: z.string().min(1, "current_password_required"),
+    new_password: passwordSchema,
+    confirm_password: z.string(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.confirm_password !== value.new_password) {
+      ctx.addIssue({ code: "custom", path: ["confirm_password"], message: "password_mismatch" });
+    }
+    if (value.current_password && value.new_password === value.current_password) {
+      ctx.addIssue({ code: "custom", path: ["new_password"], message: "password_same" });
+    }
+  });
+
+export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;

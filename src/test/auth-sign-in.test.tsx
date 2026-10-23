@@ -10,6 +10,7 @@ const api = vi.hoisted(() => ({
   signInWithPassword: vi.fn(),
   signOut: vi.fn(),
   onAuthUserChange: vi.fn(),
+  sessionIsGone: vi.fn(),
   getProfile: vi.fn(),
 }));
 
@@ -17,6 +18,7 @@ vi.mock("@/lib/api/auth", () => ({
   signInWithPassword: api.signInWithPassword,
   signOut: api.signOut,
   onAuthUserChange: api.onAuthUserChange,
+  sessionIsGone: api.sessionIsGone,
 }));
 vi.mock("@/lib/api/profiles", () => ({ getProfile: api.getProfile }));
 
@@ -51,6 +53,7 @@ describe("sign-in", () => {
     });
     api.signInWithPassword.mockResolvedValue(user);
     api.signOut.mockResolvedValue(undefined);
+    api.sessionIsGone.mockResolvedValue(false);
   });
 
   it("signs in with the profile and keeps the session", async () => {
@@ -91,5 +94,54 @@ describe("sign-in", () => {
 
     expect(api.signOut).toHaveBeenCalledOnce();
     expect(result.current.user).toBeNull();
+  });
+});
+
+describe("a session ended on another device", () => {
+  /** Signed in when the page loads, as on a second device after a password change elsewhere. */
+  function signedInOnLoad() {
+    api.onAuthUserChange.mockImplementation((onChange: (u: typeof user) => void) => {
+      onChange(user);
+      return () => {};
+    });
+  }
+
+  function showTab() {
+    Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  }
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    signedInOnLoad();
+    api.getProfile.mockResolvedValue(profile);
+    api.signOut.mockResolvedValue(undefined);
+  });
+
+  it("signs out on this device when Auth says the session is gone", async () => {
+    api.sessionIsGone.mockResolvedValue(true);
+    const { result } = renderAuth();
+    await waitFor(() => expect(api.signOut).toHaveBeenCalledOnce());
+    await waitFor(() => expect(result.current.user).toBeNull());
+  });
+
+  it("checks again when the tab is shown, and stays signed in while the session lives", async () => {
+    api.sessionIsGone.mockResolvedValue(false);
+    const { result } = renderAuth();
+    await waitFor(() => expect(result.current.profile).toEqual(profile));
+    await waitFor(() => expect(api.sessionIsGone).toHaveBeenCalledOnce());
+
+    api.sessionIsGone.mockResolvedValue(true);
+    act(() => showTab());
+    await waitFor(() => expect(api.signOut).toHaveBeenCalledOnce());
+    await waitFor(() => expect(result.current.user).toBeNull());
+  });
+
+  it("stays signed in when the check itself fails, for example offline", async () => {
+    api.sessionIsGone.mockRejectedValue(new TypeError("Failed to fetch"));
+    const { result } = renderAuth();
+    await waitFor(() => expect(api.sessionIsGone).toHaveBeenCalled());
+    expect(api.signOut).not.toHaveBeenCalled();
+    expect(result.current.profile).toEqual(profile);
   });
 });
