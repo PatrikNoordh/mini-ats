@@ -1,7 +1,7 @@
 import { AuthApiError } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { authErrorCode, changePassword } from "@/lib/api/auth";
+import { authErrorCode, changePassword, sessionIsGone } from "@/lib/api/auth";
 import { MAX_PASSWORD_BYTES, MIN_PASSWORD_LENGTH } from "@/lib/constants";
 import { errorCode } from "@/lib/errors";
 import { fieldErrors, passwordChangeSchema } from "@/lib/validation";
@@ -10,6 +10,8 @@ const auth = vi.hoisted(() => ({
   signInWithPassword: vi.fn(),
   updateUser: vi.fn(),
   signOut: vi.fn(),
+  getSession: vi.fn(),
+  getUser: vi.fn(),
 }));
 
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth } }));
@@ -114,5 +116,40 @@ describe("changing the password", () => {
     await expect(changePassword(EMAIL, "old-pass-1", "new-pass-2")).resolves.toEqual({
       otherSessionsSignedOut: false,
     });
+  });
+});
+
+describe("a session ended elsewhere", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    auth.getSession.mockResolvedValue({ data: { session: { access_token: "t" } }, error: null });
+  });
+
+  it("is gone only when Auth says the session does not exist", async () => {
+    auth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: new AuthApiError(
+        "Session from session_id claim in JWT does not exist",
+        403,
+        "session_not_found",
+      ),
+    });
+    await expect(sessionIsGone()).resolves.toBe(true);
+  });
+
+  it("is still there when Auth answers, or fails for another reason", async () => {
+    auth.getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    await expect(sessionIsGone()).resolves.toBe(false);
+    auth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: new AuthApiError("Internal", 500, "unexpected_failure"),
+    });
+    await expect(sessionIsGone()).resolves.toBe(false);
+  });
+
+  it("asks nothing without a session on this device", async () => {
+    auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
+    await expect(sessionIsGone()).resolves.toBe(false);
+    expect(auth.getUser).not.toHaveBeenCalled();
   });
 });

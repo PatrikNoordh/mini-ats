@@ -48,6 +48,19 @@ export async function signOut(): Promise<void> {
   if (data.session) throw toAppError(error);
 }
 
+/**
+ * Whether Auth says this device's session no longer exists: it was signed out from another
+ * device, by a password change (ATS-34) or by deleting the account. The access token itself stays
+ * valid until it expires, so only Auth can tell. Any other answer, a network failure included,
+ * counts as the session still being there, so going offline never signs anyone out.
+ */
+export async function sessionIsGone(): Promise<boolean> {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) return false;
+  const { error } = await supabase.auth.getUser();
+  return isAuthError(error) && error.code === "session_not_found";
+}
+
 /** How a password change went. The password is changed in both cases. */
 export interface PasswordChange {
   /** False when signing out the user's other devices failed. */

@@ -391,7 +391,7 @@
     "confirm": "Upprepa det nya lösenordet",
     "hint": "Minst {{min}} tecken, högst {{max}} byte (å, ä och ö räknas som två).",
     "submit": "Byt lösenord",
-    "done": "Lösenordet är bytt. Dina andra enheter är utloggade.",
+    "done": "Lösenordet är bytt. Dina andra enheter loggas ut.",
     "doneOthersKept": "Lösenordet är bytt, men dina andra enheter kunde inte loggas ut."
   }
 }

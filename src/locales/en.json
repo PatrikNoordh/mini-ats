@@ -391,7 +391,7 @@
     "confirm": "Repeat the new password",
     "hint": "At least {{min}} characters, at most {{max}} bytes (å, ä and ö count as two).",
     "submit": "Change password",
-    "done": "The password is changed. Your other devices are signed out.",
+    "done": "The password is changed. Your other devices will be signed out.",
     "doneOthersKept": "The password is changed, but your other devices could not be signed out."
   }
 }

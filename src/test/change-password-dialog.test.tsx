@@ -66,7 +66,7 @@ describe("the change password dialog", () => {
       }),
     );
     expect(mocks.toast.success).toHaveBeenCalledWith(
-      "The password is changed. Your other devices are signed out.",
+      "The password is changed. Your other devices will be signed out.",
     );
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });

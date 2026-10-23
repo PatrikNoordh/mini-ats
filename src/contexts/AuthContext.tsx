@@ -11,6 +11,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import {
   onAuthUserChange,
+  sessionIsGone,
   signInWithPassword,
   signOut as signOutUser,
   type AuthUser,
@@ -113,6 +114,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOutUser();
     await resolveUser(null);
   }, [resolveUser]);
+
+  // A session ended elsewhere (a password change signs out the other devices) still has a valid
+  // access token here until it expires. So ask Auth when a user is signed in and each time the
+  // tab is shown again, and sign out on this device if the session is gone (ATS-34, AC5).
+  const userId = state?.user.id ?? null;
+  useEffect(() => {
+    if (!userId) return;
+    // Never throws: a check that fails leaves the user signed in.
+    const check = async () => {
+      try {
+        if (await sessionIsGone()) await signOut();
+      } catch {
+        // Ignored on purpose; the next check, or the token's own expiry, signs the user out.
+      }
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void check();
+    };
+    void check();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [userId, signOut]);
 
   const value = useMemo<AuthValue>(
     () => ({
