@@ -41,6 +41,20 @@ export interface Candidate {
   created_at: string;
 }
 
+/**
+ * An AI assessment of a candidate's CV against the job of one application (ATS-18). A suggestion
+ * for the recruiter, never a decision. Written only by the assess-cv Edge Function.
+ */
+export interface CvAssessment {
+  id: string;
+  application_id: string;
+  score: number;
+  summary: string;
+  strengths: string[];
+  gaps: string[];
+  created_at: string;
+}
+
 export type Stage = "new" | "screening" | "interview" | "offer" | "hired" | "rejected";
 
 export interface Application {
