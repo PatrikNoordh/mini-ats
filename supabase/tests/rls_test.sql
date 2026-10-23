@@ -705,17 +705,15 @@ begin
   get diagnostics n = row_count;
   assert n = 1, 'the admin could not replace a customer''s CV';
 
-  -- Signed out: refused by the grants (CI) or by RLS (Supabase grants anon on storage).
+  -- Signed out: Supabase grants anon on storage.objects, so RLS alone must refuse. The claims
+  -- are a signed-out request's, without sub; the admin's would still be set from above.
   reset role;
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   set local role anon;
-  n := 0; blocked := false;
-  begin
-    update storage.objects set name = name where bucket_id = 'cvs' and name = cv_owner || '/cv-owner.pdf';
-    get diagnostics n = row_count;
-  exception when insufficient_privilege then blocked := true;
-  end;
+  update storage.objects set name = name where bucket_id = 'cvs' and name = cv_owner || '/cv-owner.pdf';
+  get diagnostics n = row_count;
   reset role;
-  if not blocked and n <> 0 then raise exception 'FAIL 31: anon replaced a CV'; end if;
+  assert n = 0, 'anon replaced a CV';
   raise notice 'OK 31: the cvs bucket takes PDFs up to 5 MB, and only the owner while active or an admin replaces a CV';
 end $$;
 
