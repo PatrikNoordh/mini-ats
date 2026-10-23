@@ -15,6 +15,9 @@ export function authErrorCode(error: unknown): ErrorCode | null {
   // A deleted account is banned until it is restored (ATS-27).
   if (error.code === "user_banned") return "account_deleted";
   if (error.code === "over_request_rate_limit" || error.status === 429) return "too_many_attempts";
+  // Changing your own password (ATS-34). The form checks both first; this is for anything past it.
+  if (error.code === "same_password") return "same_password";
+  if (error.code === "weak_password") return "weak_password";
   return null;
 }
 
@@ -43,6 +46,37 @@ export async function signOut(): Promise<void> {
   if (!error) return;
   const { data } = await supabase.auth.getSession();
   if (data.session) throw toAppError(error);
+}
+
+/** How a password change went. The password is changed in both cases. */
+export interface PasswordChange {
+  /** False when signing out the user's other devices failed. */
+  otherSessionsSignedOut: boolean;
+}
+
+/**
+ * Changes the signed-in user's own password (ATS-34). The current password is checked first by
+ * signing in with it again, so someone at a computer left signed in cannot take over the account;
+ * a wrong one is `wrong_current_password` and nothing changes. Then the user's other sessions are
+ * signed out, and this device stays signed in. No Edge Function and no service role: Supabase
+ * Auth changes a user's own password with the user's own session.
+ */
+export async function changePassword(
+  email: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<PasswordChange> {
+  const check = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+  if (check.error) {
+    const code = authErrorCode(check.error);
+    throw code === "invalid_credentials"
+      ? new AppError("wrong_current_password")
+      : toAppError(check.error);
+  }
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw toAppError(error);
+  const others = await supabase.auth.signOut({ scope: "others" });
+  return { otherSessionsSignedOut: !others.error };
 }
 
 /**

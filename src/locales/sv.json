@@ -93,7 +93,10 @@
     "cv_too_long": "CV:t är för långt för att bedömas.",
     "assessment_too_soon": "CV:t bedömdes nyss. Vänta en minut och försök igen.",
     "assessment_failed": "AI-bedömningen gav inget giltigt svar. Försök igen.",
-    "assessment_unavailable": "AI-bedömningen är inte tillgänglig just nu. Försök igen om en stund."
+    "assessment_unavailable": "AI-bedömningen är inte tillgänglig just nu. Försök igen om en stund.",
+    "wrong_current_password": "Det nuvarande lösenordet stämmer inte.",
+    "same_password": "Det nya lösenordet måste skilja sig från det nuvarande.",
+    "weak_password": "Lösenordet är för svagt. Välj ett längre lösenord."
   },
   "validation": {
     "name_required": "Ange namn.",
@@ -110,7 +113,10 @@
     "email_taken_deleted": "Ett borttaget konto har den e-postadressen. Återställ det under Borttagna konton.",
     "cv_not_pdf": "CV:t måste vara en PDF-fil.",
     "cv_too_large": "CV:t får vara högst {{maxCvMegabytes}} MB.",
-    "cv_empty": "Filen är tom."
+    "cv_empty": "Filen är tom.",
+    "current_password_required": "Ange ditt nuvarande lösenord.",
+    "password_mismatch": "Lösenorden stämmer inte överens.",
+    "password_same": "Det nya lösenordet måste skilja sig från det nuvarande."
   },
   "shell": {
     "toggleSidebar": "Visa eller dölj menyn",
@@ -375,5 +381,17 @@
     "done": "CV:t är bedömt mot {{job}}.",
     "failed": "Kunde inte bedöma CV:t.",
     "forJob": "{{action}} – {{job}}"
+  },
+  "changePassword": {
+    "menuItem": "Byt lösenord",
+    "title": "Byt lösenord",
+    "description": "För kontot {{email}}. Efter bytet är det bara du som vet lösenordet, och dina andra enheter loggas ut.",
+    "current": "Nuvarande lösenord",
+    "new": "Nytt lösenord",
+    "confirm": "Upprepa det nya lösenordet",
+    "hint": "Minst {{min}} tecken, högst {{max}} byte (å, ä och ö räknas som två).",
+    "submit": "Byt lösenord",
+    "done": "Lösenordet är bytt. Dina andra enheter är utloggade.",
+    "doneOthersKept": "Lösenordet är bytt, men dina andra enheter kunde inte loggas ut."
   }
 }
