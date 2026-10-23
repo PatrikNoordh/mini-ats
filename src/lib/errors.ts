@@ -32,6 +32,13 @@ export const ERROR_CODES = [
   "cv_too_large",
   "cv_upload_failed",
   "cv_not_found",
+  "cv_missing",
+  "cv_unreadable",
+  "cv_no_text",
+  "cv_too_long",
+  "assessment_too_soon",
+  "assessment_failed",
+  "assessment_unavailable",
   "offline",
   "network_error",
 ] as const;

@@ -86,7 +86,14 @@
     "cv_not_pdf": "The CV must be a PDF file.",
     "cv_too_large": "The CV can be at most {{maxCvMegabytes}} MB.",
     "cv_not_found": "The CV file could not be found. Upload it again.",
-    "cv_upload_failed": "The candidate was saved, but the CV could not be uploaded. Open the candidate and try again."
+    "cv_upload_failed": "The candidate was saved, but the CV could not be uploaded. Open the candidate and try again.",
+    "cv_missing": "The candidate has no CV. Upload one first.",
+    "cv_unreadable": "The CV file could not be read. Upload it as a regular PDF.",
+    "cv_no_text": "The CV has no text to assess. Is it a scanned image? Upload a PDF with text.",
+    "cv_too_long": "The CV is too long to be assessed.",
+    "assessment_too_soon": "The CV was just assessed. Wait a minute and try again.",
+    "assessment_failed": "The AI assessment gave no valid answer. Try again.",
+    "assessment_unavailable": "The AI assessment is not available right now. Try again in a while."
   },
   "validation": {
     "name_required": "Enter a name.",
