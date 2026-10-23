@@ -666,41 +666,42 @@ end $$;
 -- (upsert), which needs the update policy: own folder while active, or an admin.
 reset role;
 do $$ declare
-  owner uuid := gen_random_uuid(); other uuid := gen_random_uuid(); gone uuid := gen_random_uuid();
+  -- Not named owner: storage.objects has an owner column, and PL/pgSQL would not know which.
+  cv_owner uuid := gen_random_uuid(); cv_other uuid := gen_random_uuid(); cv_gone uuid := gen_random_uuid();
   n integer; blocked boolean := false;
 begin
   assert (select file_size_limit from storage.buckets where id = 'cvs') = 5 * 1024 * 1024, 'cvs limit is 5 MB';
   assert (select allowed_mime_types from storage.buckets where id = 'cvs') = array['application/pdf'], 'cvs takes only PDF';
 
   insert into auth.users (id, email, raw_app_meta_data) values
-    (owner, 'owner-17@test.local', '{"role":"customer"}'),
-    (other, 'other-17@test.local', '{"role":"customer"}'),
-    (gone, 'gone-17@test.local', '{"role":"customer"}');
+    (cv_owner, 'owner-17@test.local', '{"role":"customer"}'),
+    (cv_other, 'other-17@test.local', '{"role":"customer"}'),
+    (cv_gone, 'gone-17@test.local', '{"role":"customer"}');
   insert into storage.objects (bucket_id, name) values
-    ('cvs', owner || '/cv-owner.pdf'), ('cvs', other || '/cv-other.pdf'), ('cvs', gone || '/cv-gone.pdf');
-  update public.profiles set deleted_at = now() where id = gone;
+    ('cvs', cv_owner || '/cv-owner.pdf'), ('cvs', cv_other || '/cv-other.pdf'), ('cvs', cv_gone || '/cv-gone.pdf');
+  update public.profiles set deleted_at = now() where id = cv_gone;
 
   set local role authenticated;
-  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', owner), true);
-  update storage.objects set name = name where bucket_id = 'cvs' and name = owner || '/cv-owner.pdf';
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', cv_owner), true);
+  update storage.objects set name = name where bucket_id = 'cvs' and name = cv_owner || '/cv-owner.pdf';
   get diagnostics n = row_count;
   assert n = 1, 'the owner could not replace its own CV';
-  update storage.objects set name = name where bucket_id = 'cvs' and name = other || '/cv-other.pdf';
+  update storage.objects set name = name where bucket_id = 'cvs' and name = cv_other || '/cv-other.pdf';
   get diagnostics n = row_count;
   assert n = 0, 'a customer replaced another customer''s CV';
   begin
-    update storage.objects set name = other || '/moved.pdf' where bucket_id = 'cvs' and name = owner || '/cv-owner.pdf';
+    update storage.objects set name = cv_other || '/moved.pdf' where bucket_id = 'cvs' and name = cv_owner || '/cv-owner.pdf';
   exception when insufficient_privilege then blocked := true;
   end;
   if not blocked then raise exception 'FAIL 31: a customer moved its CV into another customer''s folder'; end if;
 
-  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', gone), true);
-  update storage.objects set name = name where bucket_id = 'cvs' and name = gone || '/cv-gone.pdf';
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', cv_gone), true);
+  update storage.objects set name = name where bucket_id = 'cvs' and name = cv_gone || '/cv-gone.pdf';
   get diagnostics n = row_count;
   assert n = 0, 'a deleted account replaced its CV';
 
   perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
-  update storage.objects set name = name where bucket_id = 'cvs' and name = other || '/cv-other.pdf';
+  update storage.objects set name = name where bucket_id = 'cvs' and name = cv_other || '/cv-other.pdf';
   get diagnostics n = row_count;
   assert n = 1, 'the admin could not replace a customer''s CV';
 
@@ -709,7 +710,7 @@ begin
   set local role anon;
   n := 0; blocked := false;
   begin
-    update storage.objects set name = name where bucket_id = 'cvs' and name = owner || '/cv-owner.pdf';
+    update storage.objects set name = name where bucket_id = 'cvs' and name = cv_owner || '/cv-owner.pdf';
     get diagnostics n = row_count;
   exception when insufficient_privilege then blocked := true;
   end;

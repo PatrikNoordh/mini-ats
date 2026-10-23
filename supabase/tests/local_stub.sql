@@ -31,7 +31,10 @@ $$;
 create table storage.buckets (
   id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]
 );
-create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text);
+-- owner as in Supabase, so a test variable named like a column fails here too, not only there.
+create table storage.objects (
+  id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid
+);
 alter table storage.objects enable row level security;  -- on by default in Supabase
 create function storage.foldername(name text) returns text[] language sql immutable as $$
   select string_to_array(name, '/')
