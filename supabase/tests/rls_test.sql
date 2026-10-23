@@ -511,18 +511,19 @@ begin
   reset role;
   raise notice 'OK 27: a deleted admin is not an admin, and an active admin still sees deleted accounts';
 
-  -- 28. The purge deletes only accounts deleted more than 30 days ago, with their data.
+  -- 28. Only accounts deleted more than 30 days ago are due for the purge (the
+  -- purge-deleted-accounts function, ATS-17), and deleting one takes its data with it.
   update public.profiles set deleted_at = now() - interval '29 days' where id = customer;
   update public.profiles set deleted_at = now() - interval '31 days' where id = admin2;
-  assert public.purge_deleted_accounts() = 1, 'one account purged';
-  assert exists (select 1 from auth.users where id = customer), 'deleted 29 days ago: kept';
-  assert not exists (select 1 from auth.users where id = admin2), 'deleted 31 days ago: gone';
-  assert exists (select 1 from public.profiles where id = '00000000-0000-0000-0000-0000000000ad'), 'active admin untouched';
-  update public.profiles set deleted_at = now() - interval '31 days' where id = customer;
-  assert public.purge_deleted_accounts() = 1, 'the customer purged too';
+  assert admin2 in (select public.accounts_due_for_purge()), 'deleted 31 days ago: due';
+  assert customer not in (select public.accounts_due_for_purge()), 'deleted 29 days ago: not due';
+  assert '00000000-0000-0000-0000-0000000000ad' not in (select public.accounts_due_for_purge()), 'active admin not due';
+  assert not has_function_privilege('anon', 'public.accounts_due_for_purge()', 'execute'), 'anon cannot list';
+  assert not has_function_privilege('authenticated', 'public.accounts_due_for_purge()', 'execute'), 'no client can list';
+  assert to_regprocedure('public.purge_deleted_accounts()') is null, 'the SQL purge is gone';
+  delete from auth.users where id = customer;
   assert not exists (select 1 from public.jobs where id = job), 'its jobs went with it';
-  assert not has_function_privilege('authenticated', 'public.purge_deleted_accounts()', 'execute'), 'no client can purge';
-  raise notice 'OK 28: the purge removes only accounts deleted more than 30 days ago, and no client can run it';
+  raise notice 'OK 28: only accounts deleted more than 30 days ago are due for the purge, and no client can list them';
 end $$;
 
 -- ---------------------------------------------------------------- removing a job link (ATS-30)
