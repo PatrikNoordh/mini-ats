@@ -336,6 +336,8 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] An edit that saves a customer's role still demotes through the ATS-28 role trigger without the last-admin lock, so an account promoted to admin a moment before the edit is read is demoted unchecked. It cannot leave zero admins on its own, since the two admins involved stay active — `supabase/functions/admin-manage-account/index.ts` (found in ATS-33)
+
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".

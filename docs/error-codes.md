@@ -49,7 +49,7 @@ Triggers and checks raise the code as the exception message:
 raise exception 'job_candidate_customer_mismatch';
 ```
 
-The data layer maps the message to an `AppError` with `fromDbError()` in `src/lib/errors.ts`. The two triggers in the first migration raise `job_candidate_customer_mismatch` and `application_not_found` (ATS-5, AC4b), and the `move_application` function raises `card_not_found` (ATS-12). The foreign key on `applications.job_id` refuses to delete a job with candidates; `deleteJob()` turns that error (`23503`) into `job_has_candidates` (ATS-26). `supabase/tests/rls_test.sql` checks all three codes.
+The data layer maps the message to an `AppError` with `fromDbError()` in `src/lib/errors.ts`. The two triggers in the first migration raise `job_candidate_customer_mismatch` and `application_not_found` (ATS-5, AC4b), the `move_application` function raises `card_not_found` (ATS-12), and `soft_delete_or_demote_account` raises `account_not_found`, `account_deleted` and `last_admin`, which `admin-manage-account` passes on (ATS-33). The foreign key on `applications.job_id` refuses to delete a job with candidates; `deleteJob()` turns that error (`23503`) into `job_has_candidates` (ATS-26). `supabase/tests/rls_test.sql` checks all three codes.
 
 ## Codes
 
