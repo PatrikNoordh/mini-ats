@@ -2,11 +2,12 @@ import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Candidate } from "@/types";
+import { cvPath, removeCvFile } from "@/lib/api/cvs";
 import { AppError, fromWriteError } from "@/lib/errors";
 import type { CandidateInput } from "@/lib/validation";
 
 const CANDIDATE_COLUMNS =
-  "id, customer_id, full_name, email, phone, linkedin_url, notes, created_at";
+  "id, customer_id, full_name, email, phone, linkedin_url, notes, cv_path, created_at";
 
 const candidateRowSchema = z.object({
   id: z.string(),
@@ -16,6 +17,7 @@ const candidateRowSchema = z.object({
   phone: z.string().nullable(),
   linkedin_url: z.string().nullable(),
   notes: z.string().nullable(),
+  cv_path: z.string().nullable(),
   created_at: z.string(),
 });
 
@@ -92,10 +94,33 @@ export async function updateCandidate(
 }
 
 /**
+ * Points one of the customer's candidates at its CV, or at none with null. An update that
+ * matches no row means the candidate does not exist for this customer.
+ */
+export async function setCandidateCvPath(
+  customerId: string,
+  id: string,
+  cvPath: string | null,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("candidates")
+    .update({ cv_path: cvPath })
+    .eq("id", id)
+    .eq("customer_id", customerId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new AppError("candidate_not_found");
+}
+
+/**
  * Deletes one of the customer's candidates. Their applications (cards) and assessments go with
- * them through the database's cascades.
+ * them through the database's cascades. The CV file goes first: if that fails nothing is
+ * deleted, so a deleted candidate never leaves a CV behind (ATS-17). Its path is fixed, so the
+ * file is removed even when this tab has not seen it uploaded; no file is no error.
  */
 export async function deleteCandidate(customerId: string, id: string): Promise<void> {
+  await removeCvFile(cvPath(customerId, id));
   const { data, error } = await supabase
     .from("candidates")
     .delete()

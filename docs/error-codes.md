@@ -51,6 +51,10 @@ raise exception 'job_candidate_customer_mismatch';
 
 The data layer maps the message to an `AppError` with `fromDbError()` in `src/lib/errors.ts`. The two triggers in the first migration raise `job_candidate_customer_mismatch` and `application_not_found` (ATS-5, AC4b), the `move_application` function raises `card_not_found` (ATS-12), and `soft_delete_or_demote_account` raises `account_not_found`, `account_deleted` and `last_admin`, which `admin-manage-account` passes on (ATS-33). The foreign key on `applications.job_id` refuses to delete a job with candidates; `deleteJob()` turns that error (`23503`) into `job_has_candidates` (ATS-26). `supabase/tests/rls_test.sql` checks each of these codes and the foreign key.
 
+## Storage (from epic 6)
+
+The `cvs` bucket refuses a file over its size limit or of a type it does not allow, and Storage gives its own code as a string in `statusCode`. `fromStorageError()` in `src/lib/api/cvs.ts` turns `413` into `cv_too_large`, `415` into `cv_not_pdf` and `404` into `cv_not_found` (ATS-17). The panel and the candidate form check size, type and an empty file with `cvFileError()` before anything is sent; those messages are validation keys (`validation.cv_*`), so these codes are for files that get past them.
+
 ## Codes
 
 | Code                              | Where                                       | Meaning                                                    |
@@ -77,6 +81,10 @@ The data layer maps the message to an `AppError` with `fromDbError()` in `src/li
 | `account_not_deleted`             | `admin-manage-account`                      | Restore or delete for good on an account not deleted       |
 | `cannot_change_self`              | `admin-manage-account`                      | An admin tried to delete or demote its own account         |
 | `last_admin`                      | `admin-manage-account`                      | The change would leave no active admin                     |
+| `cv_not_pdf`                      | CV upload (`cvs` bucket)                    | The chosen file is not a PDF                               |
+| `cv_too_large`                    | CV upload (`cvs` bucket)                    | The file is over 5 MB                                      |
+| `cv_upload_failed`                | candidates                                  | The candidate was saved, but uploading its CV failed       |
+| `cv_not_found`                    | CV (`cvs` bucket)                           | The CV file is missing, so it cannot be opened             |
 | `offline`                         | any request (browser)                       | No answer, and the browser has no internet connection      |
 | `network_error`                   | any request (browser)                       | No answer from the server, although the browser is online  |
 | `unknown`                         | anywhere                                    | Fallback for errors without a known code                   |

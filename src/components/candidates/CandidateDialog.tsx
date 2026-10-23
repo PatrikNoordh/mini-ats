@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -21,6 +21,7 @@ import { useApplications } from "@/hooks/useApplications";
 import { useDeleteCandidate, useSaveCandidate } from "@/hooks/useCandidates";
 import { useErrorToast } from "@/hooks/useErrorToast";
 import {
+  CV_MIME_TYPE,
   MAX_EMAIL_LENGTH,
   MAX_NAME_LENGTH,
   MAX_NOTES_LENGTH,
@@ -31,9 +32,11 @@ import { errorCode } from "@/lib/errors";
 import { useFormat } from "@/lib/format";
 import {
   candidateInputSchema,
+  cvFileError,
   fieldErrors,
   type CandidateInput,
   type FormErrors,
+  type ValidationKey,
 } from "@/lib/validation";
 import type { Candidate } from "@/types";
 
@@ -65,6 +68,9 @@ export function CandidateDialog({
   // The validated form, held while the user confirms removing links.
   const [pendingInput, setPendingInput] = useState<CandidateInput | null>(null);
   const [errors, setErrors] = useState<FormErrors<CandidateInput>>({});
+  // A CV chosen in the form, uploaded after the candidate is saved (ATS-17).
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvError, setCvError] = useState<ValidationKey | undefined>();
 
   // Jobs the candidate is already linked to. Read from the query, so links that arrive after the
   // dialog opened still show.
@@ -79,6 +85,8 @@ export function CandidateDialog({
   useEffect(() => {
     if (!open) return;
     setErrors({});
+    setCvFile(null);
+    setCvError(undefined);
     setNewJobIds([]);
     setRemovedJobIds([]);
     setPendingInput(null);
@@ -90,6 +98,13 @@ export function CandidateDialog({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, candidate?.id]);
+
+  const onCvChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    const invalid = file ? cvFileError(file) : null;
+    setCvError(invalid ?? undefined);
+    setCvFile(invalid ? null : file);
+  };
 
   const set = (k: keyof typeof empty) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -104,13 +119,14 @@ export function CandidateDialog({
         input,
         newJobIds: newJobIds.filter((id) => !linkedJobIds.includes(id)),
         removedJobIds: removing,
+        cvFile,
       });
       toast.success(candidate ? t("candidateDialog.updated") : t("candidateDialog.created"));
       onOpenChange(false);
     } catch (err) {
       // The candidate is saved, so the form closes: saving it again would create a duplicate.
       const code = errorCode(err);
-      if (code === "links_failed" || code === "unlinks_failed") {
+      if (code === "links_failed" || code === "unlinks_failed" || code === "cv_upload_failed") {
         toast.error(t(`errors.${code}`));
         onOpenChange(false);
       } else {
@@ -125,7 +141,7 @@ export function CandidateDialog({
     e.preventDefault();
     const parsed = candidateInputSchema.safeParse(form);
     setErrors(parsed.success ? {} : fieldErrors(candidateInputSchema, parsed.error));
-    if (!parsed.success) return;
+    if (!parsed.success || cvError) return;
     // Removing a link deletes its card, so it is confirmed first.
     if (removing.length > 0) setPendingInput(parsed.data);
     else await saveCandidate(parsed.data);
@@ -235,6 +251,20 @@ export function CandidateDialog({
                 value={form.notes}
                 onChange={set("notes")}
               />
+            )}
+          </Field>
+          <Field
+            id="c-cv"
+            label={t("candidateDialog.cv")}
+            hint={
+              candidate?.cv_path
+                ? t("candidateDialog.cvHintReplace")
+                : t("candidateDialog.cvHintNew")
+            }
+            error={cvError}
+          >
+            {(control) => (
+              <Input {...control} type="file" accept={CV_MIME_TYPE} onChange={onCvChange} />
             )}
           </Field>
           <div className="space-y-2">

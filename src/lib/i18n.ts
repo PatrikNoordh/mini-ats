@@ -1,6 +1,7 @@
 import { createInstance, type i18n, type TFunction } from "i18next";
 import en from "@/locales/en.json";
 import sv from "@/locales/sv.json";
+import { MAX_CV_BYTES } from "./constants";
 import { formatNumber } from "./format";
 import { DEFAULT_LANGUAGE, LANGUAGES, parseLanguage, type Language } from "./language";
 
@@ -12,6 +13,8 @@ export const resources = {
   en: { translation: english },
 } as const;
 
+const BYTES_PER_MEGABYTE = 1024 * 1024;
+
 function createI18n(language: Language): i18n {
   const instance = createInstance();
   void instance.init({
@@ -20,7 +23,11 @@ function createI18n(language: Language): i18n {
     supportedLngs: LANGUAGES,
     resources,
     initAsync: false,
-    interpolation: { escapeValue: false }, // React already escapes output
+    interpolation: {
+      escapeValue: false, // React already escapes output
+      // Limits named in texts that are shown without variables, such as error codes in a toast.
+      defaultVariables: { maxCvMegabytes: MAX_CV_BYTES / BYTES_PER_MEGABYTE },
+    },
     returnEmptyString: false,
   });
   // `{{count, number}}` in the locale files goes through the same Intl helper as the rest of the app.

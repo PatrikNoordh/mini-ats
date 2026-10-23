@@ -28,8 +28,13 @@ create function auth.uid() returns uuid language sql stable as $$
   )::uuid
 $$;
 
-create table storage.buckets (id text primary key, name text, public boolean);
-create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text);
+create table storage.buckets (
+  id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]
+);
+-- owner as in Supabase, so a test variable named like a column fails here too, not only there.
+create table storage.objects (
+  id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid
+);
 alter table storage.objects enable row level security;  -- on by default in Supabase
 create function storage.foldername(name text) returns text[] language sql immutable as $$
   select string_to_array(name, '/')
@@ -37,6 +42,7 @@ $$;
 
 grant usage on schema auth, storage, public to anon, authenticated, service_role;
 grant execute on function auth.uid() to anon, authenticated, service_role;
-grant all on storage.objects to authenticated, service_role;
+-- Supabase grants anon on storage.objects too, so RLS alone keeps signed-out users out of the bucket.
+grant all on storage.objects to anon, authenticated, service_role;
 -- No default table privileges: the migrations grant them explicitly (ATS-22), so CI tests the
 -- same privileges as the project.

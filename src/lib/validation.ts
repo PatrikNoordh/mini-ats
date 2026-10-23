@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import sv from "@/locales/sv.json";
 import {
+  CV_MIME_TYPE,
+  MAX_CV_BYTES,
   MAX_EMAIL_LENGTH,
   MAX_JOB_DESCRIPTION_LENGTH,
   MAX_JOB_LOCATION_LENGTH,
@@ -117,3 +119,20 @@ export type AccountInput = z.infer<typeof accountInputSchema>;
 export const accountUpdateSchema = accountInputSchema.extend({
   password: z.union([z.literal(""), passwordSchema]),
 });
+
+/**
+ * A CV file the cvs bucket accepts: a PDF with content, of at most MAX_CV_BYTES (ATS-17). The
+ * candidate form shows the message under its CV field, the candidate panel in a toast.
+ */
+const cvFileSchema = z.object({
+  type: z.literal(CV_MIME_TYPE, { message: "cv_not_pdf" }),
+  size: z.number().min(1, "cv_empty").max(MAX_CV_BYTES, "cv_too_large"),
+});
+
+/** Why a chosen file cannot be a CV, as a validation key, or null when it can. */
+export function cvFileError(file: { type: string; size: number }): ValidationKey | null {
+  const result = cvFileSchema.safeParse({ type: file.type, size: file.size });
+  if (result.success) return null;
+  const message = result.error.issues[0]?.message ?? "";
+  return isValidationKey(message) ? message : "cv_not_pdf";
+}

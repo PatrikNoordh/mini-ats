@@ -91,4 +91,8 @@ export const queryKeys = {
   jobs: (customerId: string | null) => ["jobs", customerId] as const,
   candidates: (customerId: string | null) => ["candidates", customerId] as const,
   applications: (customerId: string | null) => ["applications", customerId] as const,
+  /** Every CV link of the customer, to refresh them all after a change. */
+  cvUrls: (customerId: string | null) => ["cvUrl", customerId] as const,
+  /** A short-lived link to open one CV (ATS-17). */
+  cvUrl: (customerId: string | null, path: string | null) => ["cvUrl", customerId, path] as const,
 };

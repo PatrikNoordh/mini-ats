@@ -2,6 +2,7 @@
 // A delete is kept for 30 days (ATS-27): the account is banned and marked deleted, its data stays.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.118.0";
 
+import { CV_BUCKET, removeCvFolder } from "../_shared/cvs.ts";
 import {
   createHandler,
   type Account,
@@ -158,9 +159,14 @@ async function restore(id: string): Promise<void> {
   await setProfile(service, id, { deleted_at: null });
 }
 
-/** The Auth user goes, and the cascades remove the profile and all its data. */
+/**
+ * The CV files go first (ATS-17), then the Auth user, and the cascades remove the profile and
+ * all its data. If removing the files fails, the account is still there to try again.
+ */
 async function deleteNow(id: string): Promise<void> {
-  const { error } = await admin().auth.admin.deleteUser(id);
+  const service = admin();
+  await removeCvFolder(service.storage.from(CV_BUCKET), id);
+  const { error } = await service.auth.admin.deleteUser(id);
   if (error) throw error;
 }
 

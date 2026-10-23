@@ -241,6 +241,7 @@ export type Database = {
     };
     Functions: {
       account_is_active: { Args: never; Returns: boolean };
+      accounts_due_for_purge: { Args: never; Returns: string[] };
       is_admin: { Args: never; Returns: boolean };
       move_application: {
         Args: { application_id: string; customer_id: string; new_stage: string };
@@ -262,7 +263,6 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      purge_deleted_accounts: { Args: never; Returns: number };
       soft_delete_or_demote_account: {
         Args: { account_id: string; change: string };
         Returns: undefined;

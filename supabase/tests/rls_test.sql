@@ -511,18 +511,19 @@ begin
   reset role;
   raise notice 'OK 27: a deleted admin is not an admin, and an active admin still sees deleted accounts';
 
-  -- 28. The purge deletes only accounts deleted more than 30 days ago, with their data.
+  -- 28. Only accounts deleted more than 30 days ago are due for the purge (the
+  -- purge-deleted-accounts function, ATS-17), and deleting one takes its data with it.
   update public.profiles set deleted_at = now() - interval '29 days' where id = customer;
   update public.profiles set deleted_at = now() - interval '31 days' where id = admin2;
-  assert public.purge_deleted_accounts() = 1, 'one account purged';
-  assert exists (select 1 from auth.users where id = customer), 'deleted 29 days ago: kept';
-  assert not exists (select 1 from auth.users where id = admin2), 'deleted 31 days ago: gone';
-  assert exists (select 1 from public.profiles where id = '00000000-0000-0000-0000-0000000000ad'), 'active admin untouched';
-  update public.profiles set deleted_at = now() - interval '31 days' where id = customer;
-  assert public.purge_deleted_accounts() = 1, 'the customer purged too';
+  assert admin2 in (select public.accounts_due_for_purge()), 'deleted 31 days ago: due';
+  assert customer not in (select public.accounts_due_for_purge()), 'deleted 29 days ago: not due';
+  assert '00000000-0000-0000-0000-0000000000ad' not in (select public.accounts_due_for_purge()), 'active admin not due';
+  assert not has_function_privilege('anon', 'public.accounts_due_for_purge()', 'execute'), 'anon cannot list';
+  assert not has_function_privilege('authenticated', 'public.accounts_due_for_purge()', 'execute'), 'no client can list';
+  assert to_regprocedure('public.purge_deleted_accounts()') is null, 'the SQL purge is gone';
+  delete from auth.users where id = customer;
   assert not exists (select 1 from public.jobs where id = job), 'its jobs went with it';
-  assert not has_function_privilege('authenticated', 'public.purge_deleted_accounts()', 'execute'), 'no client can purge';
-  raise notice 'OK 28: the purge removes only accounts deleted more than 30 days ago, and no client can run it';
+  raise notice 'OK 28: only accounts deleted more than 30 days ago are due for the purge, and no client can list them';
 end $$;
 
 -- ---------------------------------------------------------------- removing a job link (ATS-30)
@@ -658,6 +659,62 @@ begin
   reset role;
   assert (select role = 'admin' and deleted_at is null from public.profiles where id = admin_id), 'the last admin is untouched';
   raise notice 'OK 30: the last active admin cannot be deleted or demoted, and no client can run the function';
+end $$;
+
+-- ---------------------------------------------------------------- CV bucket (ATS-17)
+-- The bucket refuses big files and anything but PDF on the server. A CV is replaced in place
+-- (upsert), which needs the update policy: own folder while active, or an admin.
+reset role;
+do $$ declare
+  -- Not named owner: storage.objects has an owner column, and PL/pgSQL would not know which.
+  cv_owner uuid := gen_random_uuid(); cv_other uuid := gen_random_uuid(); cv_gone uuid := gen_random_uuid();
+  n integer; blocked boolean := false;
+begin
+  assert (select file_size_limit from storage.buckets where id = 'cvs') = 5 * 1024 * 1024, 'cvs limit is 5 MB';
+  assert (select allowed_mime_types from storage.buckets where id = 'cvs') = array['application/pdf'], 'cvs takes only PDF';
+
+  insert into auth.users (id, email, raw_app_meta_data) values
+    (cv_owner, 'owner-17@test.local', '{"role":"customer"}'),
+    (cv_other, 'other-17@test.local', '{"role":"customer"}'),
+    (cv_gone, 'gone-17@test.local', '{"role":"customer"}');
+  insert into storage.objects (bucket_id, name) values
+    ('cvs', cv_owner || '/cv-owner.pdf'), ('cvs', cv_other || '/cv-other.pdf'), ('cvs', cv_gone || '/cv-gone.pdf');
+  update public.profiles set deleted_at = now() where id = cv_gone;
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', cv_owner), true);
+  update storage.objects set name = name where bucket_id = 'cvs' and name = cv_owner || '/cv-owner.pdf';
+  get diagnostics n = row_count;
+  assert n = 1, 'the owner could not replace its own CV';
+  update storage.objects set name = name where bucket_id = 'cvs' and name = cv_other || '/cv-other.pdf';
+  get diagnostics n = row_count;
+  assert n = 0, 'a customer replaced another customer''s CV';
+  begin
+    update storage.objects set name = cv_other || '/moved.pdf' where bucket_id = 'cvs' and name = cv_owner || '/cv-owner.pdf';
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL 31: a customer moved its CV into another customer''s folder'; end if;
+
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', cv_gone), true);
+  update storage.objects set name = name where bucket_id = 'cvs' and name = cv_gone || '/cv-gone.pdf';
+  get diagnostics n = row_count;
+  assert n = 0, 'a deleted account replaced its CV';
+
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
+  update storage.objects set name = name where bucket_id = 'cvs' and name = cv_other || '/cv-other.pdf';
+  get diagnostics n = row_count;
+  assert n = 1, 'the admin could not replace a customer''s CV';
+
+  -- Signed out: Supabase grants anon on storage.objects, so RLS alone must refuse. The claims
+  -- are a signed-out request's, without sub; the admin's would still be set from above.
+  reset role;
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  set local role anon;
+  update storage.objects set name = name where bucket_id = 'cvs' and name = cv_owner || '/cv-owner.pdf';
+  get diagnostics n = row_count;
+  reset role;
+  assert n = 0, 'anon replaced a CV';
+  raise notice 'OK 31: the cvs bucket takes PDFs up to 5 MB, and only the owner while active or an admin replaces a CV';
 end $$;
 
 rollback;

@@ -15,11 +15,13 @@ export function useSaveCandidate(customerId: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (vars: SaveCandidateVars) => saveCandidate(customerId!, vars),
-    // Also after a failed link: the candidate may be saved. Jobs show the number of candidates.
+    // Also after a failed link: the candidate may be saved. Jobs show the number of candidates,
+    // and a new CV makes any open link to the old one stale.
     onSettled: () => {
       qc.invalidateQueries({ queryKey: queryKeys.candidates(customerId) });
       qc.invalidateQueries({ queryKey: queryKeys.applications(customerId) });
       qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });
+      qc.invalidateQueries({ queryKey: queryKeys.cvUrls(customerId) });
     },
   });
 }

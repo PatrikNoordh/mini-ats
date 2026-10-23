@@ -28,6 +28,10 @@ export const ERROR_CODES = [
   "account_not_deleted",
   "cannot_change_self",
   "last_admin",
+  "cv_not_pdf",
+  "cv_too_large",
+  "cv_upload_failed",
+  "cv_not_found",
   "offline",
   "network_error",
 ] as const;
