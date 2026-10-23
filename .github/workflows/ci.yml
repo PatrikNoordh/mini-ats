@@ -28,6 +28,20 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  functions:
+    name: Edge Functions (deno check and test)
+    runs-on: ubuntu-latest
+    env:
+      # The functions import with npm: and jsr: specifiers; the app's package.json is not theirs.
+      DENO_NO_PACKAGE_JSON: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.5.6
+      - run: deno check supabase/functions/*/index.ts
+      - run: deno test --allow-env supabase/functions
+
   rls:
     name: RLS tests
     runs-on: ubuntu-latest
