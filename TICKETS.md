@@ -349,3 +349,4 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
 - [ ] When the Auth call fails and undoing the profile write then fails too, the undo error is thrown and the original Auth error never reaches the log — `supabase/functions/admin-manage-account/index.ts` (PR #66, ATS-33)
+- [ ] Deleting a candidate removes its CV file first; if the candidate delete then fails, the candidate keeps a `cv_path` to a missing file (shown as `cv_not_found`). Doing both in one server-side step would close it — `src/lib/api/candidates.ts` (PR #68, ATS-17)
