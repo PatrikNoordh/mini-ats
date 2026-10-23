@@ -263,6 +263,10 @@ export type Database = {
         };
       };
       purge_deleted_accounts: { Args: never; Returns: number };
+      soft_delete_or_demote_account: {
+        Args: { account_id: string; change: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;
