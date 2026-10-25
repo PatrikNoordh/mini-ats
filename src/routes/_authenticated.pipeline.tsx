@@ -12,17 +12,13 @@ import { BoardFilters, type BoardFilterValues } from "@/components/pipeline/Boar
 import { CandidateSheet } from "@/components/pipeline/CandidateSheet";
 import { RejectOthersDialog } from "@/components/pipeline/RejectOthersDialog";
 import { CandidateDialog } from "@/components/candidates/CandidateDialog";
-import {
-  useApplications,
-  useMoveApplication,
-  useRejectApplications,
-} from "@/hooks/useApplications";
+import { useApplications, useRejectApplications } from "@/hooks/useApplications";
+import { useHiredPrompt } from "@/hooks/useHiredPrompt";
 import { useCandidates } from "@/hooks/useCandidates";
 import { useJobs } from "@/hooks/useJobs";
 import { MAX_SEARCH_LENGTH } from "@/lib/constants";
 import { pageHead } from "@/lib/i18n";
-import { otherOpenApplications, resolveJobFilter, STAGES } from "@/lib/stages";
-import type { Application, Stage } from "@/types";
+import { resolveJobFilter, STAGES } from "@/lib/stages";
 
 const searchSchema = z.object({
   job: z.string().optional().catch(undefined),
@@ -47,11 +43,9 @@ function Pipeline({ customerId }: { customerId: string }) {
   const apps = useApplications(customerId);
   const cands = useCandidates(customerId);
   const jobs = useJobs(customerId);
-  const move = useMoveApplication(customerId);
+  const prompt = useHiredPrompt(customerId, apps.data);
   const reject = useRejectApplications(customerId);
   const [openId, setOpenId] = useState<string | null>(null);
-  // The card just moved to Hired, while the prompt about the candidate's other cards is open.
-  const [hired, setHired] = useState<Application | null>(null);
   const [creating, setCreating] = useState(false);
   const { q } = search;
   const job = resolveJobFilter(search.job, jobs.data);
@@ -78,37 +72,17 @@ function Pipeline({ customerId }: { customerId: string }) {
       .filter((c) => !term || c.candidateName.toLowerCase().includes(term));
   }, [apps.data, cands.data, jobs.data, job, q, t]);
 
-  // From all the customer's cards, not the filtered board: a card in another job counts too.
-  const othersOf = (card: Application) => otherOpenApplications(apps.data ?? [], card);
-  const hiredOthers = hired ? othersOf(hired) : [];
-  // Closed by itself if the other cards were moved or removed while it was open.
-  const hiredName =
-    hired && hiredOthers.length > 0
-      ? (cands.data?.find((c) => c.id === hired.candidate_id)?.full_name ??
-        t("pipeline.unknownCandidate"))
-      : null;
-
-  // The move to Hired is done either way; the prompt only offers to reject the other cards. It
-  // opens once the move is saved: a failed hire must never lead to rejecting the other cards.
-  const onMove = (id: string, stage: Stage) => {
-    const card = apps.data?.find((a) => a.id === id);
-    const prompt = stage === "hired" && card && othersOf(card).length > 0;
-    // The promise, not mutate's callbacks, which fire only for the last of several quick moves.
-    move.mutateAsync({ id, stage }).then(
-      () => {
-        if (prompt) setHired(card);
-      },
-      () => {}, // The hook already shows the error and puts the card back.
-    );
-  };
+  const hiredName = prompt.hired
+    ? (cands.data?.find((c) => c.id === prompt.hired?.candidate_id)?.full_name ??
+      t("pipeline.unknownCandidate"))
+    : null;
 
   const onReject = async () => {
-    if (!hired) return;
     const stageName = t("stages.rejected");
     // Read at the moment of the click: a card may have moved or gone since the prompt opened.
-    const ids = hiredOthers.map((a) => a.id);
+    const ids = prompt.others.map((a) => a.id);
     const result = await reject.mutateAsync(ids);
-    setHired(null);
+    prompt.close();
     if (result.moved > 0) {
       toast.success(t("rejectOthers.moved", { count: result.moved, stage: stageName }));
     }
@@ -157,7 +131,7 @@ function Pipeline({ customerId }: { customerId: string }) {
           )}
         </EmptyState>
       ) : (
-        <Board cards={cards} onMove={onMove} onOpen={(c) => setOpenId(c.app.candidate_id)} />
+        <Board cards={cards} onMove={prompt.onMove} onOpen={(c) => setOpenId(c.app.candidate_id)} />
       )}
 
       <CandidateSheet
@@ -169,10 +143,10 @@ function Pipeline({ customerId }: { customerId: string }) {
       />
       <RejectOthersDialog
         name={hiredName}
-        count={hiredOthers.length}
+        count={prompt.others.length}
         busy={reject.isPending}
         onConfirm={onReject}
-        onKeep={() => setHired(null)}
+        onKeep={prompt.close}
       />
       <CandidateDialog
         customerId={customerId}
