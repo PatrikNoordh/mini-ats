@@ -263,8 +263,15 @@
     "unlinkDescription_other": "{{name}} is removed from {{jobs}}. The cards on the board go too, with any CV assessments. The candidate is kept.",
     "unlinkConfirm": "Remove",
     "cv": "CV (PDF)",
-    "cvHintNew": "Optional. PDF, at most {{maxCvMegabytes}} MB.",
-    "cvHintReplace": "The candidate has a CV. A new file replaces it. PDF, at most {{maxCvMegabytes}} MB."
+    "cvHint": "Optional. PDF, at most {{maxCvMegabytes}} MB.",
+    "cvCurrent": "Current CV",
+    "cvOpen": "Open",
+    "cvNone": "No CV uploaded.",
+    "cvChoose": "Choose PDF",
+    "cvReplace": "Replace CV",
+    "cvChosen": "Chosen file: {{name}}",
+    "cvClear": "Undo choice",
+    "cvReplacesOnSave": "The new file replaces the current CV when you save."
   },
   "jobs": {
     "title": "Jobs",

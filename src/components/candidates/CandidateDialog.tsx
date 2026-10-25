@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { CandidateCvField } from "@/components/candidates/CandidateCvField";
 import { Field } from "@/components/Field";
 import { ErrorState, LoadingRows } from "@/components/States";
 import { useJobs } from "@/hooks/useJobs";
@@ -21,7 +22,6 @@ import { useApplications } from "@/hooks/useApplications";
 import { useDeleteCandidate, useSaveCandidate } from "@/hooks/useCandidates";
 import { useErrorToast } from "@/hooks/useErrorToast";
 import {
-  CV_MIME_TYPE,
   MAX_EMAIL_LENGTH,
   MAX_NAME_LENGTH,
   MAX_NOTES_LENGTH,
@@ -253,20 +253,17 @@ export function CandidateDialog({
               />
             )}
           </Field>
-          <Field
-            id="c-cv"
-            label={t("candidateDialog.cv")}
-            hint={
-              candidate?.cv_path
-                ? t("candidateDialog.cvHintReplace")
-                : t("candidateDialog.cvHintNew")
-            }
+          <CandidateCvField
+            customerId={customerId}
+            cvPath={candidate?.cv_path ?? null}
+            file={cvFile}
             error={cvError}
-          >
-            {(control) => (
-              <Input {...control} type="file" accept={CV_MIME_TYPE} onChange={onCvChange} />
-            )}
-          </Field>
+            onChange={onCvChange}
+            onClear={() => {
+              setCvFile(null);
+              setCvError(undefined);
+            }}
+          />
           <div className="space-y-2">
             <Label>{t("candidateDialog.linkJobs")}</Label>
             {linksLoading ? (
