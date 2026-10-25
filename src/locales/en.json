@@ -393,5 +393,17 @@
     "submit": "Change password",
     "done": "The password is changed. Your other devices will be signed out.",
     "doneOthersKept": "The password is changed, but your other devices could not be signed out."
+  },
+  "rejectOthers": {
+    "title": "Reject the other applications?",
+    "description_one": "{{name}} also has {{count, number}} other open application. Move it to {{stage}}?",
+    "description_other": "{{name}} also has {{count, number}} other open applications. Move them to {{stage}}?",
+    "keep": "Keep",
+    "confirm": "Move to {{stage}}",
+    "moving": "Moving…",
+    "moved_one": "{{count, number}} application was moved to {{stage}}.",
+    "moved_other": "{{count, number}} applications were moved to {{stage}}.",
+    "failed_one": "{{count, number}} application could not be moved to {{stage}}. The board shows how things stand now.",
+    "failed_other": "{{count, number}} applications could not be moved to {{stage}}. The board shows how things stand now."
   }
 }

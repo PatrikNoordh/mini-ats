@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,13 +10,19 @@ import { EmptyState, ErrorState, PageHeader } from "@/components/States";
 import { Board, type BoardCard } from "@/components/pipeline/Board";
 import { BoardFilters, type BoardFilterValues } from "@/components/pipeline/BoardFilters";
 import { CandidateSheet } from "@/components/pipeline/CandidateSheet";
+import { RejectOthersDialog } from "@/components/pipeline/RejectOthersDialog";
 import { CandidateDialog } from "@/components/candidates/CandidateDialog";
-import { useApplications, useMoveApplication } from "@/hooks/useApplications";
+import {
+  useApplications,
+  useMoveApplication,
+  useRejectApplications,
+} from "@/hooks/useApplications";
 import { useCandidates } from "@/hooks/useCandidates";
 import { useJobs } from "@/hooks/useJobs";
 import { MAX_SEARCH_LENGTH } from "@/lib/constants";
 import { pageHead } from "@/lib/i18n";
-import { resolveJobFilter, STAGES } from "@/lib/stages";
+import { otherOpenApplications, resolveJobFilter, STAGES } from "@/lib/stages";
+import type { Application, Stage } from "@/types";
 
 const searchSchema = z.object({
   job: z.string().optional().catch(undefined),
@@ -41,7 +48,10 @@ function Pipeline({ customerId }: { customerId: string }) {
   const cands = useCandidates(customerId);
   const jobs = useJobs(customerId);
   const move = useMoveApplication(customerId);
+  const reject = useRejectApplications(customerId);
   const [openId, setOpenId] = useState<string | null>(null);
+  // The card just moved to Hired, while the prompt about the candidate's other cards is open.
+  const [hired, setHired] = useState<Application | null>(null);
   const [creating, setCreating] = useState(false);
   const { q } = search;
   const job = resolveJobFilter(search.job, jobs.data);
@@ -67,6 +77,38 @@ function Pipeline({ customerId }: { customerId: string }) {
       }))
       .filter((c) => !term || c.candidateName.toLowerCase().includes(term));
   }, [apps.data, cands.data, jobs.data, job, q, t]);
+
+  // From all the customer's cards, not the filtered board: a card in another job counts too.
+  const othersOf = (card: Application) => otherOpenApplications(apps.data ?? [], card);
+  const hiredOthers = hired ? othersOf(hired) : [];
+  // Closed by itself if the other cards were moved or removed while it was open.
+  const hiredName =
+    hired && hiredOthers.length > 0
+      ? (cands.data?.find((c) => c.id === hired.candidate_id)?.full_name ??
+        t("pipeline.unknownCandidate"))
+      : null;
+
+  // The move to Hired is done either way; the prompt only offers to reject the other cards.
+  const onMove = (id: string, stage: Stage) => {
+    move.mutate({ id, stage });
+    const card = apps.data?.find((a) => a.id === id);
+    if (stage === "hired" && card && othersOf(card).length > 0) setHired(card);
+  };
+
+  const onReject = async () => {
+    if (!hired) return;
+    const stageName = t("stages.rejected");
+    // Read at the moment of the click: a card may have moved or gone since the prompt opened.
+    const ids = hiredOthers.map((a) => a.id);
+    const result = await reject.mutateAsync(ids);
+    setHired(null);
+    if (result.moved > 0) {
+      toast.success(t("rejectOthers.moved", { count: result.moved, stage: stageName }));
+    }
+    if (result.failed > 0) {
+      toast.error(t("rejectOthers.failed", { count: result.failed, stage: stageName }));
+    }
+  };
 
   const isLoading = apps.isLoading || cands.isLoading || jobs.isLoading;
   const isError = apps.isError || cands.isError || jobs.isError;
@@ -108,11 +150,7 @@ function Pipeline({ customerId }: { customerId: string }) {
           )}
         </EmptyState>
       ) : (
-        <Board
-          cards={cards}
-          onMove={(id, stage) => move.mutate({ id, stage })}
-          onOpen={(c) => setOpenId(c.app.candidate_id)}
-        />
+        <Board cards={cards} onMove={onMove} onOpen={(c) => setOpenId(c.app.candidate_id)} />
       )}
 
       <CandidateSheet
@@ -121,6 +159,13 @@ function Pipeline({ customerId }: { customerId: string }) {
         applications={apps.data ?? []}
         jobs={jobs.data ?? []}
         onClose={() => setOpenId(null)}
+      />
+      <RejectOthersDialog
+        name={hiredName}
+        count={hiredOthers.length}
+        busy={reject.isPending}
+        onConfirm={onReject}
+        onKeep={() => setHired(null)}
       />
       <CandidateDialog
         customerId={customerId}

@@ -393,5 +393,17 @@
     "submit": "Byt lösenord",
     "done": "Lösenordet är bytt. Dina andra enheter loggas ut.",
     "doneOthersKept": "Lösenordet är bytt, men dina andra enheter kunde inte loggas ut."
+  },
+  "rejectOthers": {
+    "title": "Avböj de andra ansökningarna?",
+    "description_one": "{{name}} har även {{count, number}} annan öppen ansökan. Flytta den till {{stage}}?",
+    "description_other": "{{name}} har även {{count, number}} andra öppna ansökningar. Flytta dem till {{stage}}?",
+    "keep": "Behåll",
+    "confirm": "Flytta till {{stage}}",
+    "moving": "Flyttar…",
+    "moved_one": "{{count, number}} ansökan flyttades till {{stage}}.",
+    "moved_other": "{{count, number}} ansökningar flyttades till {{stage}}.",
+    "failed_one": "{{count, number}} ansökan kunde inte flyttas till {{stage}}. Tavlan visar hur det ser ut nu.",
+    "failed_other": "{{count, number}} ansökningar kunde inte flyttas till {{stage}}. Tavlan visar hur det ser ut nu."
   }
 }
