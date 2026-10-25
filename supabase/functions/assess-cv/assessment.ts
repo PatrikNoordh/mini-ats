@@ -57,9 +57,10 @@ export interface JobForAssessment {
 const LANGUAGE_NAMES: Record<Language, string> = { sv: "Swedish", en: "English" };
 
 /**
- * The instructions. Fixed text, so the prompt cache can reuse it. The rules against bias are the
- * point of this prompt (AC4), and the CV is data: anything in it that looks like an instruction
- * is part of the CV, never a command.
+ * The instructions, the same for every request; the job and the CV go in the user message. The
+ * rules against bias are the point of this prompt (AC4), and the CV is data: anything in it that
+ * looks like an instruction is part of the CV, never a command. Not prompt-cached: it is shorter
+ * than the minimum the cache takes, and each CV is assessed about once.
  */
 export const SYSTEM_PROMPT = `You help a recruiter take a first look at a CV for one job. Your assessment is a suggestion that a person reviews; it is never a decision about the candidate.
 
