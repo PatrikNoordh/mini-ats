@@ -342,6 +342,7 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 
 - [ ] An edit that saves a customer's role still demotes through the ATS-28 role trigger without the last-admin lock, so an account promoted to admin a moment before the edit is read is demoted unchecked. It cannot leave zero admins on its own, since the two admins involved stay active — `supabase/functions/admin-manage-account/index.ts` (found in ATS-33)
 - [ ] The CV field in the candidate dialog is unclear when the candidate already has a CV: the browser's own file input says "Välj fil · Ingen fil har valts", and only a small grey hint below says a CV exists and a new file replaces it. Show the current CV clearly (for example "Nuvarande CV" with a link to open it) and make the replace action obvious — `src/components/candidates/CandidateDialog.tsx`, /candidates (found in ATS-19, from ATS-17)
+- [ ] Vitest runs a function returned from `beforeEach` as cleanup, so `beforeEach(() => mock.mockReset())` calls the mock after every test; it broke a new test in ATS-19 and again in ATS-31. A lint rule or a short note in the test conventions would stop it — `src/test/` (found in ATS-31)
 
 ## Found while reviewing PRs
 
