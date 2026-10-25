@@ -334,15 +334,21 @@ Tracked in #67.
 
 ---
 
+## Backlog — after delivery
+
+Known work for after the delivery on 26 October 2026, from the epic 6 close-out. Product ideas join it as tickets once they are decided.
+
+### ATS-35 · chore · Small hygiene fixes from epic 6
+
+Tracked in #74.
+
+---
+
 ## Found while building
 
 Small problems and improvements noticed while working on a ticket but outside its scope. Add one line per finding as soon as it is found, with the ticket where it was found. At each epic checkpoint the list is triaged and emptied: a finding becomes an extra AC on the open ticket that touches the same code, or goes into one hygiene ticket for the epic, or is dropped. The AC says where it came from, for example "(found while building ATS-2)". `/ats-epic-close` does the triage and records where each line went in `docs/review-epic-<N>.md`.
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
-
-- [ ] An edit that saves a customer's role still demotes through the ATS-28 role trigger without the last-admin lock, so an account promoted to admin a moment before the edit is read is demoted unchecked. It cannot leave zero admins on its own, since the two admins involved stay active — `supabase/functions/admin-manage-account/index.ts` (found in ATS-33)
-- [x] → #63 ATS-32 AC3. The CV field in the candidate dialog is unclear when the candidate already has a CV: the browser's own file input says "Välj fil · Ingen fil har valts", and only a small grey hint below says a CV exists and a new file replaces it. Show the current CV clearly (for example "Nuvarande CV" with a link to open it) and make the replace action obvious — `src/components/candidates/CandidateDialog.tsx`, /candidates (found in ATS-19, from ATS-17)
-- [x] → #63 ATS-32 AC6. Vitest runs a function returned from `beforeEach` as cleanup, so `beforeEach(() => mock.mockReset())` calls the mock after every test; it broke a new test in ATS-19 and again in ATS-31. A lint rule or a short note in the test conventions would stop it — `src/test/` (found in ATS-31)
 
 ## Found while reviewing PRs
 
@@ -350,11 +356,3 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
-- [x] → #63 ATS-32 AC4. When the Auth call fails and undoing the profile write then fails too, the undo error is thrown and the original Auth error never reaches the log — `supabase/functions/admin-manage-account/index.ts` (PR #66, ATS-33)
-- [ ] Deleting a candidate removes its CV file first; if the candidate delete then fails, the candidate keeps a `cv_path` to a missing file (shown as `cv_not_found`). Doing both in one server-side step would close it — `src/lib/api/candidates.ts` (PR #68, ATS-17)
-- [ ] Two `assess-cv` calls at the same moment can both pass the one-minute cooldown, since it is read before the save; costs one extra model call, never wrong data — `supabase/functions/assess-cv/handler.ts` (PR #69, ATS-18)
-- [x] → #63 ATS-32 AC5. The comment on `SYSTEM_PROMPT` says the prompt cache reuses it, but the request sets no `cache_control` and the prompt is likely below the minimum cacheable length — `supabase/functions/assess-cv/assessment.ts` (PR #69, ATS-18)
-- [ ] After a CV is replaced, the old AI assessment still shows as the newest with nothing saying it was made from the previous CV; only the date hints at it. Marking it would need the CV upload time — `src/components/pipeline/CandidateAssessment.tsx` (PR #70, ATS-19)
-- [ ] Every page change makes one extra Auth request (`getUser`) to check the session; cheap and fails safe, but could be limited to about once a minute if it ever shows up in Auth rate limits — `src/hooks/useSessionCheckOnNavigation.ts` (PR #71, ATS-34)
-- [x] → #63 ATS-32 AC7. No test covers when the reject prompt opens on the board (after a saved move to Hired, never after a failed one); the pipeline route has no test setup yet — `src/routes/_authenticated.pipeline.tsx` (PR #72, ATS-31)
-- [ ] While the signed link loads or if it fails, the "Öppna" link in the candidate dialog's CV field is just missing, with no message or retry as in the panel — `src/components/candidates/CandidateCvField.tsx` (PR #73, ATS-32)
