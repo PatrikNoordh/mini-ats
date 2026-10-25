@@ -1,6 +1,7 @@
 import { z } from "npm:zod@3.25.76";
 
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { utf8Length } from "../_shared/text.ts";
 import {
   MAX_EMAIL_LENGTH,
   MAX_NAME_LENGTH,
@@ -9,7 +10,6 @@ import {
 } from "../admin-create-user/handler.ts";
 
 const requiredText = z.string().trim().min(1).max(MAX_NAME_LENGTH);
-const utf8Length = (value: string) => new TextEncoder().encode(value).length;
 const id = z.string().uuid();
 
 /** The same rules as admin-create-user, so an edit can never store what creating refuses. */

@@ -339,12 +339,15 @@ The repository is connected to Vercel: every push to `main` deploys the live app
 
 ## Quality and CI
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs two jobs on every pull request and push to `main`:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs three jobs on every pull request and push to `main`:
 
 1. **App**: `npm ci` → lint → `tsc --noEmit` → `npm test` → `npm run build`
-2. **RLS**: Postgres 17 → the Supabase stand-in → every migration → `rls_test.sql` → the concurrency test
+2. **Edge Functions**: `deno check` on every function and `deno test` on all of `supabase/functions`
+3. **RLS**: Postgres 17 → the Supabase stand-in → every migration → `rls_test.sql` → the two concurrency tests
 
-A pull request merges only when both are green and the Vercel preview works. Around **230 Vitest tests** cover the logic and components: validation, the URL filters, days in stage, card moves and rollback, error codes, the customer switch, offline saves and the account dialogs. A test also checks that `sv.json` and `en.json` have the same keys and placeholders.
+A pull request merges only when all three are green and the Vercel preview works. Over **320 Vitest tests** cover the logic and components: validation, the URL filters, days in stage, card moves and rollback, error codes, the customer switch, offline saves, the account dialogs, CVs and the AI assessment. A test also checks that `sv.json` and `en.json` have the same keys and placeholders. The Edge Functions have their own Deno tests, which run with every outside call passed in, so they need no project.
+
+One convention worth knowing: a `beforeEach` or `beforeAll` callback has a block body. Vitest runs a function returned from it as cleanup, so `beforeEach(() => mock.mockReset())` would call the mock again after the test. ESLint enforces this in `src/test/`.
 
 ---
 

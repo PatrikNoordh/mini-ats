@@ -1,6 +1,7 @@
 import { z } from "npm:zod@3.25.76";
 
 import { corsHeaders, json } from "../_shared/cors.ts";
+import { utf8Length } from "../_shared/text.ts";
 
 /** Same minimum as MIN_PASSWORD_LENGTH in src/lib/constants.ts, which the form checks first. */
 export const MIN_PASSWORD_LENGTH = 8;
@@ -11,8 +12,6 @@ export const MAX_EMAIL_LENGTH = 254;
 export const MAX_NAME_LENGTH = 200;
 
 const requiredText = z.string().trim().min(1).max(MAX_NAME_LENGTH);
-
-const utf8Length = (value: string) => new TextEncoder().encode(value).length;
 
 export const newAccountSchema = z.object({
   role: z.enum(["admin", "customer"]),

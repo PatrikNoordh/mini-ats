@@ -49,7 +49,9 @@ describe("moving a card on the board", () => {
 });
 
 describe("moveApplication", () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
 
   it("moves the card in one call, scoped to the customer", async () => {
     rpc.mockResolvedValue({ data: { ...card, stage: "screening", position: 4 }, error: null });

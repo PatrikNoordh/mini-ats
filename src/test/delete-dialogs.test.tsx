@@ -16,6 +16,9 @@ const mocks = vi.hoisted(() => ({
 
 const idle = { mutateAsync: vi.fn(), isPending: false };
 vi.mock("sonner", () => ({ toast: mocks.toast }));
+vi.mock("@/hooks/useCvs", () => ({
+  useCvUrl: () => ({ data: undefined, isError: false }),
+}));
 vi.mock("@/hooks/useJobs", () => ({
   useCreateJob: () => idle,
   useUpdateJob: () => idle,
@@ -66,7 +69,9 @@ const inEnglish = (ui: React.ReactNode) =>
   render(<I18nextProvider i18n={getI18n("en")}>{ui}</I18nextProvider>);
 
 describe("deleting a job", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("refuses a job with candidates with a toast, before asking", () => {
     inEnglish(<JobDialog customerId={CUSTOMER} open onOpenChange={onOpenChange} job={job(2)} />);
@@ -111,7 +116,9 @@ describe("deleting a job", () => {
 });
 
 describe("deleting a candidate", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("names the candidate and their jobs, then deletes", async () => {
     mocks.deleteCandidate.mockResolvedValue(undefined);

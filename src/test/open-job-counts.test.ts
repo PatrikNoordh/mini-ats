@@ -11,7 +11,9 @@ const { from, select, eq } = vi.hoisted(() => {
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from } }));
 
 describe("open jobs per customer", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("reads the embedded count, and 0 for a customer without open jobs", () => {
     const counts = parseOpenJobCounts([

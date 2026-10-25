@@ -14,6 +14,12 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("sonner", () => ({ toast: mocks.toast }));
+vi.mock("@/hooks/useCvs", () => ({
+  useCvUrl: (_customerId: string, path: string | null) => ({
+    data: path ? "https://storage.test/signed/cv.pdf?token=t" : undefined,
+    isError: false,
+  }),
+}));
 vi.mock("@/hooks/useJobs", () => ({
   useJobs: () => ({ data: [], isLoading: false, isError: false }),
 }));
@@ -70,6 +76,8 @@ describe("a CV in the candidate dialog", () => {
   it("uploads the chosen CV with a new candidate", async () => {
     openDialog(null);
     expect(screen.getByText("Optional. PDF, at most 5 MB.")).toBeTruthy();
+    expect(screen.getByText("No CV uploaded.")).toBeTruthy();
+    expect(screen.queryByText("Ingen fil har valts")).toBeNull();
     fillNewCandidate();
     choose(pdf);
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -78,11 +86,27 @@ describe("a CV in the candidate dialog", () => {
     );
   });
 
-  it("says a new file replaces the CV when editing a candidate who has one", () => {
+  it("shows the current CV with a link to open it, and says a new file replaces it", () => {
     openDialog(candidate);
-    expect(
-      screen.getByText("The candidate has a CV. A new file replaces it. PDF, at most 5 MB."),
-    ).toBeTruthy();
+    expect(screen.getByText("Current CV")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open" }).getAttribute("href")).toBe(
+      "https://storage.test/signed/cv.pdf?token=t",
+    );
+    expect(screen.getByText("Replace CV")).toBeTruthy();
+    choose(pdf);
+    expect(screen.getByText("Chosen file: cv.pdf")).toBeTruthy();
+    expect(screen.getByText("The new file replaces the current CV when you save.")).toBeTruthy();
+  });
+
+  it("can undo the chosen file before saving", async () => {
+    openDialog(candidate);
+    choose(pdf);
+    fireEvent.click(screen.getByRole("button", { name: "Undo choice" }));
+    expect(screen.queryByText("Chosen file: cv.pdf")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() =>
+      expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ cvFile: null })),
+    );
   });
 
   it("shows why a file is refused under the field, and saves nothing", () => {

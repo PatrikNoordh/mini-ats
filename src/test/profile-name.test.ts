@@ -25,4 +25,10 @@ describe("initials", () => {
     expect(initials("a@test.local")).toBe("A");
     expect(initials("jan_erik-olsson@test.local")).toBe("JE");
   });
+
+  it("keeps a double name together, in a name and in an email", () => {
+    expect(initials("Anna-Lena Svensson")).toBe("AS");
+    expect(initials("anna-lena.svensson@x.test")).toBe("AS");
+    expect(initials("anna+ats@x.test")).toBe("AA");
+  });
 });

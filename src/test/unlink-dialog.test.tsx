@@ -27,6 +27,9 @@ const job = (id: string, title: string, status: "open" | "closed"): JobWithCount
   candidate_count: 1,
 });
 
+vi.mock("@/hooks/useCvs", () => ({
+  useCvUrl: () => ({ data: undefined, isError: false }),
+}));
 vi.mock("@/hooks/useJobs", () => ({
   useJobs: () => ({
     data: [

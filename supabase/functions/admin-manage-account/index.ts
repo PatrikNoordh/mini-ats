@@ -100,6 +100,19 @@ async function setProfile(
   if (error) throw error;
 }
 
+/**
+ * Undoes a profile write after the Auth call it belonged to failed. If the undo fails too, that is
+ * logged with the Auth error that caused it, and the caller still reports the Auth error, which is
+ * what went wrong first (ATS-32).
+ */
+async function undo(action: () => Promise<void>, cause: unknown): Promise<void> {
+  try {
+    await action();
+  } catch (undoError) {
+    console.error("admin-manage-account: the undo failed too", { cause, undoError });
+  }
+}
+
 async function updateAccount(
   update: Update,
   demote: boolean,
@@ -119,7 +132,7 @@ async function updateAccount(
     app_metadata: { role: update.role },
   });
   if (error) {
-    if (demote) await setProfile(service, update.id, { role: "admin" });
+    if (demote) await undo(() => setProfile(service, update.id, { role: "admin" }), error);
     if (error.code === "email_exists") return { error: "email_exists" };
     throw error;
   }
@@ -146,7 +159,7 @@ async function softDelete(id: string): Promise<RemovalRefusal | null> {
   if (refusal) return refusal;
   const ban = await service.auth.admin.updateUserById(id, { ban_duration: BAN_WHILE_DELETED });
   if (ban.error) {
-    await setProfile(service, id, { deleted_at: null });
+    await undo(() => setProfile(service, id, { deleted_at: null }), ban.error);
     throw ban.error;
   }
   return null;
