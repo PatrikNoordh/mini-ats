@@ -115,3 +115,30 @@ export async function moveApplication(
   if (error) throw fromDbError(error);
   return parseApplicationRow(data);
 }
+
+/** How moving several cards to Rejected went. The ones that moved stay moved. */
+export interface RejectResult {
+  moved: number;
+  failed: number;
+}
+
+/**
+ * Moves the given cards to Rejected, one at a time through move_application, so each gets its
+ * position and stage_changed_at from the database like any other move (ATS-31). One failing card
+ * never stops the others; the result says how many failed.
+ */
+export async function rejectApplications(
+  customerId: string,
+  ids: readonly string[],
+): Promise<RejectResult> {
+  let moved = 0;
+  for (const id of ids) {
+    try {
+      await moveApplication(customerId, id, "rejected");
+      moved++;
+    } catch {
+      // Counted below; the board refetches and shows the true state.
+    }
+  }
+  return { moved, failed: ids.length - moved };
+}
