@@ -88,11 +88,18 @@ function Pipeline({ customerId }: { customerId: string }) {
         t("pipeline.unknownCandidate"))
       : null;
 
-  // The move to Hired is done either way; the prompt only offers to reject the other cards.
+  // The move to Hired is done either way; the prompt only offers to reject the other cards. It
+  // opens once the move is saved: a failed hire must never lead to rejecting the other cards.
   const onMove = (id: string, stage: Stage) => {
-    move.mutate({ id, stage });
     const card = apps.data?.find((a) => a.id === id);
-    if (stage === "hired" && card && othersOf(card).length > 0) setHired(card);
+    const prompt = stage === "hired" && card && othersOf(card).length > 0;
+    // The promise, not mutate's callbacks, which fire only for the last of several quick moves.
+    move.mutateAsync({ id, stage }).then(
+      () => {
+        if (prompt) setHired(card);
+      },
+      () => {}, // The hook already shows the error and puts the card back.
+    );
   };
 
   const onReject = async () => {
