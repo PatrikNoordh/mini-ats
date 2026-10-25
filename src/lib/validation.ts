@@ -88,7 +88,10 @@ export const candidateInputSchema = z.object({
 
 export type CandidateInput = z.infer<typeof candidateInputSchema>;
 
-/** Length in bytes when encoded as UTF-8, the way Supabase Auth stores a password. */
+/**
+ * Length in bytes when encoded as UTF-8, the way Supabase Auth stores a password. The Edge
+ * Functions check the same with utf8Length in supabase/functions/_shared/text.ts.
+ */
 export function utf8Length(value: string): number {
   return new TextEncoder().encode(value).length;
 }
