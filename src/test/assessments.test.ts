@@ -91,7 +91,6 @@ describe("listing assessments", () => {
 });
 
 describe("asking for an assessment", () => {
-  // Braces: a function returned from beforeEach runs as cleanup, and this one returns the mock.
   beforeEach(() => {
     vi.mocked(invokeFunction).mockReset();
   });

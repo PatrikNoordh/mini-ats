@@ -43,5 +43,21 @@ export default tseslint.config(
     files: ["src/contexts/**/*.tsx", "src/components/ui/**/*.tsx"],
     rules: { "react-refresh/only-export-components": "off" },
   },
+  {
+    // Vitest runs a function returned from beforeEach or beforeAll as cleanup after the test, so
+    // `beforeEach(() => mock.mockReset())` calls the mock again with no arguments (ATS-32).
+    files: ["src/test/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.name=/^before(Each|All)$/] > ArrowFunctionExpression[expression=true]",
+          message:
+            "Use a block body: `beforeEach(() => { ... })`. Vitest runs a returned function as cleanup.",
+        },
+      ],
+    },
+  },
   eslintPluginPrettier,
 );

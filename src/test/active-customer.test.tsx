@@ -145,7 +145,9 @@ describe("the admin's chosen customer", () => {
 });
 
 describe("a customer account", () => {
-  beforeEach(() => sessionStorage.clear());
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
 
   it("is always its own customer and never reads or writes the stored choice", () => {
     sessionStorage.setItem(

@@ -10,7 +10,9 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth } }));
 const offline = { error: new AuthRetryableFetchError("Failed to fetch", 0) };
 
 describe("sign-out", () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
 
   it("signs out on this device only", async () => {
     auth.signOut.mockResolvedValue({ error: null });

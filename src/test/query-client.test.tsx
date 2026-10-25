@@ -26,7 +26,9 @@ vi.mock("@/lib/api/jobs", async (importOriginal) => ({
 const offlineError = () => new TypeError("Failed to fetch");
 
 describe("the app's query client while offline", () => {
-  beforeEach(() => onlineManager.setOnline(false));
+  beforeEach(() => {
+    onlineManager.setOnline(false);
+  });
   afterEach(() => {
     onlineManager.setOnline(true);
     vi.clearAllMocks();

@@ -41,8 +41,6 @@ describe("the hired candidate's other open applications", () => {
 
 describe("moving the other applications to Rejected", () => {
   const moved = (id: string) => ({ data: card(id, "rejected"), error: null });
-
-  // Braces: a function returned from beforeEach runs as cleanup, and mockReset returns the mock.
   beforeEach(() => {
     rpc.mockReset();
   });

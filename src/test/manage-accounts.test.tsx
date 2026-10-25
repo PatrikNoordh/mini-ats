@@ -119,7 +119,9 @@ describe("editing an account", () => {
 describe("deleted accounts", () => {
   const gone = account("c1", "customer", { deleted_at: "2026-10-22T10:00:00Z" });
 
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("shows each account with the date it is deleted for good, and restores it", async () => {
     m.restore.mockResolvedValue(undefined);
