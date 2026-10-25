@@ -342,6 +342,7 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 
 - [ ] An edit that saves a customer's role still demotes through the ATS-28 role trigger without the last-admin lock, so an account promoted to admin a moment before the edit is read is demoted unchecked. It cannot leave zero admins on its own, since the two admins involved stay active — `supabase/functions/admin-manage-account/index.ts` (found in ATS-33)
 - [ ] The CV field in the candidate dialog is unclear when the candidate already has a CV: the browser's own file input says "Välj fil · Ingen fil har valts", and only a small grey hint below says a CV exists and a new file replaces it. Show the current CV clearly (for example "Nuvarande CV" with a link to open it) and make the replace action obvious — `src/components/candidates/CandidateDialog.tsx`, /candidates (found in ATS-19, from ATS-17)
+- [ ] Vitest runs a function returned from `beforeEach` as cleanup, so `beforeEach(() => mock.mockReset())` calls the mock after every test; it broke a new test in ATS-19 and again in ATS-31. A lint rule or a short note in the test conventions would stop it — `src/test/` (found in ATS-31)
 
 ## Found while reviewing PRs
 
@@ -355,3 +356,4 @@ Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 - [ ] The comment on `SYSTEM_PROMPT` says the prompt cache reuses it, but the request sets no `cache_control` and the prompt is likely below the minimum cacheable length — `supabase/functions/assess-cv/assessment.ts` (PR #69, ATS-18)
 - [ ] After a CV is replaced, the old AI assessment still shows as the newest with nothing saying it was made from the previous CV; only the date hints at it. Marking it would need the CV upload time — `src/components/pipeline/CandidateAssessment.tsx` (PR #70, ATS-19)
 - [ ] Every page change makes one extra Auth request (`getUser`) to check the session; cheap and fails safe, but could be limited to about once a minute if it ever shows up in Auth rate limits — `src/hooks/useSessionCheckOnNavigation.ts` (PR #71, ATS-34)
+- [ ] No test covers when the reject prompt opens on the board (after a saved move to Hired, never after a failed one); the pipeline route has no test setup yet — `src/routes/_authenticated.pipeline.tsx` (PR #72, ATS-31)

@@ -5,6 +5,7 @@ import {
   addApplication,
   listApplications,
   moveApplication,
+  rejectApplications,
   unlinkCandidate,
 } from "@/lib/api/applications";
 import { queryKeys, withCardMoved, withCardRestored } from "@/lib/stages";
@@ -79,5 +80,15 @@ export function useRemoveApplication(customerId: string | null) {
       qc.invalidateQueries({ queryKey: queryKeys.jobs(customerId) });
       qc.invalidateQueries({ queryKey: queryKeys.candidates(customerId) });
     },
+  });
+}
+
+/** Moves a hired candidate's other open cards to Rejected, after the prompt (ATS-31). */
+export function useRejectApplications(customerId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: readonly string[]) => rejectApplications(customerId!, ids),
+    // The board shows the true state afterwards, also when some moves failed.
+    onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.applications(customerId) }),
   });
 }

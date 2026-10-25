@@ -84,6 +84,23 @@ export function withCardRestored(
   return applications.map((a) => (a.id === card.id ? card : a));
 }
 
+/**
+ * The candidate's other cards that are still open, meaning neither hired nor rejected, after
+ * `hired` was moved to Hired (ATS-31). The prompt offers to move these to Rejected.
+ */
+export function otherOpenApplications<A extends Pick<Application, "id" | "candidate_id" | "stage">>(
+  applications: readonly A[],
+  hired: Pick<Application, "id" | "candidate_id">,
+): A[] {
+  return applications.filter(
+    (a) =>
+      a.candidate_id === hired.candidate_id &&
+      a.id !== hired.id &&
+      a.stage !== "hired" &&
+      a.stage !== "rejected",
+  );
+}
+
 export const queryKeys = {
   profiles: () => ["profiles"] as const,
   /** Every customer's open-job count. Admin only, so it holds no single customer's id. */
