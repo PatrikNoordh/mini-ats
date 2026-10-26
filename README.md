@@ -415,6 +415,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 
 | | |
 |---|---|
+| **Own pipeline stages** | Let a customer rename, add (up to 10), remove, reorder and reset the board's columns, Trello-style. Design and decisions in [docs/next-custom-stages.md](docs/next-custom-stages.md) |
 | **End-to-end tests** | Playwright runs of sign-in, the board and acting for a customer, against a preview database |
 | **Teams** | Several users per company with a members table, which changes `customer_id = auth.uid()` to a membership check in RLS |
 | **Audit log** | Who moved, changed or deleted what, and when |
