@@ -784,4 +784,30 @@ begin
   raise notice 'OK 33: a role change in app_metadata demotes an admin, but never the last active one, and a removed role keeps the profile''s';
 end $$;
 
+-- ---------------------------------------------------------------- assessments go with the CV (ATS-35)
+-- Removing a CV removes the candidate's assessments, and only theirs. Replacing it keeps them.
+reset role;
+do $$ declare
+  customer uuid := gen_random_uuid();
+  job uuid; cand uuid; other uuid; app uuid; other_app uuid;
+begin
+  insert into auth.users (id, email, raw_app_meta_data) values (customer, 'cv-gone-35@test.local', '{"role":"customer"}');
+  insert into public.jobs (customer_id, title) values (customer, 'Job 35') returning id into job;
+  insert into public.candidates (customer_id, full_name, cv_path) values (customer, 'With CV', customer || '/x.pdf') returning id into cand;
+  insert into public.candidates (customer_id, full_name, cv_path) values (customer, 'Other', customer || '/y.pdf') returning id into other;
+  insert into public.applications (job_id, candidate_id) values (job, cand) returning id into app;
+  insert into public.applications (job_id, candidate_id) values (job, other) returning id into other_app;
+  insert into public.cv_assessments (application_id, score) values (app, 5), (other_app, 6);
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', customer), true);
+  update public.candidates set cv_path = customer || '/x.pdf' where id = cand;
+  assert (select count(*) from public.cv_assessments where application_id = app) = 1, 'replacing the CV removed its assessment';
+  update public.candidates set cv_path = null where id = cand;
+  assert (select count(*) from public.cv_assessments where application_id = app) = 0, 'removing the CV kept its assessment';
+  assert (select count(*) from public.cv_assessments where application_id = other_app) = 1, 'another candidate''s assessment was removed';
+  reset role;
+  raise notice 'OK 34: removing a CV removes the candidate''s assessments, and only theirs';
+end $$;
+
 rollback;
