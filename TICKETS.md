@@ -344,6 +344,8 @@ Tracked in #74.
 
 ### ATS-36 · chore · End-to-end test setup with Playwright and a local Supabase
 
+Tracked in #79.
+
 **Context**
 The unit, Deno and RLS tests check the parts. Nothing checks that sign-in, the board and acting for a customer work together in a real browser against a real Supabase. The tests run against a local Supabase started in CI, so they get a fresh database on every run and never touch the project.
 
@@ -360,6 +362,8 @@ In scope: the setup and one sign-in test.
 Out of scope: the flows themselves (ATS-37).
 
 ### ATS-37 · test · End-to-end tests for the main flows
+
+Tracked in #80.
 
 **Context**
 The flows a customer and an admin use every day, tested in a real browser, so the rewrites in epics 8 and 9 can't break them unnoticed.
@@ -387,6 +391,8 @@ A customer shapes their own board: rename, add, remove and reorder the columns. 
 
 ### ATS-38 · feat · Pipeline stages per customer in the database
 
+Tracked in #81.
+
 **Context**
 Today the six stages are a fixed check on `applications.stage`. This ticket moves them into a table per customer, without changing what the app shows. Backwards compatible: the code on `main` and the submitted version keep working until ATS-42.
 
@@ -405,6 +411,8 @@ Out of scope: any change in the app (ATS-39).
 
 ### ATS-39 · refactor · Read the pipeline stages from the database
 
+Tracked in #82.
+
 **Context**
 The app still uses the fixed list in `src/lib/stages.ts`. This ticket reads each customer's stages from the database instead, with no visible change for the six default stages.
 
@@ -416,6 +424,8 @@ The app still uses the fixed list in `src/lib/stages.ts`. This ticket reads each
 - [ ] AC5: The demo seed and the tests use the new shape
 
 ### ATS-40 · feat · Rename, add, remove and reset stages
+
+Tracked in #83.
 
 **Context**
 The customer, or an admin acting for them, edits the columns from the board.
@@ -430,6 +440,8 @@ The customer, or an admin acting for them, edits the columns from the board.
 
 ### ATS-41 · feat · Reorder the columns by drag and drop and by keyboard
 
+Tracked in #84.
+
 **Acceptance Criteria**
 - [ ] AC1: Columns can be dragged by their header with @dnd-kit sortable, by mouse and touch
 - [ ] AC2: The same move works by keyboard, with announcements in Swedish and English
@@ -437,6 +449,8 @@ The customer, or an admin acting for them, edits the columns from the board.
 - [ ] AC4: Works at 390 px
 
 ### ATS-42 · chore · Drop the old stage column and retire the submission URL
+
+Tracked in #85.
 
 **Context**
 Once no code on `main` uses `applications.stage`, it is dropped. This is the first migration the submitted version can't run against, so the submission URL is retired in the same ticket. The tag and release `v1.0-submission` keep the submitted code.
@@ -455,6 +469,8 @@ Once no code on `main` uses `applications.stage`, it is dropped. This is the fir
 Several users per company instead of one shared login.
 
 ### ATS-43 · docs · Design sketch for teams
+
+Tracked in #86.
 
 **Context**
 Today `customer_id` is the customer's own user id, and every RLS policy, query key and Edge Function builds on that. Teams change it, so the design is decided and approved before anything is built.
@@ -484,6 +500,8 @@ Defined by ATS-43.
 
 ### ATS-47 · feat · Audit log in the database
 
+Tracked in #87.
+
 **Context**
 Who moved, changed or deleted what, and when. Written by the database so the app can't skip it.
 
@@ -493,6 +511,8 @@ Who moved, changed or deleted what, and when. Written by the database so the app
 - [ ] AC3: `rls_test.sql` checks that customer B cannot read A's events and that no client can write one
 
 ### ATS-48 · feat · Show the history
+
+Tracked in #88.
 
 **Acceptance Criteria**
 - [ ] AC1: A history tab in the candidate side panel: stage moves, edits and job links, newest first
@@ -507,6 +527,8 @@ Who moved, changed or deleted what, and when. Written by the database so the app
 
 ### ATS-49 · chore · Send Auth emails through our own SMTP provider
 
+Tracked in #89.
+
 **Context**
 Supabase's built-in email is only meant for testing. Invites and password reset need a real provider.
 
@@ -517,12 +539,16 @@ Supabase's built-in email is only meant for testing. Invites and password reset 
 
 ### ATS-50 · feat · Invite accounts by email
 
+Tracked in #90.
+
 **Acceptance Criteria**
 - [ ] AC1: An admin creates an account by invite: the user gets an email and chooses their own password
 - [ ] AC2: After epic 9, a company invites its own members the same way
 - [ ] AC3: An expired or used invite shows a clear error
 
 ### ATS-51 · feat · Reset a forgotten password
+
+Tracked in #91.
 
 **Acceptance Criteria**
 - [ ] AC1: "Glömt lösenord?" on the sign-in page sends a reset email
@@ -539,12 +565,16 @@ A customer can choose to make Mini-ATS feel like their own app, with their colou
 
 ### ATS-52 · feat · Branding per customer in the database
 
+Tracked in #92.
+
 **Acceptance Criteria**
 - [ ] AC1: A `customer_branding` table, one row per customer, with RLS and explicit grants, as described in `docs/next-branding.md`
 - [ ] AC2: A private `branding` bucket with a folder per customer, and server-side limits on file type and size
 - [ ] AC3: `rls_test.sql` checks that customer B cannot read or change A's branding or files
 
 ### ATS-53 · feat · Apply a customer's theme in the app
+
+Tracked in #93.
 
 **Acceptance Criteria**
 - [ ] AC1: The theme is read with the query key `["branding", customerId]` and applied at runtime on the app shell
@@ -554,6 +584,8 @@ A customer can choose to make Mini-ATS feel like their own app, with their colou
 
 ### ATS-54 · feat · Settings page for the theme
 
+Tracked in #94.
+
 **Acceptance Criteria**
 - [ ] AC1: Settings → Appearance, for the customer and for an admin acting for them
 - [ ] AC2: Choose a preset palette, or a custom colour that is refused if it fails the contrast check
@@ -562,6 +594,8 @@ A customer can choose to make Mini-ATS feel like their own app, with their colou
 - [ ] AC5: A preview before saving, and text in both languages
 
 ### ATS-55 · feat · Background image
+
+Tracked in #95.
 
 **Acceptance Criteria**
 - [ ] AC1: Upload a background image, shown behind the content with a dim level the customer picks
