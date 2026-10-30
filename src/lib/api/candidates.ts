@@ -7,7 +7,7 @@ import { AppError, fromWriteError } from "@/lib/errors";
 import type { CandidateInput } from "@/lib/validation";
 
 const CANDIDATE_COLUMNS =
-  "id, customer_id, full_name, email, phone, linkedin_url, notes, cv_path, created_at";
+  "id, customer_id, full_name, email, phone, linkedin_url, notes, cv_path, cv_uploaded_at, created_at";
 
 const candidateRowSchema = z.object({
   id: z.string(),
@@ -18,6 +18,7 @@ const candidateRowSchema = z.object({
   linkedin_url: z.string().nullable(),
   notes: z.string().nullable(),
   cv_path: z.string().nullable(),
+  cv_uploaded_at: z.string().nullable(),
   created_at: z.string(),
 });
 

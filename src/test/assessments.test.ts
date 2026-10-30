@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   assessCv,
+  isFromEarlierCv,
   latestByApplication,
   listAssessments,
   parseAssessmentRow,
@@ -66,6 +67,13 @@ describe("assessment rows", () => {
     expect(latest.get("app1")?.id).toBe("new1");
     expect(latest.get("app2")?.id).toBe("new2");
     expect(latest.size).toBe(2);
+  });
+
+  it("marks an assessment older than the current CV as made from an earlier CV", () => {
+    const made = { created_at: "2026-10-23T12:00:00Z" };
+    expect(isFromEarlierCv(made, { cv_uploaded_at: "2026-10-24T08:00:00Z" })).toBe(true);
+    expect(isFromEarlierCv(made, { cv_uploaded_at: "2026-10-22T08:00:00Z" })).toBe(false);
+    expect(isFromEarlierCv(made, { cv_uploaded_at: null })).toBe(false);
   });
 });
 

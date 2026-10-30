@@ -385,6 +385,7 @@
     "gaps": "Gaps",
     "outOf": "out of {{max}}",
     "assessedAt": "Assessed {{date}}",
+    "fromEarlierCv": "Made from the previous CV. Assess again to use the current one.",
     "done": "The CV is assessed against {{job}}.",
     "failed": "Could not assess the CV.",
     "forJob": "{{action}} – {{job}}"

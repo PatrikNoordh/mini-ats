@@ -3,7 +3,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeFunction } from "@/lib/api/functions";
 import type { Language } from "@/lib/language";
-import type { CvAssessment } from "@/types";
+import type { Candidate, CvAssessment } from "@/types";
 
 const ASSESSMENT_COLUMNS = "id, application_id, score, summary, strengths, gaps, created_at";
 
@@ -51,6 +51,19 @@ export function latestByApplication(
     if (!latest.has(assessment.application_id)) latest.set(assessment.application_id, assessment);
   }
   return latest;
+}
+
+/**
+ * Whether an assessment was made from an earlier CV than the candidate's current one: it is
+ * older than the current CV's upload (ATS-35). Without a CV, or a CV from before the upload time
+ * was stored, there is nothing to compare with, so it is not marked.
+ */
+export function isFromEarlierCv(
+  assessment: Pick<CvAssessment, "created_at">,
+  candidate: Pick<Candidate, "cv_uploaded_at">,
+): boolean {
+  if (!candidate.cv_uploaded_at) return false;
+  return Date.parse(assessment.created_at) < Date.parse(candidate.cv_uploaded_at);
 }
 
 const assessResponseSchema = z.object({ assessment: z.unknown() });

@@ -48,6 +48,7 @@ const candidate: Candidate = {
   linkedin_url: "",
   notes: "",
   cv_path: `${CUSTOMER}/c1.pdf`,
+  cv_uploaded_at: "2026-10-20T08:00:00Z",
   created_at: "2026-10-20T08:00:00Z",
 };
 const pdf = new File(["%PDF-1.7"], "cv.pdf", { type: "application/pdf" });

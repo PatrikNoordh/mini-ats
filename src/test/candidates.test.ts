@@ -33,6 +33,7 @@ const candidateRow = {
   linkedin_url: "https://www.linkedin.com/in/alva-exempel",
   notes: "Stark referens.",
   cv_path: null,
+  cv_uploaded_at: null,
   created_at: "2026-10-20T08:00:00+00:00",
 };
 

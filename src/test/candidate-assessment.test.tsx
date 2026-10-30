@@ -35,6 +35,7 @@ const candidate: Candidate = {
   linkedin_url: "",
   notes: "",
   cv_path: `${CUSTOMER}/c1.pdf`,
+  cv_uploaded_at: "2026-10-20T08:00:00Z",
   created_at: "2026-09-21T08:00:00Z",
 };
 const card = (id: string, jobId: string): Application => ({
@@ -128,6 +129,26 @@ describe("the AI assessment in the candidate panel", () => {
     expect(screen.getByText("Assessed 23 Oct 2026")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Assess again – UX-designer" })).toBeTruthy();
     expect(screen.getAllByText("Not assessed yet.")).toHaveLength(1);
+    expect(screen.queryByText(/Made from the previous CV/)).toBeNull();
+  });
+
+  it("says when the newest assessment was made from the previous CV", () => {
+    mocks.list.data = [
+      {
+        id: "s1",
+        application_id: "a1",
+        score: 6,
+        summary: "From the old CV.",
+        strengths: [],
+        gaps: [],
+        created_at: "2026-10-19T12:00:00Z",
+      },
+    ];
+    renderBox();
+    expect(
+      screen.getByText("Made from the previous CV. Assess again to use the current one."),
+    ).toBeTruthy();
+    expect(screen.getByText("From the old CV.")).toBeTruthy();
   });
 
   it("cannot assess without a CV, and says why", () => {
