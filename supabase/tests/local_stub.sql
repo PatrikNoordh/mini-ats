@@ -33,7 +33,8 @@ create table storage.buckets (
 );
 -- owner as in Supabase, so a test variable named like a column fails here too, not only there.
 create table storage.objects (
-  id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid
+  id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid,
+  updated_at timestamptz default now()
 );
 alter table storage.objects enable row level security;  -- on by default in Supabase
 create function storage.foldername(name text) returns text[] language sql immutable as $$
