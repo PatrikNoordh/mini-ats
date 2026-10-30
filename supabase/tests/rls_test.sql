@@ -777,7 +777,11 @@ begin
   assert (select role from public.profiles where id = admin_id) = 'admin', 'the last admin lost its role';
   assert (select raw_app_meta_data ->> 'role' from auth.users where id = admin_id) = 'admin',
     'the refused change was kept in app_metadata';
-  raise notice 'OK 33: a role change in app_metadata demotes an admin, but never the last active one';
+
+  update auth.users set raw_app_meta_data = '{}' where id = other;
+  assert (select role from public.profiles where id = other) = 'customer',
+    'an account whose role was removed from app_metadata lost its profile role';
+  raise notice 'OK 33: a role change in app_metadata demotes an admin, but never the last active one, and a removed role keeps the profile''s';
 end $$;
 
 rollback;
