@@ -753,4 +753,31 @@ begin
   raise notice 'OK 32: the database stamps when a CV is uploaded or replaced, clears it with the CV, and a client cannot set it';
 end $$;
 
+-- ---------------------------------------------------------------- role change in Auth (ATS-35)
+-- A change of app_metadata.role outside admin-manage-account (the Dashboard, a script) goes
+-- through the same last-admin lock: it can demote an admin, but never the last active one.
+reset role;
+do $$ declare
+  admin_id uuid := '00000000-0000-0000-0000-0000000000ad';
+  other uuid := gen_random_uuid();
+begin
+  insert into auth.users (id, email, raw_app_meta_data) values (other, 'other-35@test.local', '{"role":"admin"}');
+  update public.profiles set deleted_at = now()
+  where role = 'admin' and deleted_at is null and id not in (admin_id, other);
+
+  update auth.users set raw_app_meta_data = '{"role":"customer"}' where id = other;
+  assert (select role from public.profiles where id = other) = 'customer', 'an admin with another active admin was not demoted';
+
+  begin
+    update auth.users set raw_app_meta_data = '{"role":"customer"}' where id = admin_id;
+    raise exception 'FAIL 33: the last active admin was demoted through app_metadata';
+  exception when raise_exception then
+    if sqlerrm <> 'last_admin' then raise; end if;
+  end;
+  assert (select role from public.profiles where id = admin_id) = 'admin', 'the last admin lost its role';
+  assert (select raw_app_meta_data ->> 'role' from auth.users where id = admin_id) = 'admin',
+    'the refused change was kept in app_metadata';
+  raise notice 'OK 33: a role change in app_metadata demotes an admin, but never the last active one';
+end $$;
+
 rollback;
