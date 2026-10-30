@@ -619,3 +619,5 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
+
+- [ ] Delete a candidate and its CV file in one server-side step, so a failed delete whose cv_path clear also fails can no longer leave a path to a removed file — src/lib/api/candidates.ts (PR #96, ATS-35)
