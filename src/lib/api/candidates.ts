@@ -7,7 +7,7 @@ import { AppError, fromWriteError } from "@/lib/errors";
 import type { CandidateInput } from "@/lib/validation";
 
 const CANDIDATE_COLUMNS =
-  "id, customer_id, full_name, email, phone, linkedin_url, notes, cv_path, created_at";
+  "id, customer_id, full_name, email, phone, linkedin_url, notes, cv_path, cv_uploaded_at, created_at";
 
 const candidateRowSchema = z.object({
   id: z.string(),
@@ -18,6 +18,7 @@ const candidateRowSchema = z.object({
   linkedin_url: z.string().nullable(),
   notes: z.string().nullable(),
   cv_path: z.string().nullable(),
+  cv_uploaded_at: z.string().nullable(),
   created_at: z.string(),
 });
 
@@ -118,6 +119,10 @@ export async function setCandidateCvPath(
  * them through the database's cascades. The CV file goes first: if that fails nothing is
  * deleted, so a deleted candidate never leaves a CV behind (ATS-17). Its path is fixed, so the
  * file is removed even when this tab has not seen it uploaded; no file is no error.
+ *
+ * If the file is gone but the candidate can't be deleted, the candidate stays without a CV:
+ * its cv_path is cleared, so it never points at the removed file (ATS-35). Clearing it is a
+ * best effort; the delete's own error is the one the UI shows.
  */
 export async function deleteCandidate(customerId: string, id: string): Promise<void> {
   await removeCvFile(cvPath(customerId, id));
@@ -128,6 +133,9 @@ export async function deleteCandidate(customerId: string, id: string): Promise<v
     .eq("customer_id", customerId)
     .select("id")
     .maybeSingle();
-  if (error) throw error;
+  if (error) {
+    await setCandidateCvPath(customerId, id, null).catch(() => undefined);
+    throw error;
+  }
   if (!data) throw new AppError("candidate_not_found");
 }

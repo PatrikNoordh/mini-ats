@@ -4,12 +4,13 @@ import { deleteCandidate } from "@/lib/api/candidates";
 import { deleteJob } from "@/lib/api/jobs";
 import { PG_FOREIGN_KEY_VIOLATION } from "@/lib/constants";
 
-// The query builder chain delete().eq().eq().select().maybeSingle(), recording every call.
+// The query builder chains delete() and update() ….eq().eq().select().maybeSingle(), recording
+// every call.
 const db = vi.hoisted(() => {
   const calls: [string, ...unknown[]][] = [];
   const result: { data: unknown; error: unknown } = { data: null, error: null };
   const builder: Record<string, (...args: unknown[]) => unknown> = {};
-  for (const method of ["from", "delete", "eq", "select"]) {
+  for (const method of ["from", "delete", "update", "eq", "select"]) {
     builder[method] = (...args: unknown[]) => {
       calls.push([method, ...args]);
       return builder;
@@ -81,6 +82,19 @@ describe("deleting", () => {
     db.storageResult.error = error;
     await expect(deleteCandidate(CUSTOMER, ID)).rejects.toBe(error);
     expect(db.calls).not.toContainEqual(["from", "candidates"]);
+  });
+
+  it("clears the CV path when the file is removed but the candidate can't be deleted", async () => {
+    const error = { code: "57014", message: "canceling statement due to statement timeout" };
+    db.result.error = error;
+    await expect(deleteCandidate(CUSTOMER, ID)).rejects.toBe(error);
+    expect(db.calls[0]).toEqual(["remove", "cvs", [`${CUSTOMER}/${ID}.pdf`]]);
+    expect(db.calls).toContainEqual(["update", { cv_path: null }]);
+  });
+
+  it("does not touch the CV path after a delete that worked", async () => {
+    await deleteCandidate(CUSTOMER, ID);
+    expect(db.calls.some(([method]) => method === "update")).toBe(false);
   });
 
   it("reports a candidate that is not there for this customer as candidate_not_found", async () => {

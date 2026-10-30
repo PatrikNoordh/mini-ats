@@ -18,17 +18,28 @@ export function useCvUrl(customerId: string | null, path: string | null) {
   });
 }
 
-/** The candidate list holds cv_path, and an open link may point at a file that changed. */
-function useInvalidateCv(customerId: string | null) {
+/**
+ * The candidate list holds cv_path, and an open link may point at a file that changed. Removing
+ * a CV also removes the candidate's assessments in the database (ATS-35).
+ *
+ * After a removal the links are only marked stale, not fetched again: until the list is back,
+ * the panel still holds the old cv_path, and a link to the removed file would show "Could not
+ * fetch the CV" for a moment, an error that stays cached for the next upload (ATS-35).
+ */
+function useInvalidateCv(customerId: string | null, { refetchLinks }: { refetchLinks: boolean }) {
   const qc = useQueryClient();
   return () => {
     qc.invalidateQueries({ queryKey: queryKeys.candidates(customerId) });
-    qc.invalidateQueries({ queryKey: queryKeys.cvUrls(customerId) });
+    qc.invalidateQueries({
+      queryKey: queryKeys.cvUrls(customerId),
+      refetchType: refetchLinks ? "active" : "none",
+    });
+    qc.invalidateQueries({ queryKey: queryKeys.assessmentsAll(customerId) });
   };
 }
 
 export function useUploadCv(customerId: string | null) {
-  const invalidate = useInvalidateCv(customerId);
+  const invalidate = useInvalidateCv(customerId, { refetchLinks: true });
   return useMutation({
     mutationFn: ({ candidateId, file }: { candidateId: string; file: File }) =>
       uploadCandidateCv(customerId!, candidateId, file),
@@ -38,7 +49,7 @@ export function useUploadCv(customerId: string | null) {
 }
 
 export function useRemoveCv(customerId: string | null) {
-  const invalidate = useInvalidateCv(customerId);
+  const invalidate = useInvalidateCv(customerId, { refetchLinks: false });
   return useMutation({
     mutationFn: (candidateId: string) => removeCandidateCv(customerId!, candidateId),
     onSettled: invalidate,

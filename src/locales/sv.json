@@ -385,6 +385,7 @@
     "gaps": "Luckor",
     "outOf": "av {{max}}",
     "assessedAt": "Bedömt {{date}}",
+    "fromEarlierCv": "Gjord från det tidigare CV:t. Bedöm igen för att använda det nuvarande.",
     "done": "CV:t är bedömt mot {{job}}.",
     "failed": "Kunde inte bedöma CV:t.",
     "forJob": "{{action}} – {{job}}"

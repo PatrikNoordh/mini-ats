@@ -71,6 +71,7 @@ export type Database = {
           created_at: string;
           customer_id: string;
           cv_path: string | null;
+          cv_uploaded_at: string | null;
           email: string | null;
           full_name: string;
           id: string;
@@ -83,6 +84,7 @@ export type Database = {
           created_at?: string;
           customer_id: string;
           cv_path?: string | null;
+          cv_uploaded_at?: string | null;
           email?: string | null;
           full_name: string;
           id?: string;
@@ -95,6 +97,7 @@ export type Database = {
           created_at?: string;
           customer_id?: string;
           cv_path?: string | null;
+          cv_uploaded_at?: string | null;
           email?: string | null;
           full_name?: string;
           id?: string;

@@ -56,6 +56,7 @@ const candidate: Candidate = {
   linkedin_url: "",
   notes: "",
   cv_path: null,
+  cv_uploaded_at: null,
   created_at: "2026-09-21T08:00:00Z",
 };
 

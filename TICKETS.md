@@ -619,3 +619,7 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
+
+- [ ] Delete a candidate and its CV file in one server-side step, so a failed delete whose cv_path clear also fails can no longer leave a path to a removed file — src/lib/api/candidates.ts (PR #96, ATS-35)
+- [ ] assess-cv saves its assessment without checking that the candidate still has a CV, so a CV removed while an assessment runs leaves that assessment behind — supabase/functions/assess-cv/index.ts (PR #96, ATS-35)
+- [ ] A recruiter can remove an AI assessment without removing the CV. cv_assessments is read-only for clients (rule 8), so this needs a server-side delete that checks the owner, plus an RLS check — src/components/pipeline/CandidateAssessment.tsx (PR #96, ATS-35)

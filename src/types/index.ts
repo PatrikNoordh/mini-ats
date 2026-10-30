@@ -38,6 +38,8 @@ export interface Candidate {
   notes: string;
   /** Where the CV is in the cvs bucket, or null when the candidate has none (ATS-17). */
   cv_path: string | null;
+  /** When the current CV was uploaded, set by the database, or null without a CV (ATS-35). */
+  cv_uploaded_at: string | null;
   created_at: string;
 }
 

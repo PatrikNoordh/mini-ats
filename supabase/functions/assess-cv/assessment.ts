@@ -81,16 +81,33 @@ Answer with:
 
 Base every point on something the CV actually says. If the job description is short, judge against what the job title reasonably requires and keep the score moderate.`;
 
+/** An opening or closing `cv` or `job` tag, in any case and with any spacing or attributes. */
+const PROMPT_TAG = /<\s*\/?\s*(?:cv|job)\b[^>]*>/gi;
+
+/**
+ * Removes the prompt's own tags from text that goes inside them, so a CV or a job description
+ * can't close its tag early and put text outside it, where it would read as part of the request.
+ * Repeated until none is left, because removing one can join its neighbours into a new one.
+ */
+export function stripPromptTags(text: string): string {
+  let stripped = text;
+  for (let previous = ""; stripped !== previous;) {
+    previous = stripped;
+    stripped = stripped.replace(PROMPT_TAG, "");
+  }
+  return stripped;
+}
+
 /** The request text: the job, the language to answer in, and the CV as data. */
 export function userPrompt(job: JobForAssessment, cvText: string, language: Language): string {
   return [
     "<job>",
-    `Title: ${job.title}`,
-    `Location: ${job.location}`,
-    `Description:\n${job.description || "(no description)"}`,
+    `Title: ${stripPromptTags(job.title)}`,
+    `Location: ${stripPromptTags(job.location)}`,
+    `Description:\n${stripPromptTags(job.description) || "(no description)"}`,
     "</job>",
     "",
-    `<cv>\n${cvText}\n</cv>`,
+    `<cv>\n${stripPromptTags(cvText)}\n</cv>`,
     "",
     `Write the summary, strengths and gaps in ${LANGUAGE_NAMES[language]}.`,
   ].join("\n");

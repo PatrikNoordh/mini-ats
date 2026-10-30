@@ -717,4 +717,97 @@ begin
   raise notice 'OK 31: the cvs bucket takes PDFs up to 5 MB, and only the owner while active or an admin replaces a CV';
 end $$;
 
+-- ---------------------------------------------------------------- CV upload time (ATS-35)
+-- The database stamps cv_uploaded_at whenever cv_path is written, also with the same path (a CV
+-- replaced in place), clears it with cv_path, and ignores it from the client.
+reset role;
+do $$ declare
+  customer uuid := gen_random_uuid();
+  cand uuid;
+  path text;
+  first_upload timestamptz;
+begin
+  insert into auth.users (id, email, raw_app_meta_data) values (customer, 'cv-time-35@test.local', '{"role":"customer"}');
+  insert into public.candidates (customer_id, full_name) values (customer, 'Cand 35') returning id into cand;
+  path := customer || '/' || cand || '.pdf';
+  assert (select cv_uploaded_at from public.candidates where id = cand) is null, 'a candidate without a CV has a CV time';
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', customer), true);
+  update public.candidates set cv_path = path where id = cand;
+  first_upload := (select cv_uploaded_at from public.candidates where id = cand);
+  assert first_upload is not null, 'an upload did not stamp cv_uploaded_at';
+
+  update public.candidates set cv_uploaded_at = now() - interval '1 year', full_name = 'Cand 35b' where id = cand;
+  assert (select cv_uploaded_at from public.candidates where id = cand) = first_upload,
+    'a client changed cv_uploaded_at';
+
+  update public.candidates set cv_path = path where id = cand;
+  assert (select cv_uploaded_at from public.candidates where id = cand) > first_upload,
+    'replacing the CV at the same path did not stamp a new time';
+
+  update public.candidates set cv_path = null where id = cand;
+  assert (select cv_uploaded_at from public.candidates where id = cand) is null,
+    'removing the CV did not clear cv_uploaded_at';
+  reset role;
+  raise notice 'OK 32: the database stamps when a CV is uploaded or replaced, clears it with the CV, and a client cannot set it';
+end $$;
+
+-- ---------------------------------------------------------------- role change in Auth (ATS-35)
+-- A change of app_metadata.role outside admin-manage-account (the Dashboard, a script) goes
+-- through the same last-admin lock: it can demote an admin, but never the last active one.
+reset role;
+do $$ declare
+  admin_id uuid := '00000000-0000-0000-0000-0000000000ad';
+  other uuid := gen_random_uuid();
+begin
+  insert into auth.users (id, email, raw_app_meta_data) values (other, 'other-35@test.local', '{"role":"admin"}');
+  update public.profiles set deleted_at = now()
+  where role = 'admin' and deleted_at is null and id not in (admin_id, other);
+
+  update auth.users set raw_app_meta_data = '{"role":"customer"}' where id = other;
+  assert (select role from public.profiles where id = other) = 'customer', 'an admin with another active admin was not demoted';
+
+  begin
+    update auth.users set raw_app_meta_data = '{"role":"customer"}' where id = admin_id;
+    raise exception 'FAIL 33: the last active admin was demoted through app_metadata';
+  exception when raise_exception then
+    if sqlerrm <> 'last_admin' then raise; end if;
+  end;
+  assert (select role from public.profiles where id = admin_id) = 'admin', 'the last admin lost its role';
+  assert (select raw_app_meta_data ->> 'role' from auth.users where id = admin_id) = 'admin',
+    'the refused change was kept in app_metadata';
+
+  update auth.users set raw_app_meta_data = '{}' where id = other;
+  assert (select role from public.profiles where id = other) = 'customer',
+    'an account whose role was removed from app_metadata lost its profile role';
+  raise notice 'OK 33: a role change in app_metadata demotes an admin, but never the last active one, and a removed role keeps the profile''s';
+end $$;
+
+-- ---------------------------------------------------------------- assessments go with the CV (ATS-35)
+-- Removing a CV removes the candidate's assessments, and only theirs. Replacing it keeps them.
+reset role;
+do $$ declare
+  customer uuid := gen_random_uuid();
+  job uuid; cand uuid; other uuid; app uuid; other_app uuid;
+begin
+  insert into auth.users (id, email, raw_app_meta_data) values (customer, 'cv-gone-35@test.local', '{"role":"customer"}');
+  insert into public.jobs (customer_id, title) values (customer, 'Job 35') returning id into job;
+  insert into public.candidates (customer_id, full_name, cv_path) values (customer, 'With CV', customer || '/x.pdf') returning id into cand;
+  insert into public.candidates (customer_id, full_name, cv_path) values (customer, 'Other', customer || '/y.pdf') returning id into other;
+  insert into public.applications (job_id, candidate_id) values (job, cand) returning id into app;
+  insert into public.applications (job_id, candidate_id) values (job, other) returning id into other_app;
+  insert into public.cv_assessments (application_id, score) values (app, 5), (other_app, 6);
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', customer), true);
+  update public.candidates set cv_path = customer || '/x.pdf' where id = cand;
+  assert (select count(*) from public.cv_assessments where application_id = app) = 1, 'replacing the CV removed its assessment';
+  update public.candidates set cv_path = null where id = cand;
+  assert (select count(*) from public.cv_assessments where application_id = app) = 0, 'removing the CV kept its assessment';
+  assert (select count(*) from public.cv_assessments where application_id = other_app) = 1, 'another candidate''s assessment was removed';
+  reset role;
+  raise notice 'OK 34: removing a CV removes the candidate''s assessments, and only theirs';
+end $$;
+
 rollback;

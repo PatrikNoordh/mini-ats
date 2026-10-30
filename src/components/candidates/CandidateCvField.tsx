@@ -5,12 +5,15 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Field } from "@/components/Field";
 import { useCvUrl } from "@/hooks/useCvs";
 import { CV_MIME_TYPE } from "@/lib/constants";
+import { errorCode } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import type { ValidationKey } from "@/lib/validation";
 
 /**
  * The CV field of the candidate dialog (ATS-17, made clearer in ATS-32). Says whether the
  * candidate already has a CV, with a link to open it, and which file is chosen to replace it.
+ * While the link is made, "Öppna" is disabled; if it fails, the error and a retry show instead,
+ * as in the side panel (ATS-35).
  * The real file input stays focusable and labelled but is visually hidden, because the browser's
  * own one says "no file chosen" even when the candidate has a CV; a label styled as a button
  * opens it and shows its focus ring.
@@ -55,7 +58,19 @@ export function CandidateCvField({
             <p className="flex flex-wrap items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <span>{t("candidateDialog.cvCurrent")}</span>
-              {url.data && (
+              {url.isError ? (
+                <span className="text-destructive" role="alert">
+                  {t("candidateSheet.cvOpenFailed")} {t(`errors.${errorCode(url.error)}`)}{" "}
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto p-0"
+                    onClick={() => url.refetch()}
+                  >
+                    {t("common.retry")}
+                  </Button>
+                </span>
+              ) : url.data ? (
                 <a
                   className="text-primary hover:underline"
                   href={url.data}
@@ -64,6 +79,10 @@ export function CandidateCvField({
                 >
                   {t("candidateDialog.cvOpen")}
                 </a>
+              ) : (
+                <Button type="button" variant="link" className="h-auto p-0" disabled>
+                  {t("candidateDialog.cvOpen")}
+                </Button>
               )}
             </p>
           ) : (

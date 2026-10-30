@@ -8,14 +8,15 @@ import { AssessmentResult } from "@/components/pipeline/AssessmentResult";
 import { ErrorState, LoadingRows } from "@/components/States";
 import { useAssessCv, useAssessments } from "@/hooks/useAssessments";
 import { useErrorToast } from "@/hooks/useErrorToast";
-import { latestByApplication } from "@/lib/api/assessments";
+import { isFromEarlierCv, latestByApplication } from "@/lib/api/assessments";
 import { useFormat } from "@/lib/format";
 import type { Application, Candidate } from "@/types";
 
 /**
  * The AI assessment part of the candidate panel (ATS-19): for each job the candidate is linked
  * to, the newest assessment of the CV against that job and a button to make a new one. Always
- * labelled as a suggestion from AI, never a decision.
+ * labelled as a suggestion from AI, never a decision. An assessment made from an earlier CV
+ * says so (ATS-35).
  */
 export function CandidateAssessment({
   customerId,
@@ -84,6 +85,11 @@ export function CandidateAssessment({
           {assessing(a) && (
             <p className="text-xs text-muted-foreground" role="status">
               {t("assessment.assessingHint")}
+            </p>
+          )}
+          {result && isFromEarlierCv(result, candidate) && (
+            <p className="rounded-md border border-warning/40 bg-warning-muted px-3 py-2 text-xs text-warning-foreground">
+              {t("assessment.fromEarlierCv")}
             </p>
           )}
           {result ? (
