@@ -26,8 +26,10 @@ A small applicant tracking system (ATS) for companies that recruit. The goal is 
 ## Context
 
 - The repo is public. Never commit personal data, private correspondence or anything that is not part of the project.
-- Deadline: Monday 26 October 2026 (extended from 12 October). Prefer finished and solid over fast and half-done. All seven epics, including the AI feature in epic 6, are in scope. Work through the tickets in order.
-- The reviewers follow the repo while it is built and want to see the process step by step. Keep `main` deployable, ship each finished ticket through a PR, and keep commits, PR descriptions and issue updates clear enough for someone reading along.
+- The code test is done. The submitted version is the tag `v1.0-submission` (release on GitHub), deployed from the `submission` branch to https://mini-ats-submission.vercel.app. Never commit to `submission` or move the tag.
+- The project now continues as a portfolio project, with no deadline. Prefer finished and solid over fast and half-done.
+- The repo is read by people judging the work, so the process stays visible step by step. Keep `main` deployable, ship each finished ticket through a PR, and keep commits, PR descriptions and issue updates clear enough for someone reading along.
+- Both deployments use the same Supabase project, so every migration must stay backwards compatible with the submitted code too (see § Workflow).
 
 ## Quality bar
 

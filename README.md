@@ -27,6 +27,8 @@
 
 Built as a code test, in public: every ticket is a [GitHub issue](../../issues) and every change a [pull request](../../pulls).
 
+The version submitted for the code test is kept as the release [`v1.0-submission`](../../releases/tag/v1.0-submission) and runs at [mini-ats-submission.vercel.app](https://mini-ats-submission.vercel.app). Work since then continues on `main` as a portfolio project.
+
 ---
 
 ## Contents
@@ -425,7 +427,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 
 ## Credits and attribution
 
-Mini-ATS is a code test (2026) by [Patrik Noordh](https://github.com/PatrikNoordh). I wrote the spec and the rules, made the product decisions and tested every change. The UI was first built with [Lovable](https://lovable.dev), and the code since then with [Claude Code](https://claude.com/claude-code) (see [How it was built](#how-it-was-built)).
+Mini-ATS is by [Patrik Noordh](https://github.com/PatrikNoordh). It started as a code test (2026) and continues as a portfolio project. I wrote the spec and the rules, made the product decisions and tested every change. The UI was first built with [Lovable](https://lovable.dev), and the code since then with [Claude Code](https://claude.com/claude-code) (see [How it was built](#how-it-was-built)).
 
 Built on open source:
 - [TanStack](https://tanstack.com) Start, Router and Query (MIT)
