@@ -18,12 +18,16 @@ export function useCvUrl(customerId: string | null, path: string | null) {
   });
 }
 
-/** The candidate list holds cv_path, and an open link may point at a file that changed. */
+/**
+ * The candidate list holds cv_path, and an open link may point at a file that changed. Removing
+ * a CV also removes the candidate's assessments in the database (ATS-35).
+ */
 function useInvalidateCv(customerId: string | null) {
   const qc = useQueryClient();
   return () => {
     qc.invalidateQueries({ queryKey: queryKeys.candidates(customerId) });
     qc.invalidateQueries({ queryKey: queryKeys.cvUrls(customerId) });
+    qc.invalidateQueries({ queryKey: queryKeys.assessmentsAll(customerId) });
   };
 }
 
