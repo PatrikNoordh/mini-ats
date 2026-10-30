@@ -87,9 +87,15 @@ const PROMPT_TAG = /<\s*\/?\s*(?:cv|job)\b[^>]*>/gi;
 /**
  * Removes the prompt's own tags from text that goes inside them, so a CV or a job description
  * can't close its tag early and put text outside it, where it would read as part of the request.
+ * Repeated until none is left, because removing one can join its neighbours into a new one.
  */
 export function stripPromptTags(text: string): string {
-  return text.replace(PROMPT_TAG, "");
+  let stripped = text;
+  for (let previous = ""; stripped !== previous;) {
+    previous = stripped;
+    stripped = stripped.replace(PROMPT_TAG, "");
+  }
+  return stripped;
 }
 
 /** The request text: the job, the language to answer in, and the CV as data. */
