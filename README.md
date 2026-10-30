@@ -415,13 +415,16 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 
 ## What I would do next
 
-| | |
+The work after the code test, in order, as epics 7–12 in [`TICKETS.md`](TICKETS.md) and milestones on GitHub:
+
+| Epic | |
 |---|---|
-| **Own pipeline stages** | Let a customer rename, add (up to 10), remove, reorder and reset the board's columns, Trello-style. Design and decisions in [docs/next-custom-stages.md](docs/next-custom-stages.md) |
-| **End-to-end tests** | Playwright runs of sign-in, the board and acting for a customer, against a preview database |
-| **Teams** | Several users per company with a members table, which changes `customer_id = auth.uid()` to a membership check in RLS |
-| **Audit log** | Who moved, changed or deleted what, and when |
-| **Email** | Invites and password reset through Supabase Auth, once accounts aren't handed out in person |
+| **7. End-to-end tests** | Playwright runs of sign-in, the board and acting for a customer, against a local Supabase started in CI. They come first, as a safety net for the rewrites after them |
+| **8. Own pipeline stages** | Let a customer rename, add (up to 10), remove, reorder and reset the board's columns, Trello-style. Design and decisions in [docs/next-custom-stages.md](docs/next-custom-stages.md) |
+| **9. Teams** | Several users per company with a members table, which changes `customer_id = auth.uid()` to a membership check in RLS |
+| **10. Audit log** | Who moved, changed or deleted what, and when |
+| **11. Email** | Invites and password reset through Supabase Auth, once accounts aren't handed out in person |
+| **12. A customer's own theme** | A customer's accent colour, logo and background image, always readable. Design and decisions in [docs/next-branding.md](docs/next-branding.md) |
 
 ---
 
