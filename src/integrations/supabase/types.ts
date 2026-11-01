@@ -6,6 +6,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.18";
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       applications: {
@@ -18,6 +43,7 @@ export type Database = {
           position: number;
           stage: string;
           stage_changed_at: string;
+          stage_id: string | null;
           updated_at: string;
         };
         Insert: {
@@ -29,6 +55,7 @@ export type Database = {
           position?: number;
           stage?: string;
           stage_changed_at?: string;
+          stage_id?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -40,6 +67,7 @@ export type Database = {
           position?: number;
           stage?: string;
           stage_changed_at?: string;
+          stage_id?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -63,6 +91,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "jobs";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "applications_stage_id_fkey";
+            columns: ["stage_id", "customer_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_stages";
+            referencedColumns: ["id", "customer_id"];
           },
         ];
       };
@@ -208,6 +243,47 @@ export type Database = {
           },
         ];
       };
+      pipeline_stages: {
+        Row: {
+          colour: string;
+          created_at: string;
+          customer_id: string;
+          default_key: string | null;
+          id: string;
+          kind: string;
+          name: string | null;
+          position: number;
+        };
+        Insert: {
+          colour: string;
+          created_at?: string;
+          customer_id: string;
+          default_key?: string | null;
+          id?: string;
+          kind?: string;
+          name?: string | null;
+          position: number;
+        };
+        Update: {
+          colour?: string;
+          created_at?: string;
+          customer_id?: string;
+          default_key?: string | null;
+          id?: string;
+          kind?: string;
+          name?: string | null;
+          position?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_stages_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           company_name: string | null;
@@ -245,30 +321,85 @@ export type Database = {
     Functions: {
       account_is_active: { Args: never; Returns: boolean };
       accounts_due_for_purge: { Args: never; Returns: string[] };
+      create_default_stages: { Args: { customer: string }; Returns: undefined };
       is_admin: { Args: never; Returns: boolean };
-      move_application: {
-        Args: { application_id: string; customer_id: string; new_stage: string };
+      move_application:
+        | {
+            Args: {
+              application_id: string;
+              customer_id: string;
+              new_stage: string;
+            };
+            Returns: {
+              candidate_id: string;
+              created_at: string;
+              customer_id: string;
+              id: string;
+              job_id: string;
+              position: number;
+              stage: string;
+              stage_changed_at: string;
+              stage_id: string | null;
+              updated_at: string;
+            };
+            SetofOptions: {
+              from: "*";
+              to: "applications";
+              isOneToOne: true;
+              isSetofReturn: false;
+            };
+          }
+        | {
+            Args: {
+              application_id: string;
+              customer_id: string;
+              new_stage_id: string;
+            };
+            Returns: {
+              candidate_id: string;
+              created_at: string;
+              customer_id: string;
+              id: string;
+              job_id: string;
+              position: number;
+              stage: string;
+              stage_changed_at: string;
+              stage_id: string | null;
+              updated_at: string;
+            };
+            SetofOptions: {
+              from: "*";
+              to: "applications";
+              isOneToOne: true;
+              isSetofReturn: false;
+            };
+          };
+      reorder_stages: {
+        Args: { customer_id: string; stage_ids: string[] };
         Returns: {
-          candidate_id: string;
+          colour: string;
           created_at: string;
           customer_id: string;
+          default_key: string | null;
           id: string;
-          job_id: string;
+          kind: string;
+          name: string | null;
           position: number;
-          stage: string;
-          stage_changed_at: string;
-          updated_at: string;
-        };
+        }[];
         SetofOptions: {
           from: "*";
-          to: "applications";
-          isOneToOne: true;
-          isSetofReturn: false;
+          to: "pipeline_stages";
+          isOneToOne: false;
+          isSetofReturn: true;
         };
       };
       soft_delete_or_demote_account: {
         Args: { account_id: string; change: string };
         Returns: undefined;
+      };
+      stage_id_for_key: {
+        Args: { customer: string; key: string };
+        Returns: string;
       };
     };
     Enums: {
@@ -392,6 +523,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
