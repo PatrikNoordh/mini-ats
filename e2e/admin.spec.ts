@@ -68,7 +68,8 @@ test("an admin deletes an account, finds it in Deleted accounts and restores it"
   await expect(deletedRow).toBeVisible();
 
   // While the account is deleted, the customer cannot sign in.
-  const customerPage = await (await browser.newContext()).newPage();
+  const customerContext = await browser.newContext();
+  const customerPage = await customerContext.newPage();
   await submitSignIn(customerPage, customer.email);
   await expect(customerPage.getByRole("alert")).toHaveText(sv.errors.account_deleted);
 
@@ -80,4 +81,5 @@ test("an admin deletes an account, finds it in Deleted accounts and restores it"
   await expect(
     customerPage.getByRole("heading", { level: 1, name: sv.pipeline.title }),
   ).toBeVisible();
+  await customerContext.close();
 });

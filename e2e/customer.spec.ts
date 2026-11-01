@@ -85,7 +85,7 @@ test("a customer moves cards by mouse and by keyboard, and the moves survive a r
     await expect(overScreening).toBeAttached({ timeout: 500 });
   }).toPass();
   await page.keyboard.press("Space");
-  await heard(sv.pipeline.announce.dropped, sv.stages.screening);
+  await expect(heard(sv.pipeline.announce.dropped, sv.stages.screening)).toBeAttached();
   await saved;
   await expect(card(column(page, "screening"), byKeyboard)).toBeVisible();
 
