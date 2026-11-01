@@ -79,3 +79,42 @@ jobs:
         run: bash supabase/tests/move_application_concurrency.sh
       - name: Concurrent removals of the last admins
         run: bash supabase/tests/last_admin_concurrency.sh
+
+  e2e:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - run: npm ci
+      - name: Local Supabase stack (applies the migrations)
+        # Only what the app uses: database, Auth, API, Storage and the Edge Functions.
+        run: supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,logflare,vector,supavisor
+      - name: Point the tests at the local stack
+        # The CLI's fixed local keys, not secrets. scripts/local-stack.ts reads these variables.
+        run: |
+          supabase status -o json | jq -r '
+            "E2E_SUPABASE_URL=\(.API_URL)",
+            "E2E_ANON_KEY=\(.ANON_KEY)",
+            "E2E_SERVICE_ROLE_KEY=\(.SERVICE_ROLE_KEY)"' >> "$GITHUB_ENV"
+      - run: npx playwright install --with-deps chromium
+      - name: Seed, build and run Playwright
+        # e2e/global-setup.ts seeds the stack; the web server in playwright.config.ts builds the app
+        # against it.
+        run: npm run test:e2e
+      - name: Upload the traces of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
