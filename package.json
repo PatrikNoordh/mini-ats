@@ -12,6 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "seed:e2e": "node scripts/seed-e2e.ts",
     "seed:demo": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.seed.local scripts/seed-demo.ts"
   },
   "overrides": {
