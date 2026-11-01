@@ -53,6 +53,22 @@ export async function upsertAccount(
 
 const daysAgo = (days: number) => new Date(Date.now() - days * MS_PER_DAY).toISOString();
 
+/** The ids of the customer's default stages, by key. Every account gets them (ATS-38). */
+async function defaultStageIds(
+  admin: SupabaseClient,
+  customerId: string,
+): Promise<Map<string, string>> {
+  const { data, error } = await admin
+    .from("pipeline_stages")
+    .select("id, default_key")
+    .eq("customer_id", customerId)
+    .not("default_key", "is", null);
+  if (error) throw error;
+  const ids = new Map<string, string>();
+  for (const stage of data) ids.set(String(stage.default_key), String(stage.id));
+  return ids;
+}
+
 /** Replaces the customer's jobs, candidates and cards with the given data. */
 export async function seedCustomer(
   admin: SupabaseClient,
@@ -79,6 +95,7 @@ export async function seedCustomer(
     .select("id");
   if (jobs.error) throw jobs.error;
   const jobIds = new Map(customer.jobs.map((job, i) => [job.key, jobs.data[i]?.id]));
+  const stageIds = await defaultStageIds(admin, customerId);
 
   const positions = new Map<string, number>();
   for (const candidate of customer.candidates) {
@@ -100,13 +117,15 @@ export async function seedCustomer(
     for (const application of candidate.applications) {
       const jobId = jobIds.get(application.job);
       if (!jobId) throw new Error(`Unknown job "${application.job}"`);
-      const position = positions.get(application.stage) ?? 0;
-      positions.set(application.stage, position + 1);
+      const stageId = stageIds.get(application.stage);
+      if (!stageId) throw new Error(`The customer has no "${application.stage}" stage`);
+      const position = positions.get(stageId) ?? 0;
+      positions.set(stageId, position + 1);
       // customer_id comes from the job through the trigger (security rule 7).
       const { error } = await admin.from("applications").insert({
         job_id: jobId,
         candidate_id: inserted.data.id,
-        stage: application.stage,
+        stage_id: stageId,
         position,
         stage_changed_at: daysAgo(application.daysInStage),
       });
