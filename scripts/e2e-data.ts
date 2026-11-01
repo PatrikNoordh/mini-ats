@@ -1,7 +1,8 @@
-// Test data for the end-to-end tests (ATS-36), written to the local stack by seed-e2e.ts. Kept
-// apart from the demo data, so a change to the demo never breaks a test. Two customers, so the
-// tests can check that one never sees the other's rows. Only fake people on the reserved .test
-// domain. The password is the same for every account and only ever exists in the local stack.
+// Accounts and data for the local stack, written by seed-e2e.ts (ATS-36). Kept apart from the
+// demo data. The tests sign in as the admin; every customer a test needs, it makes itself
+// (e2e/fixtures.ts, ATS-37), so customers A and B are here to look at the app locally. Only fake
+// people on the reserved .test domain. The password is the same for every account, the test
+// customers' too, and only ever exists in the local stack.
 import type { DemoAccount, DemoCustomer } from "./demo-data.ts";
 
 export const E2E_PASSWORD = "e2e-local-stack-only";
