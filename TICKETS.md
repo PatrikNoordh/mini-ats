@@ -613,6 +613,10 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] ats-git-ship does not run `npm run test:e2e` or the Deno checks in its validation step; ats-implement-ticket got them in ATS-36 — .claude/skills/ats-git-ship/SKILL.md (found in ATS-36)
+- [ ] Security rule 2 says Edge Functions read with the caller's JWT, but purge-deleted-accounts has no caller: pg_cron calls it with a secret and it reads with the service role. Document the exception — CLAUDE.md § Security rules (found in ATS-36)
+- [ ] § Reference docs calls TICKETS.md "the original plan" and does not list docs/next-custom-stages.md, docs/next-branding.md or docs/error-codes.md — CLAUDE.md (found in ATS-36)
+
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
@@ -623,3 +627,4 @@ Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 - [ ] Delete a candidate and its CV file in one server-side step, so a failed delete whose cv_path clear also fails can no longer leave a path to a removed file — src/lib/api/candidates.ts (PR #96, ATS-35)
 - [ ] assess-cv saves its assessment without checking that the candidate still has a CV, so a CV removed while an assessment runs leaves that assessment behind — supabase/functions/assess-cv/index.ts (PR #96, ATS-35)
 - [ ] A recruiter can remove an AI assessment without removing the CV. cv_assessments is read-only for clients (rule 8), so this needs a server-side delete that checks the owner, plus an RLS check — src/components/pipeline/CandidateAssessment.tsx (PR #96, ATS-35)
+- [ ] CLAUDE.md § Workflow says read-only `npx supabase` commands against the project are fine, but ats-implement-ticket now says never to run any command against the linked project, not even a read-only one. Align the two — CLAUDE.md (PR #97, ATS-36)

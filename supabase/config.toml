@@ -1,0 +1,45 @@
+# The local Supabase stack for the end-to-end tests (ATS-36): `npx supabase start` runs it in
+# Docker and applies supabase/migrations/ to a fresh database. It never touches the linked
+# project. Only the settings the app depends on are listed; everything else is the CLI default.
+project_id = "mini-ats"
+
+[api]
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+# The same major version as the project.
+major_version = 17
+
+[db.seed]
+# The test data is written by scripts/seed-e2e.ts through the Auth admin API, so the profile
+# trigger runs as it does for a real account. No SQL seed.
+enabled = false
+
+[studio]
+port = 54323
+
+[auth]
+site_url = "http://127.0.0.1:4173"
+additional_redirect_urls = ["http://127.0.0.1:4173", "http://localhost:4173"]
+# Public sign-up is disabled, as in the project (security rule 3). Accounts are made by an admin.
+enable_signup = false
+
+[auth.email]
+# This switch is the email provider itself: false would turn off password sign-in too. Sign-up
+# stays closed through enable_signup above.
+enable_signup = true
+enable_confirmations = false
+
+[storage]
+# The cvs bucket and its limits come from the migrations; this is only Storage's upper bound.
+file_size_limit = "50MiB"
+
+[edge_runtime]
+# Serves supabase/functions/ next to the API, so admin-create-user and the others run locally.
+enabled = true
+deno_version = 2

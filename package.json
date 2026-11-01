@@ -12,6 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "seed:e2e": "node scripts/seed-e2e.ts",
     "seed:demo": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.seed.local scripts/seed-demo.ts"
   },
   "overrides": {
@@ -79,6 +81,7 @@
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^2.25.2",
+    "@playwright/test": "1.64.1",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",

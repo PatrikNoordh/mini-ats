@@ -35,5 +35,11 @@ dist-ssr
 *.sln
 *.sw?
 
-# Supabase CLI cache (linked project, CLI version)
+# Playwright results and reports
+/test-results/
+/playwright-report/
+/blob-report/
+
+# Supabase CLI cache (linked project, CLI version) and local branch state
 supabase/.temp
+supabase/.branches

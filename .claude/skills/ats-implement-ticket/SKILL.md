@@ -154,13 +154,25 @@ dropdb ats_rls_test
 
 Every check must print `OK`. If Postgres is not available locally, say so in the summary. CI runs the same job on the PR.
 
-If the branch adds a migration, it must follow the migration rules in `CLAUDE.md` § Workflow. Run the dry run and show it to the developer:
+If the branch touches `supabase/functions/`, also run the Deno checks the way the `functions` job does (`DENO_NO_PACKAGE_JSON=1`): `deno check supabase/functions/*/index.ts` and `deno test --allow-env supabase/functions`.
+
+Run the end-to-end tests when Docker is available. They need the local stack; start, stop and status are the only `npx supabase` commands for it, and never anything with `--linked`:
+
+```bash
+npx supabase start
+npm run test:e2e
+npx supabase stop
+```
+
+If Docker is not available, say so in the summary. CI runs the same job on the PR.
+
+If the branch adds a migration, it must follow the migration rules in `CLAUDE.md` § Workflow. It must be backwards compatible with the code on `main` and with `v1.0-submission`, because both deployments use the same Supabase project. Print the dry run for the developer to run in their own terminal and paste back. Never run a command against the linked project yourself, not even a read-only one:
 
 ```bash
 npx supabase db push --dry-run
 ```
 
-It must list only the migrations this branch adds. If it lists anything else, stop and tell the developer. Never run `db push` yourself without the developer's yes. When unattended, write in the summary that the migration still has to be applied before the merge.
+It must list only the migrations this branch adds. If it lists anything else, stop and tell the developer. `db push` is run by the developer too, only after their yes. When unattended, write in the summary that the migration still has to be applied before the merge.
 
 Manual test, described in the summary: as admin acting for a customer, and as the customer. For data tickets, also as a second customer who must not see the first one's rows.
 
@@ -174,7 +186,7 @@ Before the last commit, read the whole branch as a strict reviewer:
 git diff origin/main...HEAD
 ```
 
-Check it against the quality bar in `CLAUDE.md`: correctness and edge cases, security, tests, accessibility, consistency, clean code and scope. Fix what you find and run the validation again. Note anything you chose not to fix, and why, in the summary.
+Check it against the quality bar in `CLAUDE.md`: correctness and edge cases, security, tests, accessibility, consistency, clean code and scope. If a script, an env variable, CI or user-facing behaviour changed, check that `README.md` and `.env.example` still match. Fix what you find and run the validation again. Note anything you chose not to fix, and why, in the summary.
 
 ---
 
@@ -244,7 +256,7 @@ When running unattended: print the summary and stop. Do not push, open a PR or p
 - [ ] No `any` or silencing casts
 - [ ] No hardcoded values: text via `t()` in sv and en, theme tokens, no arbitrary sizes, named constants
 - [ ] Loading, empty and error states, 390 px, accessible
-- [ ] lint, tsc, test and build pass. RLS tests pass or are deferred to CI with a note
+- [ ] lint, tsc, test and build pass. RLS, Deno and end-to-end tests pass or are deferred to CI with a note
 - [ ] Commits follow `(MODEL_NAME) <type> [ATS-<N>]` and are staged by file
 - [ ] Self-review of the full diff done against the quality bar
 - [ ] Summary printed. Issue updated only with the developer's yes

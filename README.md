@@ -113,7 +113,7 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
 | Validation | **zod** | Forms, search params and Edge Function bodies |
 | i18n | **i18next** | Swedish and English, every string in both files |
 | Backend | **Supabase**: Postgres with RLS, Auth, Storage, Edge Functions (Deno) | The database enforces who sees what |
-| Tests | **Vitest** + Testing Library, Deno tests, SQL RLS tests | Logic, components, Edge Functions and the security rules |
+| Tests | **Vitest** + Testing Library, Deno tests, SQL RLS tests, **Playwright** | Logic, components, Edge Functions, the security rules, and the app end to end against a local Supabase |
 | Hosting | **Vercel** | Deploys `main`, a preview for every pull request |
 
 ---
@@ -178,8 +178,10 @@ mini-ats/
 ├── supabase/
 │   ├── migrations/          # schema, RLS, triggers, database functions
 │   ├── functions/           # admin-create-user, admin-manage-account (+ Deno tests)
-│   └── tests/               # rls_test.sql, the concurrency test
-├── scripts/                 # the demo seed script
+│   ├── tests/               # rls_test.sql, the concurrency test
+│   └── config.toml          # the local stack for the end-to-end tests
+├── e2e/                     # Playwright tests
+├── scripts/                 # the demo seed and the end-to-end test seed
 ├── docs/                    # UI spec, prototype, error codes, epic reviews
 ├── CLAUDE.md                # the rules every change follows
 └── TICKETS.md               # the plan, epic by epic
@@ -336,18 +338,32 @@ The repository is connected to Vercel: every push to `main` deploys the live app
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run format` | Prettier |
 | `npm run seed:demo -- --yes` | Create or rebuild the demo accounts and data |
+| `npm run test:e2e` | Playwright against the local Supabase stack: seeds it, builds the app against it and runs the tests. Needs Docker and `npx supabase start` first |
+| `npm run seed:e2e` | Seed the test accounts and data into the local stack, to look at them in the app |
 
 ---
 
 ## Quality and CI
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs three jobs on every pull request and push to `main`:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs four jobs on every pull request and push to `main`:
 
 1. **App**: `npm ci` → lint → `tsc --noEmit` → `npm test` → `npm run build`
 2. **Edge Functions**: `deno check` on every function and `deno test` on all of `supabase/functions`
 3. **RLS**: Postgres 17 → the Supabase stand-in → every migration → `rls_test.sql` → the two concurrency tests
+4. **End-to-end**: `npx supabase start` runs a fresh local Supabase in Docker and applies every migration → a test seed with an admin and two customers → a production build against that stack → Playwright in Chromium. A failed run uploads its trace
 
-A pull request merges only when all three are green and the Vercel preview works. Over **320 Vitest tests** cover the logic and components: validation, the URL filters, days in stage, card moves and rollback, error codes, the customer switch, offline saves, the account dialogs, CVs and the AI assessment. A test also checks that `sv.json` and `en.json` have the same keys and placeholders. The Edge Functions have their own Deno tests, which run with every outside call passed in, so they need no project.
+A pull request merges only when all four are green and the Vercel preview works. Over **320 Vitest tests** cover the logic and components: validation, the URL filters, days in stage, card moves and rollback, error codes, the customer switch, offline saves, the account dialogs, CVs and the AI assessment. A test also checks that `sv.json` and `en.json` have the same keys and placeholders. The Edge Functions have their own Deno tests, which run with every outside call passed in, so they need no project.
+
+The end-to-end tests run the real app in a browser against a real Supabase: Auth, the database with its RLS, Storage and the Edge Functions. They never touch the project. [`supabase/config.toml`](supabase/config.toml) describes the local stack, with public sign-up disabled as in the project. [`scripts/seed-e2e.ts`](scripts/seed-e2e.ts) writes its own test data, apart from the demo data, and refuses any host that is not local. To run them yourself, with Docker running:
+
+```bash
+npx supabase start                # the first start downloads the images
+npx playwright install chromium   # once
+npm run test:e2e                  # or npx playwright test --ui, to watch each step
+npx supabase stop                 # --no-backup also drops the data, for a fresh database next time
+```
+
+`npm run test:e2e` does not start the stack: it stops with a message if the stack is not running. It does seed it before every run, then builds the app against it and serves the build on port 4173. When a test fails in CI, download the `playwright-traces` artifact from the run's summary page and open the trace with `npx playwright show-trace <path>/trace.zip`, or drop the file on [trace.playwright.dev](https://trace.playwright.dev).
 
 One convention worth knowing: a `beforeEach` or `beforeAll` callback has a block body. Vitest runs a function returned from it as cleanup, so `beforeEach(() => mock.mockReset())` would call the mock again after the test. ESLint enforces this in `src/test/`.
 
