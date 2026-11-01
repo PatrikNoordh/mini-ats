@@ -50,7 +50,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 - TanStack Router with file-based routes in `src/routes/`. `src/routeTree.gen.ts` is generated: never edit it by hand
 - TypeScript (strict), Tailwind CSS, shadcn/ui
 - TanStack Query for data fetching, @dnd-kit for drag and drop, zod for search params and forms
-- Vitest for unit tests
+- Vitest for unit tests, Playwright for end-to-end tests in `e2e/` against the local Supabase stack (`supabase/config.toml`)
 - npm with `package-lock.json` (`.npmrc` sets `legacy-peer-deps=true`). Do not use bun
 - Supabase: Postgres, Auth, Storage, Edge Functions
 - Hosting: Vercel, deployed from `main`, with a preview per pull request
@@ -65,7 +65,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 
 ## Security rules — never break these
 
-1. **The service role key is only used in Edge Functions**, and in the local demo seed script (`scripts/seed-demo.ts`, ATS-15), which reads it from your shell or `.env.seed.local` and is never run in CI or deployed. Never import it, read it or reference it in `src/`.
+1. **The service role key is only used in Edge Functions**, and in the local demo seed script (`scripts/seed-demo.ts`, ATS-15), which reads it from your shell or `.env.seed.local` and is never run in CI or deployed. The end-to-end test seed (`scripts/seed-e2e.ts`, ATS-36) uses only the local stack's fixed key and refuses any other host. Never import it, read it or reference it in `src/`.
 2. **Edge Functions read with the caller's JWT.** Use the service role key only for the privileged action the function exists for (creating a user, changing or deleting an account, saving an assessment). Never use it to read data on behalf of a user.
 3. **Public sign-up is disabled.** Accounts are only created by an admin through the `admin-create-user` Edge Function, which checks that the caller is an admin before doing anything.
 4. **`profiles.role` is the role that counts.** RLS reads it through `public.is_admin()`, and the app reads it from the user's own profile. `app_metadata.role` is set when the account is created so the trigger can copy it. Never read the role from `user_metadata`.

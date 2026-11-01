@@ -354,14 +354,16 @@ The repository is connected to Vercel: every push to `main` deploys the live app
 
 A pull request merges only when all four are green and the Vercel preview works. Over **320 Vitest tests** cover the logic and components: validation, the URL filters, days in stage, card moves and rollback, error codes, the customer switch, offline saves, the account dialogs, CVs and the AI assessment. A test also checks that `sv.json` and `en.json` have the same keys and placeholders. The Edge Functions have their own Deno tests, which run with every outside call passed in, so they need no project.
 
-The end-to-end tests run the real app in a browser against a real Supabase: Auth, the database with its RLS, Storage and the Edge Functions. They never touch the project. [`supabase/config.toml`](supabase/config.toml) describes the local stack, with public sign-up disabled as in the project. [`scripts/seed-e2e.ts`](scripts/seed-e2e.ts) writes its own test data, apart from the demo data, and refuses any host that is not local. To run them yourself:
+The end-to-end tests run the real app in a browser against a real Supabase: Auth, the database with its RLS, Storage and the Edge Functions. They never touch the project. [`supabase/config.toml`](supabase/config.toml) describes the local stack, with public sign-up disabled as in the project. [`scripts/seed-e2e.ts`](scripts/seed-e2e.ts) writes its own test data, apart from the demo data, and refuses any host that is not local. To run them yourself, with Docker running:
 
 ```bash
-npx supabase start   # Docker must be running; the first start downloads the images
+npx supabase start                # the first start downloads the images
 npx playwright install chromium   # once
-npm run test:e2e
-npx supabase stop
+npm run test:e2e                  # or npx playwright test --ui, to watch each step
+npx supabase stop                 # --no-backup also drops the data, for a fresh database next time
 ```
+
+`npm run test:e2e` does not start the stack: it stops with a message if the stack is not running. It does seed it before every run, then builds the app against it and serves the build on port 4173. When a test fails in CI, download the `playwright-traces` artifact from the run's summary page and open the trace with `npx playwright show-trace <path>/trace.zip`, or drop the file on [trace.playwright.dev](https://trace.playwright.dev).
 
 One convention worth knowing: a `beforeEach` or `beforeAll` callback has a block body. Vitest runs a function returned from it as cleanup, so `beforeEach(() => mock.mockReset())` would call the mock again after the test. ESLint enforces this in `src/test/`.
 
