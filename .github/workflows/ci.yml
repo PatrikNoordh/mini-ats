@@ -79,6 +79,8 @@ jobs:
         run: bash supabase/tests/move_application_concurrency.sh
       - name: Concurrent removals of the last admins
         run: bash supabase/tests/last_admin_concurrency.sh
+      - name: Concurrent writes to pipeline stages
+        run: bash supabase/tests/pipeline_stages_concurrency.sh
 
   e2e:
     name: End-to-end tests
