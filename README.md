@@ -354,7 +354,11 @@ The repository is connected to Vercel: every push to `main` deploys the live app
 
 A pull request merges only when all four are green and the Vercel preview works. Over **320 Vitest tests** cover the logic and components: validation, the URL filters, days in stage, card moves and rollback, error codes, the customer switch, offline saves, the account dialogs, CVs and the AI assessment. A test also checks that `sv.json` and `en.json` have the same keys and placeholders. The Edge Functions have their own Deno tests, which run with every outside call passed in, so they need no project.
 
-The end-to-end tests run the real app in a browser against a real Supabase: Auth, the database with its RLS, Storage and the Edge Functions. They never touch the project. [`supabase/config.toml`](supabase/config.toml) describes the local stack, with public sign-up disabled as in the project. [`scripts/seed-e2e.ts`](scripts/seed-e2e.ts) writes its own test data, apart from the demo data, and refuses any host that is not local. To run them yourself, with Docker running:
+The end-to-end tests run the real app in a browser against a real Supabase: Auth, the database with its RLS, Storage and the Edge Functions. They never touch the project. [`supabase/config.toml`](supabase/config.toml) describes the local stack, with public sign-up disabled as in the project. [`scripts/seed-e2e.ts`](scripts/seed-e2e.ts) writes the admin account, apart from the demo data, and refuses any host that is not local.
+
+The tests in [`e2e/`](e2e) cover the daily flows: a customer creates a job and a candidate and sees the card in New, moves cards by mouse and by keyboard, and keeps the job and name filters in the URL across a reload; an admin acts for one customer and switches to another without anything of the first left on screen, and deletes and restores an account; and one customer never sees another's jobs, candidates or cards. Each test makes its own customers, named with a tag unique to the attempt, and removes them afterwards, so the tests run in any order and a retry never meets data an earlier attempt changed.
+
+To run them yourself, with Docker running:
 
 ```bash
 npx supabase start                # the first start downloads the images
