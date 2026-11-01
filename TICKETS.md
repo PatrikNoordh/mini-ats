@@ -613,6 +613,10 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] ats-implement-ticket and ats-git-ship do not run `npm run test:e2e`; add it to their validation steps, for when Docker is available — .claude/skills/ (found in ATS-36)
+- [ ] Security rule 2 says Edge Functions read with the caller's JWT, but purge-deleted-accounts has no caller: pg_cron calls it with a secret and it reads with the service role. Document the exception — CLAUDE.md § Security rules (found in ATS-36)
+- [ ] § Reference docs calls TICKETS.md "the original plan" and does not list docs/next-custom-stages.md, docs/next-branding.md or docs/error-codes.md — CLAUDE.md (found in ATS-36)
+
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
