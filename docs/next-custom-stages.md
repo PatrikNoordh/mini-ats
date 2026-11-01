@@ -1,6 +1,6 @@
 # Next: customer-defined pipeline stages
 
-A design sketch for after the deadline (26 October 2026), built in epic 8. The database is in place since ATS-38 (`supabase/migrations/20261101120000_pipeline_stages.sql`); the app still uses the fixed list until ATS-39.
+A design sketch for after the deadline (26 October 2026), built in epic 8. The database is in place since ATS-38 (`supabase/migrations/20261101120000_pipeline_stages.sql`); the app reads each customer's stages since ATS-39.
 
 ## Today
 
