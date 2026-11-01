@@ -613,7 +613,7 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
-- [ ] ats-implement-ticket and ats-git-ship do not run `npm run test:e2e`; add it to their validation steps, for when Docker is available — .claude/skills/ (found in ATS-36)
+- [ ] ats-git-ship does not run `npm run test:e2e` or the Deno checks in its validation step; ats-implement-ticket got them in ATS-36 — .claude/skills/ats-git-ship/SKILL.md (found in ATS-36)
 - [ ] Security rule 2 says Edge Functions read with the caller's JWT, but purge-deleted-accounts has no caller: pg_cron calls it with a secret and it reads with the service role. Document the exception — CLAUDE.md § Security rules (found in ATS-36)
 - [ ] § Reference docs calls TICKETS.md "the original plan" and does not list docs/next-custom-stages.md, docs/next-branding.md or docs/error-codes.md — CLAUDE.md (found in ATS-36)
 
