@@ -1,27 +1,26 @@
 import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
-import type { Application, Stage } from "@/types";
+import type { Application } from "@/types";
 import { PG_UNIQUE_VIOLATION } from "@/lib/constants";
 import { AppError, fromDbError } from "@/lib/errors";
-import { stageSchema } from "@/lib/stages";
 
 const APPLICATION_COLUMNS =
-  "id, customer_id, job_id, candidate_id, stage, position, stage_changed_at, created_at, updated_at";
+  "id, customer_id, job_id, candidate_id, stage_id, position, stage_changed_at, created_at, updated_at";
 
 const applicationRowSchema = z.object({
   id: z.string(),
   customer_id: z.string(),
   job_id: z.string(),
   candidate_id: z.string(),
-  stage: stageSchema,
+  stage_id: z.string(),
   position: z.number(),
   stage_changed_at: z.string(),
   created_at: z.string(),
   updated_at: z.string(),
 });
 
-/** An `applications` row as the app's Application. Throws on a stage the app does not know. */
+/** An `applications` row as the app's Application. Throws on a row without a stage. */
 export function parseApplicationRow(row: unknown): Application {
   return applicationRowSchema.parse(row);
 }
@@ -42,7 +41,7 @@ export async function listApplications(customerId: string): Promise<Application[
 }
 
 /**
- * Links a candidate to jobs. New links start in the `new` stage (the column default). A link that
+ * Links a candidate to jobs. New links start in the default New stage (the database picks it). A link that
  * already exists is skipped, so a retry or a second tab never fails on the unique constraint.
  *
  * customer_id is not sent: the trigger sets it from the job and rejects a job and a candidate of
@@ -83,7 +82,7 @@ export function addApplicationError(error: Error & { code: string }): Error {
 }
 
 /**
- * Adds a candidate to one more job, in the `new` stage. Unlike linkCandidate, a link that already
+ * Adds a candidate to one more job, in the default New stage. Unlike linkCandidate, a link that already
  * exists fails with `already_linked`, so the user is told instead of nothing happening.
  * customer_id is set by the trigger from the job (CLAUDE.md, security rule 7).
  */
@@ -100,17 +99,18 @@ export async function addApplication(candidateId: string, jobId: string): Promis
 /**
  * Moves a card to a stage, last in its column. One database call sets the stage and the position,
  * so two quick moves into the same column never share a position. The database sets
- * stage_changed_at, and raises card_not_found when the card is not this customer's.
+ * stage_changed_at, and raises card_not_found when the card is not this customer's and
+ * stage_not_found when the stage is not (ATS-38).
  */
 export async function moveApplication(
   customerId: string,
   id: string,
-  stage: Stage,
+  stageId: string,
 ): Promise<Application> {
   const { data, error } = await supabase.rpc("move_application", {
     application_id: id,
     customer_id: customerId,
-    new_stage: stage,
+    new_stage_id: stageId,
   });
   if (error) throw fromDbError(error);
   return parseApplicationRow(data);
@@ -123,18 +123,19 @@ export interface RejectResult {
 }
 
 /**
- * Moves the given cards to Rejected, one at a time through move_application, so each gets its
+ * Moves the given cards to a Rejected stage, one at a time through move_application, so each gets its
  * position and stage_changed_at from the database like any other move (ATS-31). One failing card
  * never stops the others; the result says how many failed.
  */
 export async function rejectApplications(
   customerId: string,
   ids: readonly string[],
+  rejectedStageId: string,
 ): Promise<RejectResult> {
   let moved = 0;
   for (const id of ids) {
     try {
-      await moveApplication(customerId, id, "rejected");
+      await moveApplication(customerId, id, rejectedStageId);
       moved++;
     } catch {
       // Counted below; the board refetches and shows the true state.

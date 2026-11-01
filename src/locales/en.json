@@ -59,6 +59,7 @@
   },
   "errors": {
     "card_not_found": "The card could not be found.",
+    "stage_not_found": "The stage could not be found. Reload the page and try again.",
     "job_not_found": "The job could not be found.",
     "candidate_not_found": "The candidate could not be found.",
     "email_exists": "An account with that email address already exists.",
@@ -171,6 +172,7 @@
     "emptyHint": "Add a candidate and link them to a job.",
     "unknownCandidate": "Unknown",
     "unknownJob": "Unknown job",
+    "unknownStage": "Unknown stage",
     "moveFailed": "Could not move the card. The change has been undone.",
     "daysInStage": "Days in stage",
     "days_one": "{{count, number}} d",

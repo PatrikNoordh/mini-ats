@@ -6,7 +6,6 @@ import { MAX_NAME_LENGTH } from "@/lib/constants";
 import { AppError, errorCode, fromDbError } from "@/lib/errors";
 import { uploadCandidateCv } from "@/lib/candidate-cv";
 import { saveCandidate } from "@/lib/save-candidate";
-import { stageSchema, STAGES } from "@/lib/stages";
 import { candidateInputSchema, fieldErrors } from "@/lib/validation";
 import type { Candidate } from "@/types";
 
@@ -58,7 +57,7 @@ describe("application row", () => {
     customer_id: CUSTOMER,
     job_id: "10000000-0000-0000-0000-0000000000a1",
     candidate_id: candidateRow.id,
-    stage: "screening",
+    stage_id: "40000000-0000-0000-0000-0000000000a1",
     position: 2,
     stage_changed_at: "2026-10-18T08:00:00+00:00",
     created_at: "2026-10-10T08:00:00+00:00",
@@ -69,13 +68,12 @@ describe("application row", () => {
     expect(parseApplicationRow(row)).toEqual(row);
   });
 
-  it("rejects a stage the app does not know", () => {
-    expect(() => parseApplicationRow({ ...row, stage: "archived" })).toThrow();
+  it("keeps only the stage id, not the old stage name (ATS-39)", () => {
+    expect(parseApplicationRow({ ...row, stage: "screening" })).toEqual(row);
   });
 
-  it("knows the same stages as the board, in board order", () => {
-    expect(STAGES).toEqual(stageSchema.options);
-    expect(STAGES).toEqual(["new", "screening", "interview", "offer", "hired", "rejected"]);
+  it("refuses a row without a stage id", () => {
+    expect(() => parseApplicationRow({ ...row, stage_id: null })).toThrow();
   });
 });
 

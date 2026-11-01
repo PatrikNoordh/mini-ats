@@ -9,10 +9,12 @@ import type { Language } from "@/lib/language";
 function renderDialog(options: { count?: number; busy?: boolean; language?: Language } = {}) {
   const onConfirm = vi.fn();
   const onKeep = vi.fn();
+  const i18n = getI18n(options.language ?? "en");
   render(
-    <I18nextProvider i18n={getI18n(options.language ?? "en")}>
+    <I18nextProvider i18n={i18n}>
       <RejectOthersDialog
         name="Max Demo"
+        stage={i18n.t("stages.rejected")}
         count={options.count ?? 2}
         busy={options.busy ?? false}
         onConfirm={onConfirm}

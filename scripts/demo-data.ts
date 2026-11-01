@@ -1,7 +1,7 @@
 // Demo data for the reviewers (ATS-15). Only obviously fake people and companies: emails on the
 // reserved .test domain, phone numbers in 070-174 06 05–99 (reserved for fiction in Sweden) and
 // no LinkedIn links, so nothing can point at a real person. scripts/seed-demo.ts writes it.
-import type { JobStatus, Role, Stage } from "../src/types/index.ts";
+import type { DefaultStageKey, JobStatus, Role } from "../src/types/index.ts";
 
 export interface DemoAccount {
   /** Names the environment variable for a chosen password: DEMO_<KEY>_PASSWORD. */
@@ -22,7 +22,8 @@ export interface DemoJob {
 
 export interface DemoApplication {
   job: string;
-  stage: Stage;
+  /** The default stage the card is in. Every new account has the six defaults (ATS-38). */
+  stage: DefaultStageKey;
   /** Days since the card entered its stage, so the board shows ages and stale cards. */
   daysInStage: number;
 }

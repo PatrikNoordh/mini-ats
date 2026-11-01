@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CandidateSheet } from "@/components/pipeline/CandidateSheet";
 import { getI18n } from "@/lib/i18n";
 import type { Application, Candidate, Job } from "@/types";
+import { DEFAULT_TEST_STAGES, stageId } from "./stage-fixtures";
 
 const mocks = vi.hoisted(() => ({
   remove: vi.fn(),
@@ -36,12 +37,12 @@ const job = (id: string, title: string): Job => ({
   status: "open",
   created_at: "2026-10-01T08:00:00Z",
 });
-const card = (id: string, jobId: string, stage: Application["stage"]): Application => ({
+const card = (id: string, jobId: string, stage: string): Application => ({
   id,
   customer_id: CUSTOMER,
   job_id: jobId,
   candidate_id: "c1",
-  stage,
+  stage_id: stageId(stage),
   position: 0,
   stage_changed_at: "2026-10-20T08:00:00Z",
   created_at: "2026-10-01T08:00:00Z",
@@ -68,6 +69,7 @@ function openSheet() {
         candidate={candidate}
         applications={[card("a1", "j1", "hired"), card("a2", "j2", "new")]}
         jobs={[job("j1", "Frontendutvecklare"), job("j2", "UX-designer")]}
+        stages={DEFAULT_TEST_STAGES}
         onClose={vi.fn()}
       />
     </I18nextProvider>,

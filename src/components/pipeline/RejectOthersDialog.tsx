@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
  */
 export function RejectOthersDialog({
   name,
+  stage,
   count,
   busy,
   onConfirm,
@@ -24,26 +25,27 @@ export function RejectOthersDialog({
 }: {
   /** The candidate's name, or null when the prompt is closed. */
   name: string | null;
+  /** The name of the Rejected stage the cards move to. */
+  stage: string;
   count: number;
   busy: boolean;
   onConfirm: () => void;
   onKeep: () => void;
 }) {
   const { t } = useTranslation();
-  const rejected = t("stages.rejected");
   return (
     <AlertDialog open={name !== null} onOpenChange={(open) => !open && !busy && onKeep()}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("rejectOthers.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t("rejectOthers.description", { name: name ?? "", count, stage: rejected })}
+            {t("rejectOthers.description", { name: name ?? "", count, stage })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={busy}>{t("rejectOthers.keep")}</AlertDialogCancel>
           <Button type="button" disabled={busy} onClick={onConfirm}>
-            {busy ? t("rejectOthers.moving") : t("rejectOthers.confirm", { stage: rejected })}
+            {busy ? t("rejectOthers.moving") : t("rejectOthers.confirm", { stage })}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

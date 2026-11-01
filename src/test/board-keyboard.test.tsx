@@ -5,7 +5,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Board, type BoardCard } from "@/components/pipeline/Board";
 import { getI18n } from "@/lib/i18n";
-import { neighbourStage } from "@/lib/stages";
+import { neighbourStageId } from "@/lib/stages";
+import type { PipelineStage } from "@/types";
+import { customStage, DEFAULT_TEST_STAGES, stageId } from "./stage-fixtures";
 
 const card: BoardCard = {
   candidateName: "Test Testsson",
@@ -15,7 +17,7 @@ const card: BoardCard = {
     customer_id: "00000000-0000-0000-0000-0000000000a1",
     job_id: "10000000-0000-0000-0000-0000000000a1",
     candidate_id: "20000000-0000-0000-0000-0000000000a1",
-    stage: "screening",
+    stage_id: stageId("screening"),
     position: 0,
     stage_changed_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
@@ -25,7 +27,7 @@ const card: BoardCard = {
 
 let root: Root | null = null;
 
-function renderBoard() {
+function renderBoard(stages: readonly PipelineStage[] = DEFAULT_TEST_STAGES) {
   const onOpen = vi.fn();
   const onMove = vi.fn();
   const container = document.body.appendChild(document.createElement("div"));
@@ -33,7 +35,7 @@ function renderBoard() {
     root = createRoot(container);
     root.render(
       <I18nextProvider i18n={getI18n("en")}>
-        <Board cards={[card]} onOpen={onOpen} onMove={onMove} />
+        <Board stages={stages} cards={[card]} onOpen={onOpen} onMove={onMove} />
       </I18nextProvider>,
     );
   });
@@ -77,6 +79,29 @@ describe("the board with a keyboard", () => {
     expect(name(cardButton.closest('[role="group"]') ?? cardButton)).toBe("Screening");
   });
 
+  it("shows a renamed or added stage by the name the customer gave it, in the customer's order", () => {
+    const renamed = DEFAULT_TEST_STAGES.map((s) =>
+      s.default_key === "interview" ? { ...s, name: "Kodtest" } : s,
+    );
+    renderBoard([
+      ...renamed.slice(0, 2),
+      customStage("refs", "Referenser", 2),
+      ...renamed.slice(2),
+    ]);
+    const columns = [...document.querySelectorAll('[role="group"]')];
+    const name = (column: Element) =>
+      document.getElementById(column.getAttribute("aria-labelledby") ?? "")?.textContent;
+    expect(columns.map(name)).toEqual([
+      "New",
+      "Screening",
+      "Referenser",
+      "Kodtest",
+      "Offer",
+      "Hired",
+      "Rejected",
+    ]);
+  });
+
   it("opens the card with Enter", () => {
     const { cardButton, onOpen } = renderBoard();
     press(cardButton, "Enter", "Enter");
@@ -103,11 +128,19 @@ describe("the board with a keyboard", () => {
   });
 });
 
-describe("neighbourStage", () => {
+describe("neighbourStageId", () => {
+  const stages = DEFAULT_TEST_STAGES;
+
   it("steps one column left or right and stops at the ends", () => {
-    expect(neighbourStage("screening", 1)).toBe("interview");
-    expect(neighbourStage("screening", -1)).toBe("new");
-    expect(neighbourStage("new", -1)).toBeUndefined();
-    expect(neighbourStage("rejected", 1)).toBeUndefined();
+    expect(neighbourStageId(stages, stageId("screening"), 1)).toBe(stageId("interview"));
+    expect(neighbourStageId(stages, stageId("screening"), -1)).toBe(stageId("new"));
+    expect(neighbourStageId(stages, stageId("new"), -1)).toBeUndefined();
+    expect(neighbourStageId(stages, stageId("rejected"), 1)).toBeUndefined();
+  });
+
+  it("follows the customer's order, and knows no neighbour of an unknown stage", () => {
+    const reordered = [stages[1]!, stages[0]!, ...stages.slice(2)];
+    expect(neighbourStageId(reordered, stageId("new"), 1)).toBe(stageId("interview"));
+    expect(neighbourStageId(stages, "stage-gone", 1)).toBeUndefined();
   });
 });

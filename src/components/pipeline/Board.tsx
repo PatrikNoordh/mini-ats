@@ -15,7 +15,7 @@ import {
   type UniqueIdentifier,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import {
@@ -25,8 +25,8 @@ import {
   STALE_CARD_DAYS,
 } from "@/lib/constants";
 import { useFormat } from "@/lib/format";
-import { daysSince, neighbourStage, STAGES, stageSchema } from "@/lib/stages";
-import type { Application, Stage } from "@/types";
+import { daysSince, neighbourStageId, stageLabel } from "@/lib/stages";
+import type { Application, PipelineStage, StageColour } from "@/types";
 
 export interface BoardCard {
   app: Application;
@@ -34,13 +34,15 @@ export interface BoardCard {
   jobTitle: string;
 }
 
-const DOT: Record<Stage, string> = {
-  new: "bg-stage-new",
-  screening: "bg-stage-screening",
-  interview: "bg-stage-interview",
-  offer: "bg-stage-offer",
-  hired: "bg-stage-hired",
-  rejected: "bg-stage-rejected",
+const DOT: Record<StageColour, string> = {
+  grey: "bg-stage-grey",
+  blue: "bg-stage-blue",
+  teal: "bg-stage-teal",
+  violet: "bg-stage-violet",
+  pink: "bg-stage-pink",
+  amber: "bg-stage-amber",
+  green: "bg-stage-green",
+  red: "bg-stage-red",
 };
 
 /** Space picks a card up and drops it. Enter is left free to open the card. */
@@ -58,17 +60,26 @@ const ARROW_STEPS: Partial<Record<string, -1 | 0 | 1>> = {
   [KeyboardCode.Down]: 0,
 };
 
-/** Moves a picked-up card to the middle of the next column instead of a few pixels at a time. */
-const columnCoordinates: KeyboardCoordinateGetter = (event, { context, currentCoordinates }) => {
-  const step = ARROW_STEPS[event.code];
-  if (step === undefined) return undefined;
-  event.preventDefault(); // the arrow keys must not scroll the page while a card is held
-  const over = stageSchema.safeParse(context.over?.id);
-  const target = step && over.success ? neighbourStage(over.data, step) : undefined;
-  const rect = target && context.droppableRects.get(target);
-  if (!rect || !context.collisionRect) return undefined;
-  return { x: rect.left + (rect.width - context.collisionRect.width) / 2, y: currentCoordinates.y };
-};
+/**
+ * Moves a picked-up card to the middle of the next column instead of a few pixels at a time.
+ * `stages` is the board's columns in order; each column's droppable id is its stage id.
+ */
+function columnCoordinates(stages: readonly Pick<PipelineStage, "id">[]): KeyboardCoordinateGetter {
+  return (event, { context, currentCoordinates }) => {
+    const step = ARROW_STEPS[event.code];
+    if (step === undefined) return undefined;
+    event.preventDefault(); // the arrow keys must not scroll the page while a card is held
+    const over = context.over?.id;
+    const target =
+      step && typeof over === "string" ? neighbourStageId(stages, over, step) : undefined;
+    const rect = target && context.droppableRects.get(target);
+    if (!rect || !context.collisionRect) return undefined;
+    return {
+      x: rect.left + (rect.width - context.collisionRect.width) / 2,
+      y: currentCoordinates.y,
+    };
+  };
+}
 
 function CardBody({ card, dragging }: { card: BoardCard; dragging?: boolean }) {
   const { t } = useTranslation();
@@ -130,13 +141,13 @@ function Column({
   cards,
   onOpen,
 }: {
-  stage: Stage;
+  stage: PipelineStage;
   cards: BoardCard[];
   onOpen: (c: BoardCard) => void;
 }) {
   const { t } = useTranslation();
   const format = useFormat();
-  const { setNodeRef, isOver } = useDroppable({ id: stage });
+  const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const headingId = useId();
   return (
     // Named after its stage, so a screen reader says which column a card is in.
@@ -151,8 +162,8 @@ function Column({
     >
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2 text-sm font-semibold">
-          <span className={cn("h-2 w-2 rounded-full", DOT[stage])} />
-          <span id={headingId}>{t(`stages.${stage}`)}</span>
+          <span className={cn("h-2 w-2 rounded-full", DOT[stage.colour])} />
+          <span id={headingId}>{stageLabel(stage, t)}</span>
         </div>
         <span className="text-xs text-muted-foreground">{format.number(cards.length)}</span>
       </div>
@@ -166,15 +177,19 @@ function Column({
 }
 
 export function Board({
+  stages,
   cards,
   onMove,
   onOpen,
 }: {
+  /** The customer's columns, in board order. */
+  stages: readonly PipelineStage[];
   cards: BoardCard[];
-  onMove: (id: string, stage: Stage) => void;
+  onMove: (id: string, stageId: string) => void;
   onOpen: (c: BoardCard) => void;
 }) {
   const { t } = useTranslation();
+  const coordinateGetter = useMemo(() => columnCoordinates(stages), [stages]);
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: DRAG_MOUSE_DISTANCE_PX } }),
     useSensor(TouchSensor, {
@@ -182,7 +197,7 @@ export function Board({
     }),
     useSensor(KeyboardSensor, {
       keyboardCodes: KEYBOARD_CODES,
-      coordinateGetter: columnCoordinates,
+      coordinateGetter,
     }),
   );
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -190,17 +205,21 @@ export function Board({
 
   const cardOf = (id: UniqueIdentifier) => cards.find((c) => c.app.id === id);
   const nameOf = (id: UniqueIdentifier) => cardOf(id)?.candidateName ?? "";
+  const stageOf = (id: UniqueIdentifier | undefined) => stages.find((s) => s.id === id);
   const stageName = (id: UniqueIdentifier | undefined) => {
-    const stage = stageSchema.safeParse(id);
-    return stage.success ? t(`stages.${stage.data}`) : "";
+    const stage = stageOf(id);
+    return stage ? stageLabel(stage, t) : "";
   };
   const cancelled = (id: UniqueIdentifier) =>
-    t("pipeline.announce.cancelled", { name: nameOf(id), stage: stageName(cardOf(id)?.app.stage) });
+    t("pipeline.announce.cancelled", {
+      name: nameOf(id),
+      stage: stageName(cardOf(id)?.app.stage_id),
+    });
   const announcements: Announcements = {
     onDragStart: ({ active }) =>
       t("pipeline.announce.pickedUp", {
         name: nameOf(active.id),
-        stage: stageName(cardOf(active.id)?.app.stage),
+        stage: stageName(cardOf(active.id)?.app.stage_id),
       }),
     onDragOver: ({ active, over }) =>
       over
@@ -216,8 +235,8 @@ export function Board({
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveId(null);
     const card = cardOf(active.id);
-    const stage = stageSchema.safeParse(over?.id);
-    if (card && stage.success && card.app.stage !== stage.data) onMove(card.app.id, stage.data);
+    const stage = stageOf(over?.id);
+    if (card && stage && card.app.stage_id !== stage.id) onMove(card.app.id, stage.id);
   };
 
   return (
@@ -233,12 +252,12 @@ export function Board({
     >
       <div className="-mx-4 overflow-x-auto px-4 pb-3 md:mx-0 md:px-0">
         <div className="flex gap-3">
-          {STAGES.map((s) => (
+          {stages.map((s) => (
             <Column
-              key={s}
+              key={s.id}
               stage={s}
               cards={cards
-                .filter((c) => c.app.stage === s)
+                .filter((c) => c.app.stage_id === s.id)
                 .sort((a, b) => a.app.position - b.app.position)}
               onOpen={onOpen}
             />

@@ -16,9 +16,10 @@ import { useApplications, useRejectApplications } from "@/hooks/useApplications"
 import { useHiredPrompt } from "@/hooks/useHiredPrompt";
 import { useCandidates } from "@/hooks/useCandidates";
 import { useJobs } from "@/hooks/useJobs";
+import { useStages } from "@/hooks/useStages";
 import { MAX_SEARCH_LENGTH } from "@/lib/constants";
 import { pageHead } from "@/lib/i18n";
-import { resolveJobFilter, STAGES } from "@/lib/stages";
+import { DEFAULT_STAGE_KEYS, firstStageOfKind, resolveJobFilter, stageLabel } from "@/lib/stages";
 
 const searchSchema = z.object({
   job: z.string().optional().catch(undefined),
@@ -43,7 +44,8 @@ function Pipeline({ customerId }: { customerId: string }) {
   const apps = useApplications(customerId);
   const cands = useCandidates(customerId);
   const jobs = useJobs(customerId);
-  const prompt = useHiredPrompt(customerId, apps.data);
+  const stages = useStages(customerId);
+  const prompt = useHiredPrompt(customerId, apps.data, stages.data);
   const reject = useRejectApplications(customerId);
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -77,22 +79,27 @@ function Pipeline({ customerId }: { customerId: string }) {
       t("pipeline.unknownCandidate"))
     : null;
 
+  // Rejected cards go to the first Rejected stage on the board (ATS-31, ATS-39).
+  const rejectedStage = stages.data && firstStageOfKind(stages.data, "rejected");
+  const rejectedName = rejectedStage ? stageLabel(rejectedStage, t) : "";
+
   const onReject = async () => {
-    const stageName = t("stages.rejected");
+    // Never without one: the database keeps at least one Rejected stage per customer (ATS-38).
+    if (!rejectedStage) return prompt.close();
     // Read at the moment of the click: a card may have moved or gone since the prompt opened.
     const ids = prompt.others.map((a) => a.id);
-    const result = await reject.mutateAsync(ids);
+    const result = await reject.mutateAsync({ ids, stageId: rejectedStage.id });
     prompt.close();
     if (result.moved > 0) {
-      toast.success(t("rejectOthers.moved", { count: result.moved, stage: stageName }));
+      toast.success(t("rejectOthers.moved", { count: result.moved, stage: rejectedName }));
     }
     if (result.failed > 0) {
-      toast.error(t("rejectOthers.failed", { count: result.failed, stage: stageName }));
+      toast.error(t("rejectOthers.failed", { count: result.failed, stage: rejectedName }));
     }
   };
 
-  const isLoading = apps.isLoading || cands.isLoading || jobs.isLoading;
-  const isError = apps.isError || cands.isError || jobs.isError;
+  const isLoading = apps.isLoading || cands.isLoading || jobs.isLoading || stages.isLoading;
+  const isError = apps.isError || cands.isError || jobs.isError || stages.isError;
   const setSearch = (patch: BoardFilterValues) =>
     navigate({ to: ".", search: (prev) => ({ ...prev, ...patch }), replace: true });
 
@@ -112,12 +119,14 @@ function Pipeline({ customerId }: { customerId: string }) {
             apps.refetch();
             cands.refetch();
             jobs.refetch();
+            stages.refetch();
           }}
         />
       ) : isLoading ? (
         <div className="flex gap-3 overflow-hidden">
-          {STAGES.map((stage) => (
-            <Skeleton key={stage} className="h-80 w-kanban-column shrink-0" />
+          {/* Placeholder columns while the stages load: as many as a new account has. */}
+          {DEFAULT_STAGE_KEYS.map((key) => (
+            <Skeleton key={key} className="h-80 w-kanban-column shrink-0" />
           ))}
         </div>
       ) : cards.length === 0 ? (
@@ -131,7 +140,12 @@ function Pipeline({ customerId }: { customerId: string }) {
           )}
         </EmptyState>
       ) : (
-        <Board cards={cards} onMove={prompt.onMove} onOpen={(c) => setOpenId(c.app.candidate_id)} />
+        <Board
+          stages={stages.data ?? []}
+          cards={cards}
+          onMove={prompt.onMove}
+          onOpen={(c) => setOpenId(c.app.candidate_id)}
+        />
       )}
 
       <CandidateSheet
@@ -139,10 +153,12 @@ function Pipeline({ customerId }: { customerId: string }) {
         candidate={cands.data?.find((c) => c.id === openId) ?? null}
         applications={apps.data ?? []}
         jobs={jobs.data ?? []}
+        stages={stages.data ?? []}
         onClose={() => setOpenId(null)}
       />
       <RejectOthersDialog
         name={hiredName}
+        stage={rejectedName}
         count={prompt.others.length}
         busy={reject.isPending}
         onConfirm={onReject}

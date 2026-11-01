@@ -59,6 +59,7 @@
   },
   "errors": {
     "card_not_found": "Kortet hittades inte.",
+    "stage_not_found": "Steget hittades inte. Ladda om sidan och försök igen.",
     "job_not_found": "Jobbet hittades inte.",
     "candidate_not_found": "Kandidaten hittades inte.",
     "email_exists": "Det finns redan ett konto med den e-postadressen.",
@@ -171,6 +172,7 @@
     "emptyHint": "Lägg till en kandidat och koppla hen till ett jobb.",
     "unknownCandidate": "Okänd",
     "unknownJob": "Okänt jobb",
+    "unknownStage": "Okänt steg",
     "moveFailed": "Kunde inte flytta kortet. Ändringen har ångrats.",
     "daysInStage": "Dagar i steget",
     "days_one": "{{count, number}} d",

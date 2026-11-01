@@ -23,7 +23,7 @@ const card: Application = {
   customer_id: customerId,
   job_id: "10000000-0000-0000-0000-0000000000a1",
   candidate_id: "20000000-0000-0000-0000-0000000000a1",
-  stage: "new",
+  stage_id: "stage-new",
   position: 0,
   stage_changed_at: "2026-10-01T08:00:00.000Z",
   created_at: "2026-10-01T08:00:00.000Z",
@@ -69,7 +69,7 @@ describe("moving a card while offline", () => {
     moveApplication.mockRejectedValue(new TypeError("Failed to fetch"));
     const { qc, move } = renderMove();
 
-    await act(() => move({ id: card.id, stage: "interview" }).catch(() => undefined));
+    await act(() => move({ id: card.id, stageId: "stage-interview" }).catch(() => undefined));
 
     expect(moveApplication).toHaveBeenCalledTimes(1);
     expect(qc.getQueryData(queryKeys.applications(customerId))).toEqual([card]);

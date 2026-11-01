@@ -44,12 +44,14 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
-  --color-stage-new: var(--stage-new);
-  --color-stage-screening: var(--stage-screening);
-  --color-stage-interview: var(--stage-interview);
-  --color-stage-offer: var(--stage-offer);
-  --color-stage-hired: var(--stage-hired);
-  --color-stage-rejected: var(--stage-rejected);
+  --color-stage-grey: var(--stage-grey);
+  --color-stage-blue: var(--stage-blue);
+  --color-stage-teal: var(--stage-teal);
+  --color-stage-violet: var(--stage-violet);
+  --color-stage-pink: var(--stage-pink);
+  --color-stage-amber: var(--stage-amber);
+  --color-stage-green: var(--stage-green);
+  --color-stage-red: var(--stage-red);
   --color-column: var(--column);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -86,12 +88,16 @@
   --input: oklch(0.89 0.008 220);
   --ring: oklch(0.56 0.09 205);
   --column: oklch(0.955 0.005 220);
-  --stage-new: oklch(0.6 0.01 230);
-  --stage-screening: oklch(0.6 0.13 245);
-  --stage-interview: oklch(0.6 0.13 295);
-  --stage-offer: oklch(0.7 0.14 65);
-  --stage-hired: oklch(0.62 0.13 155);
-  --stage-rejected: oklch(0.6 0.18 25);
+  /* The stage palette: the same names as the check on pipeline_stages.colour (ATS-38). The six
+     defaults use grey, blue, violet, amber, green and red, the colours the fixed stages had. */
+  --stage-grey: oklch(0.6 0.01 230);
+  --stage-blue: oklch(0.6 0.13 245);
+  --stage-teal: oklch(0.62 0.1 190);
+  --stage-violet: oklch(0.6 0.13 295);
+  --stage-pink: oklch(0.62 0.16 350);
+  --stage-amber: oklch(0.7 0.14 65);
+  --stage-green: oklch(0.62 0.13 155);
+  --stage-red: oklch(0.6 0.18 25);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.3 0.015 230);
   --sidebar-primary: oklch(0.56 0.09 205);

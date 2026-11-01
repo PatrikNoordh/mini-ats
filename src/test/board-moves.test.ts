@@ -14,7 +14,7 @@ const card: Application = {
   customer_id: "00000000-0000-0000-0000-0000000000a1",
   job_id: "10000000-0000-0000-0000-0000000000a1",
   candidate_id: "20000000-0000-0000-0000-0000000000a1",
-  stage: "new",
+  stage_id: "stage-new",
   position: 0,
   stage_changed_at: "2026-10-01T08:00:00.000Z",
   created_at: "2026-10-01T08:00:00.000Z",
@@ -26,9 +26,9 @@ describe("moving a card on the board", () => {
   const now = new Date("2026-10-20T12:00:00.000Z");
 
   it("puts the card last in its new stage and restarts its days in stage", () => {
-    const [moved, untouched] = withCardMoved([card, other], card.id, "interview", now);
+    const [moved, untouched] = withCardMoved([card, other], card.id, "stage-interview", now);
     expect(moved).toMatchObject({
-      stage: "interview",
+      stage_id: "stage-interview",
       position: Number.MAX_SAFE_INTEGER,
       stage_changed_at: now.toISOString(),
     });
@@ -37,14 +37,14 @@ describe("moving a card on the board", () => {
 
   it("puts back only the card whose move failed", () => {
     const afterTwoMoves = withCardMoved(
-      withCardMoved([card, other], card.id, "interview", now),
+      withCardMoved([card, other], card.id, "stage-interview", now),
       other.id,
-      "offer",
+      "stage-offer",
       now,
     );
     const [restored, stillMoved] = withCardRestored(afterTwoMoves, card);
     expect(restored).toBe(card);
-    expect(stillMoved?.stage).toBe("offer");
+    expect(stillMoved?.stage_id).toBe("stage-offer");
   });
 });
 
@@ -54,20 +54,29 @@ describe("moveApplication", () => {
   });
 
   it("moves the card in one call, scoped to the customer", async () => {
-    rpc.mockResolvedValue({ data: { ...card, stage: "screening", position: 4 }, error: null });
-    const moved = await moveApplication(card.customer_id, card.id, "screening");
+    rpc.mockResolvedValue({
+      data: { ...card, stage: "screening", stage_id: "stage-screening", position: 4 },
+      error: null,
+    });
+    const moved = await moveApplication(card.customer_id, card.id, "stage-screening");
     expect(rpc).toHaveBeenCalledTimes(1);
     expect(rpc).toHaveBeenCalledWith("move_application", {
       application_id: card.id,
       customer_id: card.customer_id,
-      new_stage: "screening",
+      new_stage_id: "stage-screening",
     });
-    expect(moved).toMatchObject({ stage: "screening", position: 4 });
+    expect(moved).toMatchObject({ stage_id: "stage-screening", position: 4 });
   });
 
   it("says card_not_found when the card is not the customer's", async () => {
     rpc.mockResolvedValue({ data: null, error: new Error("card_not_found") });
-    const move = moveApplication(card.customer_id, card.id, "hired");
+    const move = moveApplication(card.customer_id, card.id, "stage-hired");
     await expect(move).rejects.toSatisfy((e) => errorCode(e) === "card_not_found");
+  });
+
+  it("says stage_not_found when the stage is not the customer's", async () => {
+    rpc.mockResolvedValue({ data: null, error: new Error("stage_not_found") });
+    const move = moveApplication(card.customer_id, card.id, "stage-elsewhere");
+    await expect(move).rejects.toSatisfy((e) => errorCode(e) === "stage_not_found");
   });
 });

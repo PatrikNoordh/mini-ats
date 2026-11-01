@@ -9,7 +9,7 @@ import {
   unlinkCandidate,
 } from "@/lib/api/applications";
 import { queryKeys, withCardMoved, withCardRestored } from "@/lib/stages";
-import type { Application, Stage } from "@/types";
+import type { Application } from "@/types";
 
 export function useApplications(customerId: string | null) {
   return useQuery({
@@ -30,12 +30,12 @@ export function useMoveApplication(customerId: string | null) {
     // Already the app's default for mutations (src/lib/query-client.ts). Kept here because the
     // board shows the card moved at once: a paused move would leave it in the wrong column.
     networkMode: "always",
-    mutationFn: ({ id, stage }: { id: string; stage: Stage }) =>
-      moveApplication(customerId!, id, stage),
-    onMutate: async ({ id, stage }) => {
+    mutationFn: ({ id, stageId }: { id: string; stageId: string }) =>
+      moveApplication(customerId!, id, stageId),
+    onMutate: async ({ id, stageId }) => {
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<Application[]>(key)?.find((a) => a.id === id);
-      qc.setQueryData<Application[]>(key, (old) => old && withCardMoved(old, id, stage));
+      qc.setQueryData<Application[]>(key, (old) => old && withCardMoved(old, id, stageId));
       return { previous };
     },
     onError: (err, _vars, ctx) => {
@@ -83,11 +83,12 @@ export function useRemoveApplication(customerId: string | null) {
   });
 }
 
-/** Moves a hired candidate's other open cards to Rejected, after the prompt (ATS-31). */
+/** Moves a hired candidate's other open cards to a Rejected stage, after the prompt (ATS-31). */
 export function useRejectApplications(customerId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (ids: readonly string[]) => rejectApplications(customerId!, ids),
+    mutationFn: ({ ids, stageId }: { ids: readonly string[]; stageId: string }) =>
+      rejectApplications(customerId!, ids, stageId),
     // The board shows the true state afterwards, also when some moves failed.
     onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.applications(customerId) }),
   });
