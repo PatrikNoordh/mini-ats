@@ -3,11 +3,13 @@
 # Mini-ATS — two move_application calls into the same column at the same time
 #
 # rls_test.sql runs in one session, so it cannot show that concurrent moves wait for each other.
-# This script runs two sessions, A and B, that move two cards into the same empty column:
+# This script runs two sessions, A and B, that move two cards into the same empty column. A moves
+# by stage name, the way the code on main does, and B by stage id (ATS-38), so it also shows that
+# both versions of move_application take the same lock:
 #
 #   1. A holder session takes advisory lock HOLD_KEY.
-#   2. A moves card 1 (taking the column lock), then waits for HOLD_KEY inside its transaction.
-#   3. B moves card 2 into the same column and must wait for A's column lock.
+#   2. A moves card 1 (taking the customer's lock), then waits for HOLD_KEY inside its transaction.
+#   3. B moves card 2 into the same column and must wait for A's lock.
 #   4. Once B is seen waiting, the holder is ended. A commits, then B goes on.
 #   5. The two cards must have different positions.
 #
@@ -63,14 +65,17 @@ insert into public.applications (id, job_id, candidate_id) values
   ('$CARD_2', '$JOB', '20000000-0000-0000-0000-0000000000c2');
 SQL
 
+OFFER_BY_NAME="'offer'"
+OFFER_BY_ID="(select id from public.pipeline_stages where customer_id = '$CUSTOMER' and default_key = 'offer')"
+
 # One move as the customer, in its own transaction. Extra SQL runs before the commit.
 move() {
-  local name=$1 card=$2 before_commit=${3:-}
+  local name=$1 card=$2 stage=$3 before_commit=${4:-}
   PGAPPNAME=$name q <<SQL >/dev/null
 begin;
 set local role authenticated;
 select set_config('request.jwt.claims', '$CLAIMS', true);
-select position from public.move_application('$card', '$CUSTOMER', 'offer');
+select position from public.move_application('$card', '$CUSTOMER', $stage);
 $before_commit
 commit;
 SQL
@@ -81,13 +86,13 @@ PGAPPNAME=move_test_holder q -c "select pg_advisory_lock($HOLD_KEY), pg_sleep($T
 wait_until "the holder's lock" \
   "select exists (select 1 from pg_locks where locktype = 'advisory' and objid = $HOLD_KEY and granted)"
 
-move move_test_a "$CARD_1" "select pg_advisory_xact_lock_shared($HOLD_KEY);" &
+move move_test_a "$CARD_1" "$OFFER_BY_NAME" "select pg_advisory_xact_lock_shared($HOLD_KEY);" &
 A=$!
-wait_until "A to hold the column lock" "$(waiting_on_advisory_lock move_test_a)"
+wait_until "A to hold the customer's lock" "$(waiting_on_advisory_lock move_test_a)"
 
-move move_test_b "$CARD_2" &
+move move_test_b "$CARD_2" "$OFFER_BY_ID" &
 B=$!
-wait_until "B to wait for A's column lock" "$(waiting_on_advisory_lock move_test_b)"
+wait_until "B to wait for A's lock" "$(waiting_on_advisory_lock move_test_b)"
 
 q -c "select pg_terminate_backend(pid) from pg_stat_activity where application_name = 'move_test_holder'" \
   >/dev/null
