@@ -59,5 +59,10 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Playwright fixtures hand their value on with a function named `use`, which is not React's.
+    files: ["e2e/**/*.ts"],
+    rules: { "react-hooks/rules-of-hooks": "off" },
+  },
   eslintPluginPrettier,
 );
