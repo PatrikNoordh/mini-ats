@@ -1,6 +1,6 @@
 # Next: customer-defined pipeline stages
 
-A design sketch for after the deadline (26 October 2026). Nothing here is built yet.
+A design sketch for after the deadline (26 October 2026), built in epic 8. The database is in place since ATS-38 (`supabase/migrations/20261101120000_pipeline_stages.sql`); the app still uses the fixed list until ATS-39.
 
 ## Today
 
@@ -38,6 +38,16 @@ A customer, or an admin acting for them, shapes their own pipeline:
    - (a) Create the table, seed the six current columns for every customer, add `stage_id` next to `stage` and backfill it, give new customers the defaults in a trigger, and add a `move_application` that takes `stage_id`. `stage_changed_at` must also update when `stage_id` changes.
    - (b) In a later PR, once no code on `main` uses it, drop `stage` and its check.
 6. RLS tests: customer B cannot read, create, rename, reorder or delete customer A's columns, and cannot move a card to one of them.
+
+**As built in ATS-38**, where it differs from or adds to the sketch above:
+
+- The foreign key is `on delete no action`, not `restrict`. Both refuse removing a column with cards, but `no action` checks at the end of the statement, so deleting an account, which cascades to its columns and its cards in one statement, works whatever order the cascades run in (the same choice as `applications.job_id` in ATS-26).
+- `stage_id` is held by `check (stage_id is not null)` until ATS-42. A `not null` column without a default would be required in the generated Insert type, which the code on `main` does not send.
+- Every account gets the six defaults, admins too, so an admin later made a customer has a board.
+- One advisory lock per customer covers card moves, `reorder_stages` and every write to `pipeline_stages`. The stage writes take it before the row is written, so a removal and a move into the same column wait for each other instead of deadlocking.
+- `move_application(application_id, customer_id, new_stage text)` stays for the code on `main` and moves through the version that takes `new_stage_id`. A column that is not a default reads as `new` to the old code (or `hired` / `rejected` by its kind).
+- Clients insert only `customer_id, name, position, kind, colour` and update only `name, position, kind, colour`. `default_key` is set only for the defaults.
+- The colour palette is `grey, blue, teal, violet, pink, amber, green, red`. Name limit 50 characters, unique per customer ignoring case and surrounding spaces.
 
 ### UI
 
