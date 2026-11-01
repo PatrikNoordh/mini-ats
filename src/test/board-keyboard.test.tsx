@@ -61,6 +61,22 @@ describe("the board with a keyboard", () => {
     expect(cardButton).toHaveAttribute("tabindex", "0");
   });
 
+  it("names each column after its stage, and the card sits in its own stage's column", () => {
+    const { cardButton } = renderBoard();
+    const columns = [...document.querySelectorAll('[role="group"]')];
+    const name = (column: Element) =>
+      document.getElementById(column.getAttribute("aria-labelledby") ?? "")?.textContent;
+    expect(columns.map(name)).toEqual([
+      "New",
+      "Screening",
+      "Interview",
+      "Offer",
+      "Hired",
+      "Rejected",
+    ]);
+    expect(name(cardButton.closest('[role="group"]') ?? cardButton)).toBe("Screening");
+  });
+
   it("opens the card with Enter", () => {
     const { cardButton, onOpen } = renderBoard();
     press(cardButton, "Enter", "Enter");

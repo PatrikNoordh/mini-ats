@@ -15,7 +15,7 @@ import {
   type UniqueIdentifier,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import {
@@ -137,9 +137,13 @@ function Column({
   const { t } = useTranslation();
   const format = useFormat();
   const { setNodeRef, isOver } = useDroppable({ id: stage });
+  const headingId = useId();
   return (
+    // Named after its stage, so a screen reader says which column a card is in.
     <div
       ref={setNodeRef}
+      role="group"
+      aria-labelledby={headingId}
       className={cn(
         "flex w-kanban-column shrink-0 flex-col rounded-lg border bg-column transition-colors",
         isOver && "border-primary bg-accent",
@@ -148,7 +152,7 @@ function Column({
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <span className={cn("h-2 w-2 rounded-full", DOT[stage])} />
-          {t(`stages.${stage}`)}
+          <span id={headingId}>{t(`stages.${stage}`)}</span>
         </div>
         <span className="text-xs text-muted-foreground">{format.number(cards.length)}</span>
       </div>
