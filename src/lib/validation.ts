@@ -12,6 +12,7 @@ import {
   MAX_NOTES_LENGTH,
   MAX_PASSWORD_BYTES,
   MAX_PHONE_LENGTH,
+  MAX_STAGE_NAME_LENGTH,
   MAX_URL_LENGTH,
   MIN_PASSWORD_LENGTH,
 } from "@/lib/constants";
@@ -69,6 +70,21 @@ export const jobInputSchema = z.object({
 });
 
 export type JobInput = z.infer<typeof jobInputSchema>;
+
+/**
+ * A column name. `takenNames` are the names the other columns show, translated defaults
+ * included, so "Intervju" is refused while the default Interview column is on the board. The
+ * database only knows typed names, so it checks those again.
+ */
+export function stageNameSchema(takenNames: readonly string[]) {
+  const taken = new Set(takenNames.map((name) => name.trim().toLocaleLowerCase()));
+  return z
+    .string()
+    .trim()
+    .min(1, "name_required")
+    .max(MAX_STAGE_NAME_LENGTH, "too_long")
+    .refine((name) => !taken.has(name.toLocaleLowerCase()), "stage_name_taken");
+}
 
 /**
  * The candidate form. Trims every field. The name and a valid email are required; the LinkedIn

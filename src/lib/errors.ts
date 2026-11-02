@@ -8,6 +8,12 @@ import { PG_CHECK_VIOLATION } from "./constants";
 export const ERROR_CODES = [
   "card_not_found",
   "stage_not_found",
+  "stage_has_cards",
+  "stage_name_taken",
+  "stage_limit_reached",
+  "stage_hired_required",
+  "stage_rejected_required",
+  "stage_open_required",
   "job_not_found",
   "candidate_not_found",
   "email_exists",
