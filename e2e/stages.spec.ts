@@ -61,3 +61,102 @@ test("a customer renames a column, adds one before Anställd, and resets to the 
     card(page.getByRole("group", { name: sv.stages.new, exact: true }), name),
   ).toBeVisible();
 });
+
+test("a customer reorders the columns by keyboard and by mouse, and the order survives a reload", async ({
+  page,
+  makeCustomer,
+}) => {
+  const customer = await makeCustomer("Kund");
+  await signIn(page, customer.email);
+  const headings = page.getByRole("group").locator("span[id]");
+  const handle = (stage: string) =>
+    page.getByRole("button", { name: text(sv.pipeline.columnHandle, { stage }) });
+  const heard = (template: string, stage: string, position: number) =>
+    page.getByText(text(template, { stage, position: String(position), count: "6" }));
+  const saved = () =>
+    page.waitForResponse((r) => r.url().includes("/rpc/reorder_stages") && r.ok());
+
+  // By keyboard: Intervju one step left, past Screening.
+  let save = saved();
+  await handle(sv.stages.interview).focus();
+  await page.keyboard.press("Space");
+  await expect(heard(sv.pipeline.announceColumn.over, sv.stages.interview, 3)).toBeAttached();
+  // The board measures its columns just after the pick-up; press again until the column moved.
+  const atTwo = heard(sv.pipeline.announceColumn.over, sv.stages.interview, 2);
+  await expect(async () => {
+    if ((await atTwo.count()) === 0) await page.keyboard.press("ArrowLeft");
+    await expect(atTwo).toBeAttached({ timeout: 500 });
+  }).toPass();
+  await page.keyboard.press("Space");
+  await expect(heard(sv.pipeline.announceColumn.dropped, sv.stages.interview, 2)).toBeAttached();
+  await save;
+  await expect(headings).toHaveText([
+    sv.stages.new,
+    sv.stages.interview,
+    sv.stages.screening,
+    sv.stages.offer,
+    sv.stages.hired,
+    sv.stages.rejected,
+  ]);
+
+  // By mouse: Erbjudande dragged onto Ny.
+  save = saved();
+  const from = await handle(sv.stages.offer).boundingBox();
+  const to = await handle(sv.stages.new).boundingBox();
+  if (!from || !to) throw new Error("The columns are not on screen");
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 4, to.y + to.height / 2, { steps: 20 });
+  await page.mouse.up();
+  await save;
+  const order = [
+    sv.stages.offer,
+    sv.stages.new,
+    sv.stages.interview,
+    sv.stages.screening,
+    sv.stages.hired,
+    sv.stages.rejected,
+  ];
+  await expect(headings).toHaveText(order);
+
+  await page.reload();
+  await expect(headings).toHaveText(order);
+});
+
+test("at 390 px the board scrolls on its own and a column still moves by keyboard", async ({
+  page,
+  makeCustomer,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const customer = await makeCustomer("Kund");
+  await signIn(page, customer.email);
+  const headings = page.getByRole("group").locator("span[id]");
+  await expect(headings).toHaveCount(6);
+
+  // Only the board scrolls sideways, never the page.
+  const pageOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(pageOverflow).toBeLessThanOrEqual(0);
+
+  const saved = page.waitForResponse((r) => r.url().includes("/rpc/reorder_stages") && r.ok());
+  const handle = page.getByRole("button", {
+    name: text(sv.pipeline.columnHandle, { stage: sv.stages.screening }),
+  });
+  await handle.focus();
+  await page.keyboard.press("Space");
+  const atOne = page.getByText(
+    text(sv.pipeline.announceColumn.over, {
+      stage: sv.stages.screening,
+      position: "1",
+      count: "6",
+    }),
+  );
+  await expect(async () => {
+    if ((await atOne.count()) === 0) await page.keyboard.press("ArrowLeft");
+    await expect(atOne).toBeAttached({ timeout: 500 });
+  }).toPass();
+  await page.keyboard.press("Space");
+  await saved;
+  await expect(headings.first()).toHaveText(sv.stages.screening);
+});
