@@ -67,6 +67,21 @@ export function neighbourStageId(
   return index === -1 ? undefined : stages[index + step]?.id;
 }
 
+/**
+ * The columns in a new order, before the database answers: in the order of `stageIds`, with
+ * positions 0 to n - 1. A column not named keeps its place at the end, so a list out of date
+ * never drops one from the board.
+ */
+export function withStagesOrdered<S extends PipelineStage>(
+  stages: readonly S[],
+  stageIds: readonly string[],
+): S[] {
+  const rank = new Map(stageIds.map((id, index) => [id, index]));
+  return [...stages]
+    .sort((a, b) => (rank.get(a.id) ?? stageIds.length) - (rank.get(b.id) ?? stageIds.length))
+    .map((stage, position) => ({ ...stage, position }));
+}
+
 /** The first stage of a kind in board order, for example where rejected cards go (ATS-31). */
 export function firstStageOfKind<S extends Pick<PipelineStage, "kind">>(
   stages: readonly S[],

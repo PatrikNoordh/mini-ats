@@ -17,7 +17,7 @@ import { useApplications, useRejectApplications } from "@/hooks/useApplications"
 import { useHiredPrompt } from "@/hooks/useHiredPrompt";
 import { useCandidates } from "@/hooks/useCandidates";
 import { useJobs } from "@/hooks/useJobs";
-import { useStages } from "@/hooks/useStages";
+import { useReorderStages, useStages } from "@/hooks/useStages";
 import { MAX_SEARCH_LENGTH } from "@/lib/constants";
 import { pageHead } from "@/lib/i18n";
 import {
@@ -52,6 +52,7 @@ function Pipeline({ customerId }: { customerId: string }) {
   const cands = useCandidates(customerId);
   const jobs = useJobs(customerId);
   const stages = useStages(customerId);
+  const reorder = useReorderStages(customerId);
   const prompt = useHiredPrompt(customerId, apps.data, stages.data);
   const reject = useRejectApplications(customerId);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -161,6 +162,7 @@ function Pipeline({ customerId }: { customerId: string }) {
                 cards={cards}
                 onMove={prompt.onMove}
                 onOpen={(c) => setOpenId(c.app.candidate_id)}
+                onReorder={(ids) => reorder.mutate(ids)}
                 columnMenu={columnMenu}
               />
             </>

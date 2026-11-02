@@ -1,19 +1,27 @@
 import {
+  closestCenter,
   DndContext,
   DragOverlay,
   KeyboardCode,
   KeyboardSensor,
   MouseSensor,
+  rectIntersection,
   TouchSensor,
   useDraggable,
-  useDroppable,
   useSensor,
   useSensors,
   type Announcements,
+  type CollisionDetection,
   type DragEndEvent,
   type KeyboardCoordinateGetter,
   type UniqueIdentifier,
 } from "@dnd-kit/core";
+import {
+  arrayMove,
+  horizontalListSortingStrategy,
+  SortableContext,
+  useSortable,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -41,7 +49,10 @@ const KEYBOARD_CODES = {
   end: [KeyboardCode.Space, KeyboardCode.Tab],
 };
 
-/** How far each arrow key moves a picked-up card: one column left or right, never up or down. */
+/**
+ * How far each arrow key moves a picked-up card or column: one column left or right, never up or
+ * down.
+ */
 const ARROW_STEPS: Partial<Record<string, -1 | 0 | 1>> = {
   [KeyboardCode.Left]: -1,
   [KeyboardCode.Right]: 1,
@@ -50,8 +61,9 @@ const ARROW_STEPS: Partial<Record<string, -1 | 0 | 1>> = {
 };
 
 /**
- * Moves a picked-up card to the middle of the next column instead of a few pixels at a time.
- * `stages` is the board's columns in order; each column's droppable id is its stage id.
+ * Moves a picked-up card, or a picked-up column, to the middle of the next column instead of a few
+ * pixels at a time. `stages` is the board's columns in order; each column's droppable id is its
+ * stage id.
  */
 function columnCoordinates(stages: readonly Pick<PipelineStage, "id">[]): KeyboardCoordinateGetter {
   return (event, { context, currentCoordinates }) => {
@@ -125,36 +137,70 @@ function DraggableCard({ card, onOpen }: { card: BoardCard; onOpen: (c: BoardCar
   );
 }
 
+/**
+ * One column: a place to drop cards, and itself sortable by its header (ATS-41). The header is the
+ * handle, so a card dragged inside the column never moves the column.
+ */
 function Column({
   stage,
   cards,
   onOpen,
   menu,
+  cardDragging,
+  instructionsId,
 }: {
   stage: PipelineStage;
   cards: BoardCard[];
   onOpen: (c: BoardCard) => void;
   menu: ReactNode;
+  /** A card, not a column, is being dragged: only then does the column light up under it. */
+  cardDragging: boolean;
+  /** The column move instructions, read with the header. */
+  instructionsId: string;
 }) {
   const { t } = useTranslation();
   const format = useFormat();
-  const { setNodeRef, isOver } = useDroppable({ id: stage.id });
+  const {
+    setNodeRef,
+    setActivatorNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isOver,
+    isDragging,
+  } = useSortable({ id: stage.id });
   const headingId = useId();
+  const label = stageLabel(stage, t);
   return (
     // Named after its stage, so a screen reader says which column a card is in.
     <div
       ref={setNodeRef}
       role="group"
       aria-labelledby={headingId}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn(
         "flex w-kanban-column shrink-0 flex-col rounded-lg border bg-column transition-colors",
-        isOver && "border-primary bg-accent",
+        isOver && cardDragging && "border-primary bg-accent",
+        isDragging && "relative z-10 shadow-lg ring-2 ring-primary",
       )}
     >
-      <div className="flex items-center justify-between px-3 py-2.5">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <span className={cn("h-2 w-2 rounded-full", STAGE_DOT_CLASS[stage.colour])} />
-          <span id={headingId}>{stageLabel(stage, t)}</span>
+      <div className="flex items-center justify-between gap-1 px-3 py-2.5">
+        <div
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          aria-label={t("pipeline.columnHandle", { stage: label })}
+          aria-describedby={instructionsId}
+          className="flex min-w-0 flex-1 cursor-grab touch-manipulation select-none items-center gap-2 rounded-md text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span
+            className={cn("h-2 w-2 shrink-0 rounded-full", STAGE_DOT_CLASS[stage.colour])}
+            aria-hidden="true"
+          />
+          <span id={headingId} className="truncate">
+            {label}
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <span className="text-xs text-muted-foreground">{format.number(cards.length)}</span>
@@ -175,6 +221,7 @@ export function Board({
   cards,
   onMove,
   onOpen,
+  onReorder,
   columnMenu,
 }: {
   /** The customer's columns, in board order. */
@@ -182,10 +229,13 @@ export function Board({
   cards: BoardCard[];
   onMove: (id: string, stageId: string) => void;
   onOpen: (c: BoardCard) => void;
+  /** Saves the columns in a new order, as stage ids (ATS-41). */
+  onReorder: (stageIds: string[]) => void;
   /** The menu on each column header, for editing the columns (ATS-40). */
   columnMenu?: ((stage: PipelineStage) => ReactNode) | undefined;
 }) {
   const { t } = useTranslation();
+  const instructionsId = useId();
   const coordinateGetter = useMemo(() => columnCoordinates(stages), [stages]);
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: DRAG_MOUSE_DISTANCE_PX } }),
@@ -207,30 +257,57 @@ export function Board({
     const stage = stageOf(id);
     return stage ? stageLabel(stage, t) : "";
   };
+  /** Where a column is or would land, counted from 1, for the announcements. */
+  const place = (column: UniqueIdentifier, at: UniqueIdentifier | undefined = column) => ({
+    stage: stageName(column),
+    position: stages.findIndex((s) => s.id === at) + 1,
+    count: stages.length,
+  });
   const cancelled = (id: UniqueIdentifier) =>
-    t("pipeline.announce.cancelled", {
-      name: nameOf(id),
-      stage: stageName(cardOf(id)?.app.stage_id),
-    });
+    stageOf(id)
+      ? t("pipeline.announceColumn.cancelled", place(id))
+      : t("pipeline.announce.cancelled", {
+          name: nameOf(id),
+          stage: stageName(cardOf(id)?.app.stage_id),
+        });
   const announcements: Announcements = {
     onDragStart: ({ active }) =>
-      t("pipeline.announce.pickedUp", {
-        name: nameOf(active.id),
-        stage: stageName(cardOf(active.id)?.app.stage_id),
-      }),
-    onDragOver: ({ active, over }) =>
-      over
+      stageOf(active.id)
+        ? t("pipeline.announceColumn.pickedUp", place(active.id))
+        : t("pipeline.announce.pickedUp", {
+            name: nameOf(active.id),
+            stage: stageName(cardOf(active.id)?.app.stage_id),
+          }),
+    onDragOver: ({ active, over }) => {
+      if (stageOf(active.id)) {
+        return over ? t("pipeline.announceColumn.over", place(active.id, over.id)) : undefined;
+      }
+      return over
         ? t("pipeline.announce.over", { name: nameOf(active.id), stage: stageName(over.id) })
-        : t("pipeline.announce.notOver", { name: nameOf(active.id) }),
-    onDragEnd: ({ active, over }) =>
-      over
-        ? t("pipeline.announce.dropped", { name: nameOf(active.id), stage: stageName(over.id) })
-        : cancelled(active.id),
+        : t("pipeline.announce.notOver", { name: nameOf(active.id) });
+    },
+    onDragEnd: ({ active, over }) => {
+      if (!over) return cancelled(active.id);
+      return stageOf(active.id)
+        ? t("pipeline.announceColumn.dropped", place(active.id, over.id))
+        : t("pipeline.announce.dropped", { name: nameOf(active.id), stage: stageName(over.id) });
+    },
     onDragCancel: ({ active }) => cancelled(active.id),
   };
 
+  // A column snaps to the nearest column; a card drops on the column it overlaps most.
+  const collisionDetection: CollisionDetection = (args) =>
+    stageOf(args.active.id) ? closestCenter(args) : rectIntersection(args);
+
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveId(null);
+    const ids = stages.map((s) => s.id);
+    const from = ids.indexOf(String(active.id));
+    if (from !== -1) {
+      const to = over ? ids.indexOf(String(over.id)) : -1;
+      if (to !== -1 && to !== from) onReorder(arrayMove(ids, from, to));
+      return;
+    }
     const card = cardOf(active.id);
     const stage = stageOf(over?.id);
     if (card && stage && card.app.stage_id !== stage.id) onMove(card.app.id, stage.id);
@@ -239,6 +316,7 @@ export function Board({
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={collisionDetection}
       accessibility={{
         announcements,
         screenReaderInstructions: { draggable: t("pipeline.dragInstructions") },
@@ -247,20 +325,27 @@ export function Board({
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
+      <p id={instructionsId} className="sr-only">
+        {t("pipeline.columnInstructions")}
+      </p>
       <div className="-mx-4 overflow-x-auto px-4 pb-3 md:mx-0 md:px-0">
-        <div className="flex gap-3">
-          {stages.map((s) => (
-            <Column
-              key={s.id}
-              stage={s}
-              cards={cards
-                .filter((c) => c.app.stage_id === s.id)
-                .sort((a, b) => a.app.position - b.app.position)}
-              onOpen={onOpen}
-              menu={columnMenu?.(s)}
-            />
-          ))}
-        </div>
+        <SortableContext items={stages.map((s) => s.id)} strategy={horizontalListSortingStrategy}>
+          <div className="flex gap-3">
+            {stages.map((s) => (
+              <Column
+                key={s.id}
+                stage={s}
+                cards={cards
+                  .filter((c) => c.app.stage_id === s.id)
+                  .sort((a, b) => a.app.position - b.app.position)}
+                onOpen={onOpen}
+                menu={columnMenu?.(s)}
+                cardDragging={!!active}
+                instructionsId={instructionsId}
+              />
+            ))}
+          </div>
+        </SortableContext>
       </div>
       <DragOverlay>{active ? <CardBody card={active} dragging /> : null}</DragOverlay>
     </DndContext>
