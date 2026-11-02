@@ -1,6 +1,6 @@
 # Next: customer-defined pipeline stages
 
-A design sketch for after the deadline (26 October 2026), built in epic 8. The database is in place since ATS-38 (`supabase/migrations/20261101120000_pipeline_stages.sql`); the app reads each customer's stages since ATS-39.
+A design sketch for after the deadline (26 October 2026), built in epic 8 (ATS-38 to ATS-42). The section "Today" describes the board before it.
 
 ## Today
 
@@ -37,6 +37,7 @@ A customer, or an admin acting for them, shapes their own pipeline:
 5. **Two migrations, because migrations reach the project before the merge:**
    - (a) Create the table, seed the six current columns for every customer, add `stage_id` next to `stage` and backfill it, give new customers the defaults in a trigger, and add a `move_application` that takes `stage_id`. `stage_changed_at` must also update when `stage_id` changes.
    - (b) In a later PR, once no code on `main` uses it, drop `stage` and its check.
+     Done in ATS-42 (`20261102200000_drop_application_stage.sql`): `stage`, its check, the sync trigger, `move_application(…, text)` and `stage_id_for_key` are gone, and `stage_id` is `not null`. Its default is the nil UUID, a placeholder the trigger `applications_start_stage` replaces with the customer's first open column, so a card can still be inserted without naming a column. The submission URL was retired with it; the tag and release `v1.0-submission` keep the submitted code.
 6. RLS tests: customer B cannot read, create, rename, reorder or delete customer A's columns, and cannot move a card to one of them.
 
 **As built in ATS-38**, where it differs from or adds to the sketch above:

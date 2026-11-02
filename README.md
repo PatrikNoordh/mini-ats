@@ -27,7 +27,7 @@
 
 Built as a code test, in public: every ticket is a [GitHub issue](../../issues) and every change a [pull request](../../pulls).
 
-The version submitted for the code test is kept as the release [`v1.0-submission`](../../releases/tag/v1.0-submission) and runs at [mini-ats-submission.vercel.app](https://mini-ats-submission.vercel.app). Work since then continues on `main` as a portfolio project.
+The version submitted for the code test is kept as the tag and release [`v1.0-submission`](../../releases/tag/v1.0-submission). Work since then continues on `main` as a portfolio project.
 
 ---
 
