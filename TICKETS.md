@@ -617,6 +617,8 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] Screen readers hear dnd-kit's English role descriptions ("sortable" on the column handles, "draggable" on the cards) also in Swedish; pass a translated `aria-roledescription` to both — `src/components/pipeline/Board.tsx` (found in ATS-41)
+
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
