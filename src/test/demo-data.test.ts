@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { DEMO_ACCOUNTS, DEMO_ADMIN, DEMO_CUSTOMERS } from "../../scripts/demo-data";
 import { STALE_CARD_DAYS } from "@/lib/constants";
-import { STAGES } from "@/lib/stages";
+import { DEFAULT_STAGE_KEYS } from "@/lib/stages";
 import { accountInputSchema, candidateInputSchema, jobInputSchema } from "@/lib/validation";
 
 const candidates = DEMO_CUSTOMERS.flatMap((c) => c.candidates);
@@ -19,9 +19,9 @@ describe("demo data", () => {
     expect(candidates.length).toBeLessThanOrEqual(18);
   });
 
-  it("puts the reviewers' customer in every stage, with a stale card", () => {
+  it("puts the reviewers' customer in every default stage, with a stale card", () => {
     const first = DEMO_CUSTOMERS[0]!.candidates.flatMap((c) => c.applications);
-    expect(new Set(first.map((a) => a.stage))).toEqual(new Set(STAGES));
+    expect(new Set(first.map((a) => a.stage))).toEqual(new Set(DEFAULT_STAGE_KEYS));
     expect(first.some((a) => a.daysInStage >= STALE_CARD_DAYS)).toBe(true);
   });
 

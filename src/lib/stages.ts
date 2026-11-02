@@ -1,16 +1,66 @@
+import type { TFunction } from "i18next";
 import { z } from "zod";
 
-import type { Application, Job, Stage } from "@/types";
+import type { Application, Job, PipelineStage, StageKind } from "@/types";
 import { MS_PER_DAY } from "./constants";
 
-/** The pipeline stages in board order. The same values as the check on `applications.stage`. */
-export const stageSchema = z.enum(["new", "screening", "interview", "offer", "hired", "rejected"]);
+/** The keys of the six default stages, in their default order (ATS-38). */
+export const defaultStageKeySchema = z.enum([
+  "new",
+  "screening",
+  "interview",
+  "offer",
+  "hired",
+  "rejected",
+]);
 
-export const STAGES: Stage[] = [...stageSchema.options];
+export const DEFAULT_STAGE_KEYS = defaultStageKeySchema.options;
 
-/** The stage next to a stage on the board, one step left (-1) or right (1). None past the ends. */
-export function neighbourStage(stage: Stage, step: -1 | 1): Stage | undefined {
-  return STAGES[STAGES.indexOf(stage) + step];
+export const stageKindSchema = z.enum(["open", "hired", "rejected"]);
+
+/** The same list as the check on `pipeline_stages.colour`. */
+export const stageColourSchema = z.enum([
+  "grey",
+  "blue",
+  "teal",
+  "violet",
+  "pink",
+  "amber",
+  "green",
+  "red",
+]);
+
+/**
+ * A stage's name on screen: the name the customer typed, shown as it is, or the translated name of
+ * a default stage that was never renamed.
+ */
+export function stageLabel(
+  stage: Pick<PipelineStage, "name" | "default_key">,
+  t: TFunction,
+): string {
+  if (stage.name !== null) return stage.name;
+  return stage.default_key ? t(`stages.${stage.default_key}`) : "";
+}
+
+/**
+ * The id of the stage next to a stage on the board, one step left (-1) or right (1). None past
+ * the ends. `stages` is in board order.
+ */
+export function neighbourStageId(
+  stages: readonly Pick<PipelineStage, "id">[],
+  stageId: string,
+  step: -1 | 1,
+): string | undefined {
+  const index = stages.findIndex((s) => s.id === stageId);
+  return index === -1 ? undefined : stages[index + step]?.id;
+}
+
+/** The first stage of a kind in board order, for example where rejected cards go (ATS-31). */
+export function firstStageOfKind<S extends Pick<PipelineStage, "kind">>(
+  stages: readonly S[],
+  kind: StageKind,
+): S | undefined {
+  return stages.find((s) => s.kind === kind);
 }
 
 /** Whole days since the given ISO date (never negative). */
@@ -62,13 +112,19 @@ export function jobsToAdd<J extends Pick<Job, "id" | "status">>(
 export function withCardMoved(
   applications: readonly Application[],
   id: string,
-  stage: Stage,
+  stageId: string,
   now: Date = new Date(),
 ): Application[] {
   const iso = now.toISOString();
   return applications.map((a) =>
     a.id === id
-      ? { ...a, stage, position: Number.MAX_SAFE_INTEGER, stage_changed_at: iso, updated_at: iso }
+      ? {
+          ...a,
+          stage_id: stageId,
+          position: Number.MAX_SAFE_INTEGER,
+          stage_changed_at: iso,
+          updated_at: iso,
+        }
       : a,
   );
 }
@@ -85,19 +141,19 @@ export function withCardRestored(
 }
 
 /**
- * The candidate's other cards that are still open, meaning neither hired nor rejected, after
- * `hired` was moved to Hired (ATS-31). The prompt offers to move these to Rejected.
+ * The candidate's other cards that are still open, meaning in a stage of kind `open`, after
+ * `hired` was moved to the Hired stage (ATS-31). The prompt offers to move these to Rejected.
  */
-export function otherOpenApplications<A extends Pick<Application, "id" | "candidate_id" | "stage">>(
+export function otherOpenApplications<
+  A extends Pick<Application, "id" | "candidate_id" | "stage_id">,
+>(
   applications: readonly A[],
   hired: Pick<Application, "id" | "candidate_id">,
+  stages: readonly Pick<PipelineStage, "id" | "kind">[],
 ): A[] {
+  const open = new Set(stages.filter((s) => s.kind === "open").map((s) => s.id));
   return applications.filter(
-    (a) =>
-      a.candidate_id === hired.candidate_id &&
-      a.id !== hired.id &&
-      a.stage !== "hired" &&
-      a.stage !== "rejected",
+    (a) => a.candidate_id === hired.candidate_id && a.id !== hired.id && open.has(a.stage_id),
   );
 }
 
@@ -108,6 +164,8 @@ export const queryKeys = {
   jobs: (customerId: string | null) => ["jobs", customerId] as const,
   candidates: (customerId: string | null) => ["candidates", customerId] as const,
   applications: (customerId: string | null) => ["applications", customerId] as const,
+  /** The customer's board columns, in board order (ATS-39). */
+  stages: (customerId: string | null) => ["stages", customerId] as const,
   /** Every assessment list of the customer, to refresh them all after a new assessment. */
   assessmentsAll: (customerId: string | null) => ["assessments", customerId] as const,
   /** The assessments of one candidate's applications (ATS-19). */

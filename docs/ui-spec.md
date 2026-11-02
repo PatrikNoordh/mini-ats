@@ -28,9 +28,10 @@ TypeScript types in `src/types/index.ts`. Fields are snake_case to match the dat
 - `Profile`: id, role (`"admin" | "customer"`), full_name, company_name, email, created_at
 - `Job`: id, customer_id, title, description, location, status (`"open" | "closed"`), created_at
 - `Candidate`: id, customer_id, full_name, email, phone, linkedin_url, notes, created_at
-- `Application`: id, customer_id, job_id, candidate_id, stage, position, stage_changed_at, created_at, updated_at
-  - stage: `"new" | "screening" | "interview" | "offer" | "hired" | "rejected"`
-  - Swedish labels: Ny, Screening, Intervju, Erbjudande, Anställd, Avböjd
+- `PipelineStage` (ATS-38, read by the app since ATS-39): id, customer_id, name, default_key, position, kind (`"open" | "hired" | "rejected"`), colour
+  - Every account starts with six default stages, keys `"new" | "screening" | "interview" | "offer" | "hired" | "rejected"`. A default keeps its translated name (`stages.<key>`; Swedish: Ny, Screening, Intervju, Erbjudande, Anställd, Avböjd) until the customer renames it; a typed name is user data and is never translated.
+  - `kind` gives a stage its meaning: exactly one `hired`, at least one `rejected`.
+- `Application`: id, customer_id, job_id, candidate_id, stage_id, position, stage_changed_at, created_at, updated_at
 
 An application links one candidate to one job and is one card on the kanban board. A candidate can be linked to several jobs.
 
@@ -38,7 +39,7 @@ An application links one candidate to one job and is one card on the kanban boar
 
 - All data functions live in `src/lib/api/`, one file per entity: `profiles.ts`, `jobs.ts`, `candidates.ts`, `applications.ts`. They are async and take `customerId` as an explicit argument where data belongs to a customer.
 - The data functions call Supabase (since epic 2). ATS-1 to ATS-9 used an in-memory mock store, `src/lib/api/mockStore.ts`, removed in ATS-10.
-- TanStack Query hooks in `src/hooks/`: `useJobs`, `useCandidates`, `useApplications`, `useProfiles`, plus mutations.
+- TanStack Query hooks in `src/hooks/`: `useJobs`, `useCandidates`, `useApplications`, `useStages`, `useProfiles`, plus mutations.
 - Every query key that returns customer data includes the active customer id, for example `["jobs", customerId]`. Switching customer must never show the previous customer's cached data.
 - Moving a card uses an optimistic update and rolls back with a toast if the call fails. The database function `move_application` sets the stage and the card's position, last in its new column, in one call.
 - Components never call Supabase directly.
@@ -66,11 +67,11 @@ An application links one candidate to one job and is one card on the kanban boar
 
 1. **`/login`:** email and password form with Swedish error messages.
 2. **`/pipeline`** (start page after login, unless the user asked for another page), the kanban board:
-   - One column per stage, in order. The column header shows the stage name and the number of cards.
+   - One column per stage of the customer, in the customer's order (`pipeline_stages.position`). The column header shows the stage's colour, its name and the number of cards.
    - Compact cards: candidate name, job title, and days in the current stage computed from `stage_changed_at`. Small enough that many fit on screen.
    - Drag a card to another column to change its stage. Changing stage sets `stage_changed_at` to now.
    - With the keyboard: Tab to a card, Enter opens it, space picks it up, the left and right arrow keys move it one column, and space drops it. Escape cancels. Screen readers hear the moves in the chosen language.
-   - Moving a card to Hired, by drag or by keyboard, is done at once. Once the move is saved (a failed hire never prompts), if the same candidate has other cards that are neither Hired nor Rejected, in any job and not only the filtered ones, a prompt asks "<name> har även <n> andra öppna ansökningar. Flytta dem till Avböjd?" with **Behåll** (focused) and **Flytta till Avböjd**. Confirming moves exactly those cards through `move_application`, one at a time; a toast says how many moved and how many failed, and the board refetches. A soft prompt, not a rule: one person can be hired for two roles (ATS-31).
+   - Moving a card to Hired (the stage of kind `hired`, whatever its name), by drag or by keyboard, is done at once. Once the move is saved (a failed hire never prompts), if the same candidate has other cards in a stage of kind `open`, in any job and not only the filtered ones, a prompt asks "<name> har även <n> andra öppna ansökningar. Flytta dem till Avböjd?" with **Behåll** (focused) and **Flytta till Avböjd**. Confirming moves exactly those cards to the first stage of kind `rejected`, by position, through `move_application`, one at a time; a toast says how many moved and how many failed, and the board refetches. A soft prompt, not a rule: one person can be hired for two roles (ATS-31).
    - Clicking a card opens a side sheet with the candidate's details, LinkedIn link (new tab), notes, CV, and the jobs they are linked to. The CV part uploads a PDF of at most 5 MB (`MAX_CV_BYTES`) to the private `cvs` bucket at `<customer_id>/<candidate_id>.pdf`, opens it in a new tab through a signed link that works for 5 minutes, replaces it, or removes it after a confirm (ATS-17). Last, a box with a dashed border, "AI-bedömning av CV" with the badge "AI-förslag" and a line saying it is a suggestion, not a decision: for each linked job the newest assessment (score out of 10, summary, strengths, gaps and the date) and a "Bedöm CV" button ("Bedöm igen" once assessed), which calls `assess-cv` in the app's language. The button is disabled without a CV, and while an assessment runs (ATS-19). Each linked job has a remove button that, after the same confirm as the candidate dialog, removes that card and keeps the candidate (ATS-30).
    - Filters above the board: a job dropdown (all jobs or one job) and a name search that filters as you type. Both live in the URL as `?job=<job id>&q=<text>`. A hand-typed numeric search such as `?q=123` is kept as text, and each filter has a visually hidden label.
    - A clear empty state when no cards match.

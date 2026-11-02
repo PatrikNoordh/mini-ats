@@ -18,20 +18,22 @@ import { CandidateCv } from "@/components/pipeline/CandidateCv";
 import { useRemoveApplication } from "@/hooks/useApplications";
 import { useErrorToast } from "@/hooks/useErrorToast";
 import { useFormat } from "@/lib/format";
-import { daysSince } from "@/lib/stages";
-import type { Application, Candidate, Job } from "@/types";
+import { daysSince, stageLabel } from "@/lib/stages";
+import type { Application, Candidate, Job, PipelineStage } from "@/types";
 
 export function CandidateSheet({
   customerId,
   candidate,
   applications,
   jobs,
+  stages,
   onClose,
 }: {
   customerId: string;
   candidate: Candidate | null;
   applications: Application[];
   jobs: Job[];
+  stages: readonly PipelineStage[];
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -43,6 +45,10 @@ export function CandidateSheet({
   const links = candidate ? applications.filter((a) => a.candidate_id === candidate.id) : [];
   const jobTitle = (a: Application) =>
     jobs.find((j) => j.id === a.job_id)?.title ?? t("pipeline.unknownJob");
+  const stageName = (a: Application) => {
+    const stage = stages.find((s) => s.id === a.stage_id);
+    return stage ? stageLabel(stage, t) : t("pipeline.unknownStage");
+  };
 
   const onRemove = async () => {
     if (!candidate || !removing) return;
@@ -130,7 +136,7 @@ export function CandidateSheet({
                     >
                       <span className="min-w-0 truncate font-medium">{jobTitle(a)}</span>
                       <span className="flex shrink-0 items-center gap-2">
-                        <Badge variant="secondary">{t(`stages.${a.stage}`)}</Badge>
+                        <Badge variant="secondary">{stageName(a)}</Badge>
                         <span className="font-mono text-xs text-muted-foreground">
                           {t("pipeline.days", { count: daysSince(a.stage_changed_at) })}
                         </span>

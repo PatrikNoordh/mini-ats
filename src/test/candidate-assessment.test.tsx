@@ -43,7 +43,7 @@ const card = (id: string, jobId: string): Application => ({
   customer_id: CUSTOMER,
   job_id: jobId,
   candidate_id: "c1",
-  stage: "new",
+  stage_id: "stage-new",
   position: 0,
   stage_changed_at: "2026-10-20T08:00:00Z",
   created_at: "2026-10-01T08:00:00Z",

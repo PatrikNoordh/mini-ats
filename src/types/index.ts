@@ -57,14 +57,33 @@ export interface CvAssessment {
   created_at: string;
 }
 
-export type Stage = "new" | "screening" | "interview" | "offer" | "hired" | "rejected";
+/** The key of one of the six default stages. The app translates it as `stages.<key>`. */
+export type DefaultStageKey = "new" | "screening" | "interview" | "offer" | "hired" | "rejected";
+
+/** What a stage means: an open step, the one Hired stage, or a Rejected stage (ATS-38). */
+export type StageKind = "open" | "hired" | "rejected";
+
+/** A colour from the fixed stage palette, the same list as the check on `pipeline_stages.colour`. */
+export type StageColour = "grey" | "blue" | "teal" | "violet" | "pink" | "amber" | "green" | "red";
+
+/** One column of a customer's board (ATS-38). */
+export interface PipelineStage {
+  id: string;
+  customer_id: string;
+  /** The name the customer gave it, or null for a default that keeps its translated name. */
+  name: string | null;
+  default_key: DefaultStageKey | null;
+  position: number;
+  kind: StageKind;
+  colour: StageColour;
+}
 
 export interface Application {
   id: string;
   customer_id: string;
   job_id: string;
   candidate_id: string;
-  stage: Stage;
+  stage_id: string;
   position: number;
   stage_changed_at: string;
   created_at: string;
