@@ -15,7 +15,7 @@ import { useErrorToast } from "@/hooks/useErrorToast";
 import { jobsToAdd } from "@/lib/stages";
 import type { Application, Job } from "@/types";
 
-/** Adds the candidate to one more open job. The new card starts in the default New stage. */
+/** Adds the candidate to one more open job. The new card lands in the first open column (ATS-40). */
 export function AddToJob({
   customerId,
   candidateId,

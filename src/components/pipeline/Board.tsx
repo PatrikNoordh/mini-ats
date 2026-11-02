@@ -15,7 +15,7 @@ import {
   type UniqueIdentifier,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import {
@@ -25,25 +25,14 @@ import {
   STALE_CARD_DAYS,
 } from "@/lib/constants";
 import { useFormat } from "@/lib/format";
-import { daysSince, neighbourStageId, stageLabel } from "@/lib/stages";
-import type { Application, PipelineStage, StageColour } from "@/types";
+import { daysSince, neighbourStageId, STAGE_DOT_CLASS, stageLabel } from "@/lib/stages";
+import type { Application, PipelineStage } from "@/types";
 
 export interface BoardCard {
   app: Application;
   candidateName: string;
   jobTitle: string;
 }
-
-const DOT: Record<StageColour, string> = {
-  grey: "bg-stage-grey",
-  blue: "bg-stage-blue",
-  teal: "bg-stage-teal",
-  violet: "bg-stage-violet",
-  pink: "bg-stage-pink",
-  amber: "bg-stage-amber",
-  green: "bg-stage-green",
-  red: "bg-stage-red",
-};
 
 /** Space picks a card up and drops it. Enter is left free to open the card. */
 const KEYBOARD_CODES = {
@@ -140,10 +129,12 @@ function Column({
   stage,
   cards,
   onOpen,
+  menu,
 }: {
   stage: PipelineStage;
   cards: BoardCard[];
   onOpen: (c: BoardCard) => void;
+  menu: ReactNode;
 }) {
   const { t } = useTranslation();
   const format = useFormat();
@@ -162,10 +153,13 @@ function Column({
     >
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-2 text-sm font-semibold">
-          <span className={cn("h-2 w-2 rounded-full", DOT[stage.colour])} />
+          <span className={cn("h-2 w-2 rounded-full", STAGE_DOT_CLASS[stage.colour])} />
           <span id={headingId}>{stageLabel(stage, t)}</span>
         </div>
-        <span className="text-xs text-muted-foreground">{format.number(cards.length)}</span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground">{format.number(cards.length)}</span>
+          {menu}
+        </div>
       </div>
       <div className="flex min-h-24 flex-1 flex-col gap-1.5 px-2 pb-2">
         {cards.map((c) => (
@@ -181,12 +175,15 @@ export function Board({
   cards,
   onMove,
   onOpen,
+  columnMenu,
 }: {
   /** The customer's columns, in board order. */
   stages: readonly PipelineStage[];
   cards: BoardCard[];
   onMove: (id: string, stageId: string) => void;
   onOpen: (c: BoardCard) => void;
+  /** The menu on each column header, for editing the columns (ATS-40). */
+  columnMenu?: ((stage: PipelineStage) => ReactNode) | undefined;
 }) {
   const { t } = useTranslation();
   const coordinateGetter = useMemo(() => columnCoordinates(stages), [stages]);
@@ -260,6 +257,7 @@ export function Board({
                 .filter((c) => c.app.stage_id === s.id)
                 .sort((a, b) => a.app.position - b.app.position)}
               onOpen={onOpen}
+              menu={columnMenu?.(s)}
             />
           ))}
         </div>

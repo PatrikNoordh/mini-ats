@@ -10,6 +10,7 @@ import { EmptyState, ErrorState, PageHeader } from "@/components/States";
 import { Board, type BoardCard } from "@/components/pipeline/Board";
 import { BoardFilters, type BoardFilterValues } from "@/components/pipeline/BoardFilters";
 import { CandidateSheet } from "@/components/pipeline/CandidateSheet";
+import { StageManager } from "@/components/pipeline/StageManager";
 import { RejectOthersDialog } from "@/components/pipeline/RejectOthersDialog";
 import { CandidateDialog } from "@/components/candidates/CandidateDialog";
 import { useApplications, useRejectApplications } from "@/hooks/useApplications";
@@ -19,7 +20,13 @@ import { useJobs } from "@/hooks/useJobs";
 import { useStages } from "@/hooks/useStages";
 import { MAX_SEARCH_LENGTH } from "@/lib/constants";
 import { pageHead } from "@/lib/i18n";
-import { DEFAULT_STAGE_KEYS, firstStageOfKind, resolveJobFilter, stageLabel } from "@/lib/stages";
+import {
+  cardCountsByStage,
+  DEFAULT_STAGE_KEYS,
+  firstStageOfKind,
+  resolveJobFilter,
+  stageLabel,
+} from "@/lib/stages";
 
 const searchSchema = z.object({
   job: z.string().optional().catch(undefined),
@@ -129,23 +136,36 @@ function Pipeline({ customerId }: { customerId: string }) {
             <Skeleton key={key} className="h-80 w-kanban-column shrink-0" />
           ))}
         </div>
-      ) : cards.length === 0 ? (
-        <EmptyState title={job || q ? t("pipeline.noMatch") : t("pipeline.empty")}>
-          {job || q ? (
-            <Button variant="link" onClick={() => setSearch({ job: undefined, q: undefined })}>
-              {t("pipeline.clearFilters")}
-            </Button>
-          ) : (
-            t("pipeline.emptyHint")
-          )}
+      ) : cards.length === 0 && (job || q) ? (
+        <EmptyState title={t("pipeline.noMatch")}>
+          <Button variant="link" onClick={() => setSearch({ job: undefined, q: undefined })}>
+            {t("pipeline.clearFilters")}
+          </Button>
         </EmptyState>
       ) : (
-        <Board
+        <StageManager
+          customerId={customerId}
           stages={stages.data ?? []}
-          cards={cards}
-          onMove={prompt.onMove}
-          onOpen={(c) => setOpenId(c.app.candidate_id)}
-        />
+          cardCounts={cardCountsByStage(apps.data ?? [])}
+        >
+          {(columnMenu) => (
+            <>
+              {/* An empty board still shows its columns, so they can be set up first. */}
+              {cards.length === 0 && (
+                <div className="mb-3">
+                  <EmptyState title={t("pipeline.empty")}>{t("pipeline.emptyHint")}</EmptyState>
+                </div>
+              )}
+              <Board
+                stages={stages.data ?? []}
+                cards={cards}
+                onMove={prompt.onMove}
+                onOpen={(c) => setOpenId(c.app.candidate_id)}
+                columnMenu={columnMenu}
+              />
+            </>
+          )}
+        </StageManager>
       )}
 
       <CandidateSheet
