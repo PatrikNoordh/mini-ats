@@ -15,7 +15,9 @@ const CV_TEXT = "Erfaren UX-designer med åtta år inom användbarhet och protot
 
 const application: ApplicationForAssessment = {
   id: APPLICATION_ID,
+  candidateId: "20000000-0000-4000-8000-0000000000c1",
   cvPath: "00000000-0000-4000-8000-0000000000c1/c1.pdf",
+  cvUploadedAt: "2026-10-23T11:00:00Z",
   job: { title: "UX-designer", location: "Stockholm", description: "Figma och användartester." },
   lastAssessedAt: null,
 };
@@ -35,6 +37,8 @@ function setup(
     pdf?: Uint8Array | null;
     text?: string | Error;
     model?: ModelResult;
+    /** The CV when it is read again before saving; the one that was read by default. */
+    cvNow?: { path: string; uploadedAt: string | null } | null;
   } = {},
 ) {
   const ran: string[] = [];
@@ -43,6 +47,11 @@ function setup(
     getApplication: (auth, id) => {
       ran.push(`read ${id} as ${auth}`);
       return Promise.resolve(options.application === undefined ? application : options.application);
+    },
+    getCv: (auth, candidateId) => {
+      ran.push(`check ${candidateId} as ${auth}`);
+      const current = { path: application.cvPath ?? "", uploadedAt: application.cvUploadedAt };
+      return Promise.resolve(options.cvNow === undefined ? current : options.cvNow);
     },
     downloadCv: (auth, path) => {
       ran.push(`download ${path} as ${auth}`);
@@ -143,10 +152,26 @@ Deno.test(
       `read ${APPLICATION_ID} as Bearer caller-jwt`,
       `download ${application.cvPath} as Bearer caller-jwt`,
       `assess UX-designer ${CV_TEXT.trim().length} sv`,
+      `check ${application.candidateId} as Bearer caller-jwt`,
       `save ${APPLICATION_ID} 8 claude-opus-5-5`,
     ]);
   },
 );
+
+Deno.test("saves nothing when the CV was removed or replaced while the model worked", async () => {
+  for (const [cvNow, error] of [
+    [null, "cv_missing"],
+    [{ path: application.cvPath ?? "", uploadedAt: "2026-10-23T11:59:00Z" }, "cv_changed"],
+  ] as const) {
+    const { handler, ran } = setup({ cvNow });
+    const res = await call(handler, post(request));
+    assertEquals([res.status, res.body.error], [409, error]);
+    assertEquals(
+      ran.some((step) => step.startsWith("save")),
+      false,
+    );
+  }
+});
 
 Deno.test("an application the caller cannot see is not found", async () => {
   const { handler, ran } = setup({ application: null });
@@ -218,6 +243,7 @@ Deno.test("hides unexpected errors behind the unknown code", async () => {
   const failing = createHandler({
     getUserId: () => Promise.resolve("user-1"),
     getApplication: () => Promise.reject(new Error("database down")),
+    getCv: () => Promise.resolve(null),
     downloadCv: () => Promise.resolve(null),
     extractText: () => Promise.resolve(""),
     assess: () => Promise.resolve({ kind: "no_answer" }),

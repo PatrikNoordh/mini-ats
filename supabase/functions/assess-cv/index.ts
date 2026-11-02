@@ -65,7 +65,11 @@ async function getUserId(authorization: string): Promise<string | null> {
 const applicationRowSchema = z.object({
   id: z.string(),
   job: z.object({ title: z.string(), location: z.string(), description: z.string().nullable() }),
-  candidate: z.object({ cv_path: z.string().nullable() }),
+  candidate: z.object({
+    id: z.string(),
+    cv_path: z.string().nullable(),
+    cv_uploaded_at: z.string().nullable(),
+  }),
 });
 
 async function getApplication(
@@ -75,7 +79,9 @@ async function getApplication(
   const caller = asCaller(authorization);
   const { data, error } = await caller
     .from("applications")
-    .select("id, job:jobs(title, location, description), candidate:candidates(cv_path)")
+    .select(
+      "id, job:jobs(title, location, description), candidate:candidates(id, cv_path, cv_uploaded_at)",
+    )
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
@@ -93,11 +99,32 @@ async function getApplication(
 
   return {
     id: row.id,
+    candidateId: row.candidate.id,
     cvPath: row.candidate.cv_path,
+    cvUploadedAt: row.candidate.cv_uploaded_at,
     job: { ...row.job, description: row.job.description ?? "" },
     lastAssessedAt:
       z.object({ created_at: z.string() }).nullable().parse(latest.data)?.created_at ?? null,
   };
+}
+
+const cvRowSchema = z.object({
+  cv_path: z.string().nullable(),
+  cv_uploaded_at: z.string().nullable(),
+});
+
+async function getCv(
+  authorization: string,
+  candidateId: string,
+): Promise<{ path: string; uploadedAt: string | null } | null> {
+  const { data, error } = await asCaller(authorization)
+    .from("candidates")
+    .select("cv_path, cv_uploaded_at")
+    .eq("id", candidateId)
+    .maybeSingle();
+  if (error) throw error;
+  const row = cvRowSchema.nullable().parse(data);
+  return row?.cv_path ? { path: row.cv_path, uploadedAt: row.cv_uploaded_at } : null;
 }
 
 async function downloadCv(authorization: string, path: string): Promise<Uint8Array | null> {
@@ -187,6 +214,7 @@ Deno.serve(
   createHandler({
     getUserId,
     getApplication,
+    getCv,
     downloadCv,
     extractText,
     assess,
