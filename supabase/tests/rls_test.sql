@@ -355,25 +355,26 @@ do $$ declare tbl text; begin
   raise notice 'OK 20: anon has no privilege on any table in public, also tables added later';
 end $$;
 
+-- Clients never create or change an assessment, not even an admin. Deleting one is allowed since
+-- ATS-56 and checked in 44.
 do $$ declare blocked boolean := false; begin
   assert not has_table_privilege('authenticated', 'public.cv_assessments', 'insert'), 'no insert';
   assert not has_table_privilege('authenticated', 'public.cv_assessments', 'update'), 'no update';
-  assert not has_table_privilege('authenticated', 'public.cv_assessments', 'delete'), 'no delete';
   set local role authenticated;
   perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
   begin
-    delete from public.cv_assessments;
+    update public.cv_assessments set score = 10;
   exception when insufficient_privilege then blocked := true;
   end;
   reset role;
-  if not blocked then raise exception 'FAIL 21: even an admin client could write cv_assessments'; end if;
-  raise notice 'OK 21: authenticated cannot write cv_assessments, not even an admin';
+  if not blocked then raise exception 'FAIL 21: even an admin client could change cv_assessments'; end if;
+  raise notice 'OK 21: authenticated cannot create or change cv_assessments, not even an admin';
 end $$;
 
 -- The grants are exactly what the app uses. A change here is a deliberate change to this list.
 do $$ declare actual text; expected text :=
   'applications:DELETE,INSERT,SELECT,UPDATE candidates:DELETE,INSERT,SELECT,UPDATE '
-  'cv_assessments:SELECT jobs:DELETE,INSERT,SELECT,UPDATE pipeline_stages:DELETE,SELECT profiles:SELECT';
+  'cv_assessments:DELETE,SELECT jobs:DELETE,INSERT,SELECT,UPDATE pipeline_stages:DELETE,SELECT profiles:SELECT';
 begin
   select string_agg(table_name || ':' || privileges, ' ' order by table_name) into actual
   from (
@@ -1119,6 +1120,61 @@ do $$ declare actual text; begin
   assert not exists (select 1 from public.pipeline_stages where customer_id = '00000000-0000-0000-0000-0000000038a1'), 'columns left';
   assert not exists (select 1 from public.applications where customer_id = '00000000-0000-0000-0000-0000000038a1'), 'cards left';
   raise notice 'OK 43: clients write only the stage columns the app uses, and deleting an account removes its columns and cards';
+end $$;
+
+-- ---------------------------------------------------------------- removing an assessment (ATS-56)
+-- A customer removes its own assessment and keeps the CV; another customer, a deleted account and
+-- anon cannot. RLS is the check, the same rule as reading.
+reset role;
+do $$ declare
+  a uuid := gen_random_uuid();
+  b uuid := gen_random_uuid();
+  job uuid; cand uuid; app uuid;
+begin
+  insert into auth.users (id, email, raw_app_meta_data) values
+    (a, 'assess-a-56@test.local', '{"role":"customer"}'),
+    (b, 'assess-b-56@test.local', '{"role":"customer"}');
+  insert into public.jobs (customer_id, title) values (a, 'Job 56') returning id into job;
+  insert into public.candidates (customer_id, full_name, cv_path) values (a, 'With CV 56', a || '/x.pdf') returning id into cand;
+  insert into public.applications (job_id, candidate_id) values (job, cand) returning id into app;
+  insert into public.cv_assessments (application_id, score) values (app, 4), (app, 7);
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', b), true);
+  delete from public.cv_assessments where application_id = app;
+  reset role;
+  assert (select count(*) from public.cv_assessments where application_id = app) = 2, 'B removed A''s assessments';
+
+  set local role anon;
+  perform set_config('request.jwt.claims', '', true);
+  begin
+    delete from public.cv_assessments where application_id = app;
+    raise exception 'FAIL 44: a signed-out user could delete assessments';
+  exception when insufficient_privilege then null;
+  end;
+  reset role;
+
+  update public.profiles set deleted_at = now() where id = a;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', a), true);
+  delete from public.cv_assessments where application_id = app;
+  reset role;
+  assert (select count(*) from public.cv_assessments where application_id = app) = 2, 'a deleted account removed its assessments';
+  update public.profiles set deleted_at = null where id = a;
+
+  set local role authenticated;
+  delete from public.cv_assessments where application_id = app;
+  reset role;
+  assert (select count(*) from public.cv_assessments where application_id = app) = 0, 'A could not remove its own assessments';
+  assert (select cv_path from public.candidates where id = cand) = a || '/x.pdf', 'removing the assessments removed the CV';
+
+  insert into public.cv_assessments (application_id, score) values (app, 5);
+  set local role authenticated;
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
+  delete from public.cv_assessments where application_id = app;
+  reset role;
+  assert (select count(*) from public.cv_assessments where application_id = app) = 0, 'admin could not remove a customer''s assessment';
+  raise notice 'OK 44: a customer and an admin remove an assessment and keep the CV; another customer, a deleted account and anon cannot';
 end $$;
 
 rollback;
