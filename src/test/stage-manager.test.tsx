@@ -185,13 +185,28 @@ describe("editing the columns from the board", () => {
     expect(mocks.toast.success).toHaveBeenCalledWith("The columns have been reset.");
   });
 
-  it("cannot reset while a column it would remove has cards, with the same hint", () => {
+  it("cannot reset while a column it would remove has cards, and names that column", () => {
     const own = customStage("refs", "Referenser", 6);
     renderManager([...DEFAULT_TEST_STAGES, own], new Map([[own.id, 1]]));
     const reset = screen.getByRole("button", { name: "Reset columns" });
     expect(reset).toBeDisabled();
     expect(reset).toHaveAccessibleDescription(
-      "The column has cards. Move them to another column first.",
+      "The column Referenser has cards. A reset removes the columns you added, so move its cards to another column first.",
+    );
+  });
+
+  it("names every added column with cards when a reset is blocked", () => {
+    const refs = customStage("refs", "Referenser", 6);
+    const test = customStage("test", "Kodtest", 7);
+    renderManager(
+      [...DEFAULT_TEST_STAGES, refs, test],
+      new Map([
+        [refs.id, 1],
+        [test.id, 2],
+      ]),
+    );
+    expect(screen.getByRole("button", { name: "Reset columns" })).toHaveAccessibleDescription(
+      "The columns Referenser and Kodtest have cards. A reset removes the columns you added, so move their cards to another column first.",
     );
   });
 });

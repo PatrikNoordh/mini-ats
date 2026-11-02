@@ -445,6 +445,8 @@
     "removeDescription": "Kolumnen {{stage}} tas bort från tavlan.",
     "resetTitle": "Återställ kolumnerna?",
     "resetDescription": "Tavlan får tillbaka de sex standardkolumnerna med sina namn, färger och ordning. Kolumner du har lagt till tas bort. Korten ligger kvar i sina kolumner.",
+    "resetBlocked_one": "Kolumnen {{stages}} har kort. En återställning tar bort kolumner du har lagt till, så flytta korten till en annan kolumn först.",
+    "resetBlocked_other": "Kolumnerna {{stages}} har kort. En återställning tar bort kolumner du har lagt till, så flytta korten till en annan kolumn först.",
     "resetConfirm": "Återställ",
     "resetting": "Återställer…",
     "renamed": "Kolumnen heter nu {{stage}}.",

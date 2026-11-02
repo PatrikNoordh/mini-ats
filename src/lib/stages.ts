@@ -146,12 +146,15 @@ export function stageRemoveBlock(
   return stage.kind === "rejected" ? "stage_rejected_required" : "stage_open_required";
 }
 
-/** A reset removes every column that is not a default, so it is refused while one has cards. */
-export function resetBlocked(
-  stages: readonly Pick<PipelineStage, "id" | "default_key">[],
+/**
+ * The columns that stop a reset: a reset removes every column that is not a default, so it is
+ * refused while one of them has cards. Empty when the board can be reset.
+ */
+export function resetBlockers<S extends Pick<PipelineStage, "id" | "default_key">>(
+  stages: readonly S[],
   cardCounts: ReadonlyMap<string, number>,
-): boolean {
-  return stages.some((s) => s.default_key === null && (cardCounts.get(s.id) ?? 0) > 0);
+): S[] {
+  return stages.filter((s) => s.default_key === null && (cardCounts.get(s.id) ?? 0) > 0);
 }
 
 /** The first palette colour no column uses yet, for a new column; grey once all are taken. */

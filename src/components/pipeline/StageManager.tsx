@@ -15,7 +15,8 @@ import {
   useSetStageColour,
 } from "@/hooks/useStages";
 import { MAX_PIPELINE_STAGES } from "@/lib/constants";
-import { resetBlocked, stageLabel, stageRemoveBlock, unusedColour } from "@/lib/stages";
+import { useFormat } from "@/lib/format";
+import { resetBlockers, stageLabel, stageRemoveBlock, unusedColour } from "@/lib/stages";
 import type { PipelineStage } from "@/types";
 
 /**
@@ -39,6 +40,7 @@ export function StageManager({
   children: (columnMenu: (stage: PipelineStage) => ReactNode) => ReactNode;
 }) {
   const { t } = useTranslation();
+  const format = useFormat();
   const errorToast = useErrorToast();
   const add = useAddStage(customerId);
   const rename = useRenameStage(customerId);
@@ -56,7 +58,8 @@ export function StageManager({
   const namesBut = (stage: PipelineStage | null) =>
     stages.filter((s) => s.id !== stage?.id).map(label);
   const atLimit = stages.length >= MAX_PIPELINE_STAGES;
-  const cannotReset = resetBlocked(stages, cardCounts);
+  const blockers = resetBlockers(stages, cardCounts);
+  const cannotReset = blockers.length > 0;
 
   const onRemove = async () => {
     if (!removing) return;
@@ -131,7 +134,10 @@ export function StageManager({
           </Button>
           {cannotReset && (
             <p id={resetHintId} className="mt-1 text-xs text-muted-foreground">
-              {t("errors.stage_has_cards")}
+              {t("stageEditor.resetBlocked", {
+                count: blockers.length,
+                stages: format.list(blockers.map(label)),
+              })}
             </p>
           )}
         </div>

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { stageWriteError } from "@/lib/api/pipelineStages";
 import { errorCode } from "@/lib/errors";
-import { cardCountsByStage, resetBlocked, stageRemoveBlock, unusedColour } from "@/lib/stages";
+import { cardCountsByStage, resetBlockers, stageRemoveBlock, unusedColour } from "@/lib/stages";
 import { stageNameSchema } from "@/lib/validation";
 import { customStage, DEFAULT_TEST_STAGES, stageId } from "./stage-fixtures";
 
@@ -37,12 +37,12 @@ describe("resetting the columns", () => {
 
   it("is blocked while a column it would remove has cards", () => {
     const withOwn = [...stages, own];
-    expect(resetBlocked(withOwn, noCards)).toBe(false);
-    expect(resetBlocked(withOwn, new Map([[own.id, 1]]))).toBe(true);
+    expect(resetBlockers(withOwn, noCards)).toEqual([]);
+    expect(resetBlockers(withOwn, new Map([[own.id, 1]]))).toEqual([own]);
   });
 
   it("is not blocked by cards in default columns, which keep their cards", () => {
-    expect(resetBlocked(stages, new Map([[stageId("new"), 5]]))).toBe(false);
+    expect(resetBlockers(stages, new Map([[stageId("new"), 5]]))).toEqual([]);
   });
 });
 

@@ -445,6 +445,8 @@
     "removeDescription": "The column {{stage}} will be removed from the board.",
     "resetTitle": "Reset the columns?",
     "resetDescription": "The board gets back the six default columns with their names, colours and order. Columns you added are removed. The cards stay in their columns.",
+    "resetBlocked_one": "The column {{stages}} has cards. A reset removes the columns you added, so move its cards to another column first.",
+    "resetBlocked_other": "The columns {{stages}} have cards. A reset removes the columns you added, so move their cards to another column first.",
     "resetConfirm": "Reset",
     "resetting": "Resetting…",
     "renamed": "The column is now called {{stage}}.",
