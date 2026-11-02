@@ -1177,4 +1177,173 @@ begin
   raise notice 'OK 44: a customer and an admin remove an assessment and keep the CV; another customer, a deleted account and anon cannot';
 end $$;
 
+-- ---------------------------------------------------------------- managing columns (ATS-40)
+-- Customers A3 and B3. pg_temp.error_of() and pg_temp.stage_of() are from the ATS-38 section.
+reset role;
+insert into auth.users (id, email, raw_app_meta_data) values
+  ('00000000-0000-0000-0000-0000000040a1', 'stages-a-40@test.local', '{"role":"customer"}'),
+  ('00000000-0000-0000-0000-0000000040b1', 'stages-b-40@test.local', '{"role":"customer"}');
+insert into public.jobs (id, customer_id, title) values
+  ('10000000-0000-0000-0000-0000000040a1', '00000000-0000-0000-0000-0000000040a1', 'Job A 40');
+
+-- A new card lands in the first open column: after New is renamed, after the columns are
+-- reordered, and after New is removed. An insert with the stage name 'new', as the code on main
+-- and v1.0-submission do, still works.
+do $$ declare
+  a uuid := '00000000-0000-0000-0000-0000000040a1';
+  job uuid := '10000000-0000-0000-0000-0000000040a1';
+  ids uuid[];
+  new_card uuid;
+begin
+  insert into public.candidates (customer_id, full_name) values (a, 'First 40') returning id into new_card;
+  insert into public.applications (job_id, candidate_id, stage) values (job, new_card, 'new');
+  assert (select stage_id from public.applications where candidate_id = new_card) = pg_temp.stage_of(a, 'new'),
+         'an insert with stage new did not land in New';
+
+  update public.pipeline_stages set name = 'Inkommen' where id = pg_temp.stage_of(a, 'new');
+  insert into public.candidates (customer_id, full_name) values (a, 'Second 40') returning id into new_card;
+  insert into public.applications (job_id, candidate_id) values (job, new_card);
+  assert (select stage_id from public.applications where candidate_id = new_card) = pg_temp.stage_of(a, 'new'),
+         'after New was renamed, a new card did not land in it';
+
+  -- Rejected first, then Screening: the first open column is Screening, never Rejected.
+  select array_agg(id order by case default_key when 'rejected' then 0 when 'screening' then 1 else 2 end, position)
+  into ids from public.pipeline_stages where customer_id = a;
+  perform public.reorder_stages(a, ids);
+  insert into public.candidates (customer_id, full_name) values (a, 'Third 40') returning id into new_card;
+  insert into public.applications (job_id, candidate_id) values (job, new_card);
+  assert (select stage_id from public.applications where candidate_id = new_card) = pg_temp.stage_of(a, 'screening'),
+         'after a reorder, a new card did not land in the first open column';
+
+  -- New can only go once it is empty.
+  update public.applications set stage_id = pg_temp.stage_of(a, 'screening')
+  where stage_id = pg_temp.stage_of(a, 'new');
+  delete from public.pipeline_stages where id = pg_temp.stage_of(a, 'new');
+  insert into public.candidates (customer_id, full_name) values (a, 'Fourth 40') returning id into new_card;
+  insert into public.applications (job_id, candidate_id, stage) values (job, new_card, 'new');
+  assert (select stage_id from public.applications where candidate_id = new_card) = pg_temp.stage_of(a, 'screening'),
+         'after New was removed, a new card did not land in the first open column';
+  raise notice 'OK 45: a new card lands in the first open column after New is renamed, moved or removed';
+end $$;
+
+-- At least one open column: removing the last one, or changing its kind, is refused.
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000040b1","role":"authenticated"}', true);
+do $$ declare b uuid := '00000000-0000-0000-0000-0000000040b1'; begin
+  delete from public.pipeline_stages where customer_id = b and default_key in ('new', 'screening', 'interview');
+  assert pg_temp.error_of(format('delete from public.pipeline_stages where id = %L', pg_temp.stage_of(b, 'offer')))
+         = 'stage_open_required', 'the last open column could be removed';
+  assert pg_temp.error_of(format('update public.pipeline_stages set kind = ''rejected'' where id = %L', pg_temp.stage_of(b, 'offer')))
+         = 'stage_open_required', 'the last open column could change kind';
+  raise notice 'OK 46: the last open column cannot be removed or change kind (stage_open_required)';
+end $$;
+
+-- add_stage puts a new open column before the first Hired or Rejected column, and stops at 10.
+-- B cannot add a column to A's board.
+do $$ declare
+  a uuid := '00000000-0000-0000-0000-0000000040a1';
+  b uuid := '00000000-0000-0000-0000-0000000040b1';
+  added public.pipeline_stages;
+begin
+  added := public.add_stage(b, 'Kodtest', 'teal');
+  assert added.kind = 'open' and added.name = 'Kodtest' and added.default_key is null, 'the new column';
+  assert (select string_agg(coalesce(default_key, name), ',' order by position) from public.pipeline_stages where customer_id = b)
+         = 'offer,Kodtest,hired,rejected', 'the new column did not land before Hired';
+  assert pg_temp.error_of(format('select public.add_stage(%L, ''Kodtest'', ''grey'')', b)) = '23505', 'a duplicate name was accepted';
+  assert pg_temp.error_of(format('select public.add_stage(%L, ''Lila'', ''purple'')', b)) = '23514', 'a colour outside the palette was accepted';
+  assert pg_temp.error_of(format('select public.add_stage(%L, ''Planterad'', ''grey'')', a)) = 'stage_not_found', 'B added a column for A';
+  for i in 1..6 loop perform public.add_stage(b, 'Extra ' || i, 'grey'); end loop;
+  assert pg_temp.error_of(format('select public.add_stage(%L, ''Elva'', ''grey'')', b)) = 'stage_limit_reached', 'an eleventh column was added';
+  assert pg_temp.error_of(format('select public.reset_stages(%L)', a)) = 'stage_not_found', 'B reset A''s columns';
+  reset role;
+  assert not exists (select 1 from public.pipeline_stages where customer_id = a and name = 'Planterad'), 'B''s column reached A';
+  raise notice 'OK 47: add_stage adds an open column before Hired, up to 10, and only to the caller''s own board';
+end $$;
+
+-- reset_stages at 10 columns, after removed and renamed defaults and an own Rejected column:
+-- the six defaults are back, in order, with their keys, names, colours and kinds. The default
+-- columns keep their ids, and their cards keep their column and stage_changed_at.
+do $$ declare
+  b uuid := '00000000-0000-0000-0000-0000000040b1';
+  own_rejected uuid;
+  offer_id uuid;
+  card uuid;
+  long_ago timestamptz := '2026-01-01';
+begin
+  insert into public.jobs (customer_id, title) values (b, 'Job B 40');
+  insert into public.candidates (customer_id, full_name) values (b, 'Cand B 40');
+  insert into public.applications (job_id, candidate_id, stage_id)
+  select j.id, c.id, pg_temp.stage_of(b, 'offer')
+  from public.jobs j, public.candidates c where j.customer_id = b and c.customer_id = b
+  returning id into card;
+  update public.applications set stage_changed_at = long_ago where id = card;
+  offer_id := pg_temp.stage_of(b, 'offer');
+  update public.pipeline_stages set name = 'Erbjudet', colour = 'pink' where id = offer_id;
+  -- Replace the default Rejected with an own one: make room under the limit first.
+  delete from public.pipeline_stages where customer_id = b and name = 'Extra 6';
+  insert into public.pipeline_stages (customer_id, name, position, kind, colour)
+  values (b, 'Nej tack', 20, 'rejected', 'red') returning id into own_rejected;
+  delete from public.pipeline_stages where id = pg_temp.stage_of(b, 'rejected');
+  insert into public.pipeline_stages (customer_id, name, position, kind, colour) values (b, 'Extra 7', 21, 'open', 'grey');
+  assert (select count(*) from public.pipeline_stages where customer_id = b) = 10, 'ten columns before the reset';
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', b), true);
+  perform public.reset_stages(b);
+  reset role;
+
+  assert (select string_agg(default_key || ':' || kind || ':' || colour || ':' || position, ',' order by position)
+          from public.pipeline_stages where customer_id = b)
+         = 'new:open:grey:0,screening:open:blue:1,interview:open:violet:2,offer:open:amber:3,hired:hired:green:4,rejected:rejected:red:5',
+         'the six defaults are not back in order';
+  assert not exists (select 1 from public.pipeline_stages where customer_id = b and (name is not null or default_key is null)),
+         'a renamed default kept its name, or an own column stayed';
+  assert pg_temp.stage_of(b, 'offer') = offer_id, 'a default column got a new id';
+  assert (select stage_id = offer_id and stage_changed_at = long_ago from public.applications where id = card),
+         'a card moved or its days in stage restarted';
+  raise notice 'OK 48: reset_stages brings back the six defaults at 10 columns, after removed, renamed and replaced defaults, and cards stay';
+end $$;
+
+-- A reset that would remove a column with cards changes nothing. The admin resets for a customer.
+do $$ declare
+  b uuid := '00000000-0000-0000-0000-0000000040b1';
+  before text;
+  added public.pipeline_stages;
+begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', b), true);
+  added := public.add_stage(b, 'Referenser', 'teal');
+  update public.pipeline_stages set name = 'Inkommen' where id = pg_temp.stage_of(b, 'new');
+  update public.applications set stage_id = added.id where customer_id = b;
+  select string_agg(id || coalesce(name, '') || colour || position, ',' order by position) into before
+  from public.pipeline_stages where customer_id = b;
+  assert pg_temp.error_of(format('select public.reset_stages(%L)', b)) = '23503',
+         'a reset removed a column with cards';
+  assert (select string_agg(id || coalesce(name, '') || colour || position, ',' order by position)
+          from public.pipeline_stages where customer_id = b) = before, 'a refused reset changed something';
+
+  update public.applications set stage_id = pg_temp.stage_of(b, 'new') where customer_id = b;
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated"}', true);
+  perform public.reset_stages(b);
+  reset role;
+  assert (select count(*) from public.pipeline_stages where customer_id = b) = 6, 'the admin''s reset did not remove the own column';
+  raise notice 'OK 49: a reset that would remove a column with cards changes nothing, and an admin resets for a customer';
+end $$;
+
+-- Signed out, and a deleted account, cannot add or reset.
+do $$ declare b uuid := '00000000-0000-0000-0000-0000000040b1'; begin
+  set local role anon;
+  perform set_config('request.jwt.claims', '', true);
+  assert pg_temp.error_of(format('select public.add_stage(%L, ''X'', ''grey'')', b)) = '42501', 'anon could call add_stage';
+  assert pg_temp.error_of(format('select public.reset_stages(%L)', b)) = '42501', 'anon could call reset_stages';
+  reset role;
+  update public.profiles set deleted_at = now() where id = b;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', b), true);
+  assert pg_temp.error_of(format('select public.add_stage(%L, ''X'', ''grey'')', b)) = 'stage_not_found', 'a deleted account added a column';
+  assert pg_temp.error_of(format('select public.reset_stages(%L)', b)) = 'stage_not_found', 'a deleted account reset its columns';
+  reset role;
+  raise notice 'OK 50: signed-out users and deleted accounts cannot add or reset columns';
+end $$;
+
 rollback;

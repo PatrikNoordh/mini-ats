@@ -624,3 +624,4 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
 - [ ] Warn when a new candidate looks like one that already exists (same email, or same name), so a recruiter doesn't create a duplicate by mistake; the Hired prompt only finds other cards of the same candidate, not a duplicate with the same name (found while manual testing) — `src/components/candidates/CandidateDialog.tsx` (PR #101, ATS-38)
+- [ ] Refuse a column name that matches a default column's name in either language, not only the one on screen: a column named "Interview" in Swedish shows twice as "Interview" after switching to English — `src/lib/validation.ts` (`stageNameSchema`), `src/components/pipeline/StageManager.tsx` (PR #104, ATS-40)

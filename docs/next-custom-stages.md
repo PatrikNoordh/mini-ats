@@ -58,6 +58,8 @@ A customer, or an admin acting for them, shapes their own pipeline:
 - Filters, URL parameters and query keys use `stage_id`, and the query keys keep the active customer id: `["stages", customerId]`.
 - Not affected: jobs, candidates and the AI assessments.
 
+**As built in ATS-40:** `add_stage` (security invoker) puts a new open column just before the first Hired or Rejected one. `reset_stages` is security definer, since a removed default comes back with its `default_key`, which clients may not insert; it checks the caller with the table policy's rule, keeps the default columns' ids and so their cards, removes the other columns first and inserts the missing defaults, all under one deferred kind and position check. Every customer keeps at least one open column (`stage_open_required`), and a card inserted without a column lands in the first open column by position. Both functions take the customer's lock, then the rows, then the removal lock, the order `20261101140000_pipeline_stages_lock_order` set out.
+
 ## Estimate
 
 3–4 days of focused work, in 4–5 tickets: database, data layer, column management, reordering, and the cleanup migration.

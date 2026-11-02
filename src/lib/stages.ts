@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import { z } from "zod";
 
-import type { Application, Job, PipelineStage, StageKind } from "@/types";
+import type { Application, Job, PipelineStage, StageColour, StageKind } from "@/types";
 import { MS_PER_DAY } from "./constants";
 
 /** The keys of the six default stages, in their default order (ATS-38). */
@@ -29,6 +29,18 @@ export const stageColourSchema = z.enum([
   "green",
   "red",
 ]);
+
+/** The dot class for each palette colour: the `--stage-<colour>` tokens in src/styles.css. */
+export const STAGE_DOT_CLASS: Record<StageColour, string> = {
+  grey: "bg-stage-grey",
+  blue: "bg-stage-blue",
+  teal: "bg-stage-teal",
+  violet: "bg-stage-violet",
+  pink: "bg-stage-pink",
+  amber: "bg-stage-amber",
+  green: "bg-stage-green",
+  red: "bg-stage-red",
+};
 
 /**
  * A stage's name on screen: the name the customer typed, shown as it is, or the translated name of
@@ -103,6 +115,52 @@ export function jobsToAdd<J extends Pick<Job, "id" | "status">>(
     applications.filter((a) => a.candidate_id === candidateId).map((a) => a.job_id),
   );
   return jobs.filter((j) => j.status === "open" && !linked.has(j.id));
+}
+
+/** How many cards each column has, by stage id: every card of the customer, not a filtered few. */
+export function cardCountsByStage(
+  applications: readonly Pick<Application, "stage_id">[],
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const a of applications) counts.set(a.stage_id, (counts.get(a.stage_id) ?? 0) + 1);
+  return counts;
+}
+
+/** Why a column cannot be removed, as the error code the database would answer, or null. */
+export type StageRemoveBlock =
+  "stage_has_cards" | "stage_hired_required" | "stage_rejected_required" | "stage_open_required";
+
+/**
+ * Why a column cannot be removed right now: it has cards, or it is the last column of its kind
+ * (one Hired, at least one Rejected and one open column, ATS-38 and ATS-40). The database refuses
+ * the same; this lets the menu say why before anything is sent.
+ */
+export function stageRemoveBlock(
+  stage: Pick<PipelineStage, "id" | "kind">,
+  stages: readonly Pick<PipelineStage, "kind">[],
+  cardCounts: ReadonlyMap<string, number>,
+): StageRemoveBlock | null {
+  if ((cardCounts.get(stage.id) ?? 0) > 0) return "stage_has_cards";
+  if (stages.filter((s) => s.kind === stage.kind).length > 1) return null;
+  if (stage.kind === "hired") return "stage_hired_required";
+  return stage.kind === "rejected" ? "stage_rejected_required" : "stage_open_required";
+}
+
+/**
+ * The columns that stop a reset: a reset removes every column that is not a default, so it is
+ * refused while one of them has cards. Empty when the board can be reset.
+ */
+export function resetBlockers<S extends Pick<PipelineStage, "id" | "default_key">>(
+  stages: readonly S[],
+  cardCounts: ReadonlyMap<string, number>,
+): S[] {
+  return stages.filter((s) => s.default_key === null && (cardCounts.get(s.id) ?? 0) > 0);
+}
+
+/** The first palette colour no column uses yet, for a new column; grey once all are taken. */
+export function unusedColour(stages: readonly Pick<PipelineStage, "colour">[]): StageColour {
+  const used = new Set(stages.map((s) => s.colour));
+  return stageColourSchema.options.find((c) => !used.has(c)) ?? "grey";
 }
 
 /**

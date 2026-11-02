@@ -12,6 +12,9 @@
 #      refused with stage_rejected_required.
 #   3. A move into a column that is being removed waits for the removal, then fails on the
 #      foreign key instead of pointing at a removed column.
+#   4. A reset while a removal holds its column and the removal lock waits for the column, not
+#      the other way round, so the two never deadlock (ATS-40). The reset then brings back the
+#      six defaults.
 #
 # Each step holds its first session open on advisory lock HOLD_KEY until the second one is seen
 # waiting. No sleeps decide the order: each step waits until Postgres shows the previous one.
@@ -164,3 +167,23 @@ grep -q "applications_stage_id_fkey" "$SECOND_ERROR" \
 [[ $(q -c "select stage from public.applications where id = '$CARD_2'") == new ]] \
   || fail "the card left the new column"
 echo "OK 3: a move into a column being removed waits for the removal, then fails on the foreign key"
+
+# 4. A reset while a removal holds its column and the removal lock.
+q -c "insert into public.pipeline_stages (customer_id, name, position, kind, colour)
+      values ('$CUSTOMER', 'Tom', 7, 'open', 'grey')" >/dev/null
+EMPTY=$(stage "name = 'Tom'")
+hold
+as_customer stages_test_remove_empty "delete from public.pipeline_stages where id = '$EMPTY'" \
+  "$WAIT_FOR_HOLDER" &
+REMOVE=$!
+wait_until "the removal to be done" "$(waiting_on_advisory_lock stages_test_remove_empty)"
+as_customer stages_test_reset "select 1 from public.reset_stages('$CUSTOMER')" 2>"$SECOND_ERROR" &
+RESET=$!
+wait_until "the reset to wait for the removed column" "$(waiting_on_row stages_test_reset)"
+release
+wait "$REMOVE" || fail "the removal failed"
+wait "$RESET" || fail "the reset failed: $(cat "$SECOND_ERROR")"
+[[ $(q -c "select string_agg(default_key, ',' order by position) from public.pipeline_stages
+           where customer_id = '$CUSTOMER'") == new,screening,interview,offer,hired,rejected ]] \
+  || fail "the reset did not bring back the six defaults"
+echo "OK 4: a reset waits for a removal that holds its column, then brings back the defaults"

@@ -321,7 +321,35 @@ export type Database = {
     Functions: {
       account_is_active: { Args: never; Returns: boolean };
       accounts_due_for_purge: { Args: never; Returns: string[] };
+      add_stage: {
+        Args: { colour: string; customer_id: string; name: string };
+        Returns: {
+          colour: string;
+          created_at: string;
+          customer_id: string;
+          default_key: string | null;
+          id: string;
+          kind: string;
+          name: string | null;
+          position: number;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "pipeline_stages";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       create_default_stages: { Args: { customer: string }; Returns: undefined };
+      default_stage_specs: {
+        Args: never;
+        Returns: {
+          colour: string;
+          default_key: string;
+          kind: string;
+          position: number;
+        }[];
+      };
       is_admin: { Args: never; Returns: boolean };
       move_application:
         | {
@@ -376,6 +404,25 @@ export type Database = {
           };
       reorder_stages: {
         Args: { customer_id: string; stage_ids: string[] };
+        Returns: {
+          colour: string;
+          created_at: string;
+          customer_id: string;
+          default_key: string | null;
+          id: string;
+          kind: string;
+          name: string | null;
+          position: number;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "pipeline_stages";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      reset_stages: {
+        Args: { customer_id: string };
         Returns: {
           colour: string;
           created_at: string;

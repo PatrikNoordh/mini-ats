@@ -48,6 +48,14 @@ export const MAX_JOB_DESCRIPTION_LENGTH = 5000;
 /** Placeholder cards in the admin's customer chooser while the customers load. */
 export const CHOOSER_LOADING_CARDS = 4;
 
+// MAX_PIPELINE_STAGES and MAX_STAGE_NAME_LENGTH are also held by the database:
+// supabase/migrations/20261101120000_pipeline_stages.sql. Change a limit in both.
+
+/** Most columns a customer's board can have. */
+export const MAX_PIPELINE_STAGES = 10;
+/** Longest name a customer can give a column. */
+export const MAX_STAGE_NAME_LENGTH = 50;
+
 /** Longest board search, in the field and in ?q=. */
 export const MAX_SEARCH_LENGTH = 200;
 

@@ -41,7 +41,8 @@ export async function listApplications(customerId: string): Promise<Application[
 }
 
 /**
- * Links a candidate to jobs. New links start in the default New stage (the database picks it). A link that
+ * Links a candidate to jobs. New links land in the first open column (the database picks it,
+ * ATS-40). A link that
  * already exists is skipped, so a retry or a second tab never fails on the unique constraint.
  *
  * customer_id is not sent: the trigger sets it from the job and rejects a job and a candidate of
@@ -82,7 +83,7 @@ export function addApplicationError(error: Error & { code: string }): Error {
 }
 
 /**
- * Adds a candidate to one more job, in the default New stage. Unlike linkCandidate, a link that already
+ * Adds a candidate to one more job, in the first open column. Unlike linkCandidate, a link that already
  * exists fails with `already_linked`, so the user is told instead of nothing happening.
  * customer_id is set by the trigger from the job (CLAUDE.md, security rule 7).
  */
