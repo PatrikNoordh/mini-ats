@@ -1,3 +1,4 @@
+import { screen } from "@testing-library/react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
@@ -30,18 +31,25 @@ let root: Root | null = null;
 function renderBoard(stages: readonly PipelineStage[] = DEFAULT_TEST_STAGES) {
   const onOpen = vi.fn();
   const onMove = vi.fn();
+  const onReorder = vi.fn();
   const container = document.body.appendChild(document.createElement("div"));
   act(() => {
     root = createRoot(container);
     root.render(
       <I18nextProvider i18n={getI18n("en")}>
-        <Board stages={stages} cards={[card]} onOpen={onOpen} onMove={onMove} />
+        <Board
+          stages={stages}
+          cards={[card]}
+          onOpen={onOpen}
+          onMove={onMove}
+          onReorder={onReorder}
+        />
       </I18nextProvider>,
     );
   });
   const cardButton = container.querySelector<HTMLElement>('[aria-roledescription="draggable"]');
   if (!cardButton) throw new Error("Board did not render the card");
-  return { onOpen, onMove, cardButton };
+  return { onOpen, onMove, onReorder, cardButton };
 }
 
 function press(target: EventTarget, code: string, key: string) {
@@ -119,6 +127,33 @@ describe("the board with a keyboard", () => {
       "Move cancelled. Test Testsson stays in Screening.",
     );
     expect(onOpen).not.toHaveBeenCalled();
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it("makes each column header a labelled handle that moves the column (ATS-41)", () => {
+    renderBoard();
+    const handle = screen.getByRole("button", { name: "Move the column Interview" });
+    expect(handle).toHaveAttribute("tabindex", "0");
+    expect(handle).toHaveAccessibleDescription(
+      "Press space to pick up the column, move it with the left and right arrow keys and press space again to drop it. Escape cancels the move.",
+    );
+    // The column keeps its own name, which says where a card is.
+    const columns = document.querySelectorAll('[role="group"]');
+    expect(columns[2]).toHaveAccessibleName("Interview");
+  });
+
+  it("picks a column up with space, and escape puts it back and says where it stays", async () => {
+    const { onReorder, onMove } = renderBoard();
+    const handle = screen.getByRole("button", { name: "Move the column Interview" });
+    press(handle, "Space", " ");
+    // Picked up. jsdom has no layout, so where the column is held is checked end to end instead.
+    expect(handle).toHaveAttribute("aria-pressed", "true");
+    await act(() => new Promise((resolve) => setTimeout(resolve)));
+    press(handle, "Escape", "Escape");
+    expect(document.body.textContent).toContain(
+      "Move cancelled. The column Interview stays at position 3 of 6.",
+    );
+    expect(onReorder).not.toHaveBeenCalled();
     expect(onMove).not.toHaveBeenCalled();
   });
 
