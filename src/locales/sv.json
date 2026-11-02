@@ -194,6 +194,15 @@
       "notOver": "{{name}} är inte över någon kolumn.",
       "dropped": "{{name}} släppt i {{stage}}.",
       "cancelled": "Flytten avbröts. {{name}} ligger kvar i {{stage}}."
+    },
+    "reorderFailed": "Kunde inte flytta kolumnen. Ändringen har ångrats.",
+    "columnHandle": "Flytta kolumnen {{stage}}",
+    "columnInstructions": "Tryck mellanslag för att lyfta kolumnen, flytta den med vänster- och högerpil och tryck mellanslag igen för att släppa den. Escape avbryter flytten.",
+    "announceColumn": {
+      "pickedUp": "Kolumnen {{stage}} lyft från plats {{position}} av {{count}}.",
+      "over": "Kolumnen {{stage}} är på plats {{position}} av {{count}}.",
+      "dropped": "Kolumnen {{stage}} släppt på plats {{position}} av {{count}}.",
+      "cancelled": "Flytten avbröts. Kolumnen {{stage}} ligger kvar på plats {{position}} av {{count}}."
     }
   },
   "candidateSheet": {

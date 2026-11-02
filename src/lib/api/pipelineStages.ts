@@ -119,3 +119,19 @@ export async function resetStages(customerId: string): Promise<PipelineStage[]> 
   if (error) throw stageWriteError(error);
   return z.array(z.unknown()).parse(data).map(parseStageRow);
 }
+
+/**
+ * Puts the customer's columns in the given order, in one database call under the customer's lock
+ * (ATS-38). `stageIds` names each column once. Returns the columns in their new order.
+ */
+export async function reorderStages(
+  customerId: string,
+  stageIds: readonly string[],
+): Promise<PipelineStage[]> {
+  const { data, error } = await supabase.rpc("reorder_stages", {
+    customer_id: customerId,
+    stage_ids: [...stageIds],
+  });
+  if (error) throw stageWriteError(error);
+  return z.array(z.unknown()).parse(data).map(parseStageRow);
+}

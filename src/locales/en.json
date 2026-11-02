@@ -194,6 +194,15 @@
       "notOver": "{{name}} is not over a column.",
       "dropped": "Dropped {{name}} in {{stage}}.",
       "cancelled": "Move cancelled. {{name}} stays in {{stage}}."
+    },
+    "reorderFailed": "Could not move the column. The change has been undone.",
+    "columnHandle": "Move the column {{stage}}",
+    "columnInstructions": "Press space to pick up the column, move it with the left and right arrow keys and press space again to drop it. Escape cancels the move.",
+    "announceColumn": {
+      "pickedUp": "Picked up the column {{stage}} from position {{position}} of {{count}}.",
+      "over": "The column {{stage}} is at position {{position}} of {{count}}.",
+      "dropped": "Dropped the column {{stage}} at position {{position}} of {{count}}.",
+      "cancelled": "Move cancelled. The column {{stage}} stays at position {{position}} of {{count}}."
     }
   },
   "candidateSheet": {
