@@ -80,7 +80,7 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
 **For a customer (a recruiting company)**
 - **Jobs**: create, edit, close and reopen. A job can be deleted only while no candidates are linked to it, so a board is never emptied by mistake
 - **Candidates**: name, email, phone, LinkedIn and notes, linked to one or more jobs. Untick a job to take the candidate off it, after a confirm. Deleting a candidate removes their cards too, after a confirm that says how many
-- **Pipeline**: a compact kanban board that starts with `Ny → Screening → Intervju → Erbjudande → Anställd`, plus `Avböjd`. Each customer can rename the columns, change their colours, add up to 10 and remove empty ones, or reset to the six defaults
+- **Pipeline**: a compact kanban board that starts with `Ny → Screening → Intervju → Erbjudande → Anställd`, plus `Avböjd`. Each customer can rename the columns, change their colours, reorder them by drag and drop or keyboard, add up to 10 and remove empty ones, or reset to the six defaults
   - Small cards with the candidate's name, the job and the **days in the current stage**
   - **Drag and drop** with mouse, touch or keyboard, with optimistic moves that roll back on a failed save
   - **Filters** for the job and the name, kept in the URL (`?job=&q=`) so a reload or a shared link shows the same board
