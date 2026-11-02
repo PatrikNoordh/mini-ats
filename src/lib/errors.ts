@@ -37,6 +37,7 @@ export const ERROR_CODES = [
   "cv_upload_failed",
   "cv_not_found",
   "cv_missing",
+  "cv_changed",
   "cv_unreadable",
   "cv_no_text",
   "cv_too_long",

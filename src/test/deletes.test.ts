@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteCandidate } from "@/lib/api/candidates";
 import { deleteJob } from "@/lib/api/jobs";
 import { PG_FOREIGN_KEY_VIOLATION } from "@/lib/constants";
+import { AppError } from "@/lib/errors";
 
 // The query builder chains delete() and update() ….eq().eq().select().maybeSingle(), recording
 // every call.
@@ -17,22 +18,13 @@ const db = vi.hoisted(() => {
     };
   }
   builder["maybeSingle"] = () => Promise.resolve(result);
-  // Removing the candidate's CV file (ATS-17).
-  const storageResult: { error: unknown } = { error: null };
-  const storage = {
-    from: (bucket: string) => ({
-      remove: (paths: string[]) => {
-        calls.push(["remove", bucket, paths]);
-        return Promise.resolve({ data: [], error: storageResult.error });
-      },
-    }),
-  };
-  return { calls, result, builder, storage, storageResult };
+  return { calls, result, builder };
 });
 
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { ...db.builder, storage: db.storage },
-}));
+vi.mock("@/integrations/supabase/client", () => ({ supabase: db.builder }));
+
+const invokeFunction = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/api/functions", () => ({ invokeFunction }));
 
 const CUSTOMER = "00000000-0000-0000-0000-0000000000a1";
 const ID = "10000000-0000-0000-0000-0000000000a1";
@@ -42,7 +34,7 @@ describe("deleting", () => {
     db.calls.length = 0;
     db.result.data = { id: ID };
     db.result.error = null;
-    db.storageResult.error = null;
+    invokeFunction.mockReset();
   });
 
   it("deletes a job scoped to the customer", async () => {
@@ -70,37 +62,18 @@ describe("deleting", () => {
     await expect(deleteJob(CUSTOMER, ID)).rejects.toBe(error);
   });
 
-  it("deletes a candidate scoped to the customer, removing its CV file first", async () => {
-    await expect(deleteCandidate(CUSTOMER, ID)).resolves.toBeUndefined();
-    expect(db.calls[0]).toEqual(["remove", "cvs", [`${CUSTOMER}/${ID}.pdf`]]);
-    expect(db.calls).toContainEqual(["from", "candidates"]);
-    expect(db.calls).toContainEqual(["eq", "customer_id", CUSTOMER]);
-  });
-
-  it("deletes no candidate when its CV file cannot be removed", async () => {
-    const error = new Error("storage down");
-    db.storageResult.error = error;
-    await expect(deleteCandidate(CUSTOMER, ID)).rejects.toBe(error);
-    expect(db.calls).not.toContainEqual(["from", "candidates"]);
-  });
-
-  it("clears the CV path when the file is removed but the candidate can't be deleted", async () => {
-    const error = { code: "57014", message: "canceling statement due to statement timeout" };
-    db.result.error = error;
-    await expect(deleteCandidate(CUSTOMER, ID)).rejects.toBe(error);
-    expect(db.calls[0]).toEqual(["remove", "cvs", [`${CUSTOMER}/${ID}.pdf`]]);
-    expect(db.calls).toContainEqual(["update", { cv_path: null }]);
-  });
-
-  it("does not touch the CV path after a delete that worked", async () => {
-    await deleteCandidate(CUSTOMER, ID);
-    expect(db.calls.some(([method]) => method === "update")).toBe(false);
-  });
-
-  it("reports a candidate that is not there for this customer as candidate_not_found", async () => {
-    db.result.data = null;
-    await expect(deleteCandidate(CUSTOMER, ID)).rejects.toMatchObject({
-      code: "candidate_not_found",
+  it("deletes a candidate in one call to delete-candidate, which removes the CV file too", async () => {
+    invokeFunction.mockResolvedValue({ deleted: ID });
+    await expect(deleteCandidate(ID)).resolves.toBeUndefined();
+    expect(invokeFunction).toHaveBeenCalledExactlyOnceWith("delete-candidate", {
+      candidate_id: ID,
     });
+    // Nothing is deleted or removed from the browser itself (ATS-56).
+    expect(db.calls).toEqual([]);
+  });
+
+  it("passes the function's code on, such as candidate_not_found", async () => {
+    invokeFunction.mockRejectedValue(new AppError("candidate_not_found"));
+    await expect(deleteCandidate(ID)).rejects.toMatchObject({ code: "candidate_not_found" });
   });
 });

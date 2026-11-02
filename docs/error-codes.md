@@ -63,7 +63,7 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 | --------------------------------- | ------------------------------------------- | ---------------------------------------------------------- |
 | `card_not_found`                  | `move_application` (function)               | The card does not exist for this customer                  |
 | `job_not_found`                   | jobs                                        | The job does not exist for this customer                   |
-| `candidate_not_found`             | candidates                                  | The candidate does not exist for this customer             |
+| `candidate_not_found`             | candidates, `delete-candidate`              | The candidate does not exist for this customer             |
 | `email_exists`                    | `admin-create-user`, `admin-manage-account` | An account with that email already exists                  |
 | `invalid_input`                   | `admin-create-user`, `admin-manage-account` | The request body failed validation (`fields` names which)  |
 | `not_authenticated`               | Edge Functions                              | No valid JWT: signed out or the session expired            |
@@ -95,6 +95,7 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 | `cv_upload_failed`                | candidates                                  | The candidate was saved, but uploading its CV failed       |
 | `cv_not_found`                    | CV (`cvs` bucket), `assess-cv`              | The CV file is missing, so it cannot be opened or assessed |
 | `cv_missing`                      | `assess-cv`                                 | The candidate has no CV to assess (409)                    |
+| `cv_changed`                      | `assess-cv`                                 | The CV was replaced while it was assessed; not saved (409) |
 | `cv_unreadable`                   | `assess-cv`                                 | The CV file is not a readable PDF (422)                    |
 | `cv_no_text`                      | `assess-cv`                                 | The PDF has too little text, for example a scan (422)      |
 | `cv_too_long`                     | `assess-cv`                                 | The CV text is over the limit; it is never cut (422)       |

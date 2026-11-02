@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Candidate } from "@/types";
-import { cvPath, removeCvFile } from "@/lib/api/cvs";
+import { invokeFunction } from "@/lib/api/functions";
 import { AppError, fromWriteError } from "@/lib/errors";
 import type { CandidateInput } from "@/lib/validation";
 
@@ -115,27 +115,13 @@ export async function setCandidateCvPath(
 }
 
 /**
- * Deletes one of the customer's candidates. Their applications (cards) and assessments go with
- * them through the database's cascades. The CV file goes first: if that fails nothing is
- * deleted, so a deleted candidate never leaves a CV behind (ATS-17). Its path is fixed, so the
- * file is removed even when this tab has not seen it uploaded; no file is no error.
- *
- * If the file is gone but the candidate can't be deleted, the candidate stays without a CV:
- * its cv_path is cleared, so it never points at the removed file (ATS-35). Clearing it is a
- * best effort; the delete's own error is the one the UI shows.
+ * Deletes a candidate with their CV file, in one call to the delete-candidate Edge Function
+ * (ATS-56). Their cards and assessments go with them through the database's cascades. The
+ * function reads the candidate with the caller's JWT, so RLS decides whose candidate it is, and
+ * removes the file first: a deleted candidate never leaves a CV behind, and one that could not be
+ * deleted never points at a removed file. Failures come back as codes, such as
+ * `candidate_not_found` for a candidate that is not there for the caller.
  */
-export async function deleteCandidate(customerId: string, id: string): Promise<void> {
-  await removeCvFile(cvPath(customerId, id));
-  const { data, error } = await supabase
-    .from("candidates")
-    .delete()
-    .eq("id", id)
-    .eq("customer_id", customerId)
-    .select("id")
-    .maybeSingle();
-  if (error) {
-    await setCandidateCvPath(customerId, id, null).catch(() => undefined);
-    throw error;
-  }
-  if (!data) throw new AppError("candidate_not_found");
+export async function deleteCandidate(id: string): Promise<void> {
+  await invokeFunction("delete-candidate", { candidate_id: id });
 }

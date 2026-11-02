@@ -29,7 +29,7 @@ export function useSaveCandidate(customerId: string | null) {
 export function useDeleteCandidate(customerId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteCandidate(customerId!, id),
+    mutationFn: (id: string) => deleteCandidate(id),
     // The candidate's cards go too, and jobs show the number of candidates. Also after a failure:
     // a candidate already deleted in another tab must leave the list.
     onSettled: () => {

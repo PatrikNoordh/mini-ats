@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { assessCv, listAssessments } from "@/lib/api/assessments";
+import { assessCv, deleteAssessments, listAssessments } from "@/lib/api/assessments";
 import type { Language } from "@/lib/language";
 import { queryKeys } from "@/lib/stages";
 
@@ -23,6 +23,16 @@ export function useAssessCv(customerId: string | null) {
     mutationFn: ({ applicationId, language }: { applicationId: string; language: Language }) =>
       assessCv(applicationId, language),
     // Also after a failure: a slow answer may have been saved after the request gave up.
+    onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.assessmentsAll(customerId) }),
+  });
+}
+
+/** Removes an application's assessments and keeps the CV (ATS-56). */
+export function useRemoveAssessment(customerId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (applicationId: string) => deleteAssessments(customerId!, applicationId),
+    // Also after a failure: another tab may have removed or added one meanwhile.
     onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.assessmentsAll(customerId) }),
   });
 }

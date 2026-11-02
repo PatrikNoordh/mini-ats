@@ -67,19 +67,23 @@ test("an admin deletes an account, finds it in Deleted accounts and restores it"
     .getByRole("row", { name: new RegExp(customer.company) });
   await expect(deletedRow).toBeVisible();
 
-  // While the account is deleted, the customer cannot sign in.
+  // While the account is deleted, the customer cannot sign in. The customer's own browser context
+  // is closed even when a step fails, so a failed run leaves no browser open.
   const customerContext = await browser.newContext();
-  const customerPage = await customerContext.newPage();
-  await submitSignIn(customerPage, customer.email);
-  await expect(customerPage.getByRole("alert")).toHaveText(sv.errors.account_deleted);
+  try {
+    const customerPage = await customerContext.newPage();
+    await submitSignIn(customerPage, customer.email);
+    await expect(customerPage.getByRole("alert")).toHaveText(sv.errors.account_deleted);
 
-  await deletedRow.getByRole("button", { name: sv.accounts.restore }).click();
-  await expect(page.getByText(sv.accounts.restored)).toBeVisible();
-  await expect(deletedRow).toHaveCount(0);
+    await deletedRow.getByRole("button", { name: sv.accounts.restore }).click();
+    await expect(page.getByText(sv.accounts.restored)).toBeVisible();
+    await expect(deletedRow).toHaveCount(0);
 
-  await signIn(customerPage, customer.email);
-  await expect(
-    customerPage.getByRole("heading", { level: 1, name: sv.pipeline.title }),
-  ).toBeVisible();
-  await customerContext.close();
+    await signIn(customerPage, customer.email);
+    await expect(
+      customerPage.getByRole("heading", { level: 1, name: sv.pipeline.title }),
+    ).toBeVisible();
+  } finally {
+    await customerContext.close();
+  }
 });

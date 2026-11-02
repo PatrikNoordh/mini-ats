@@ -23,7 +23,10 @@ export const requestSchema = z.object({
 /** The application as the caller sees it through RLS (AC1). */
 export interface ApplicationForAssessment {
   id: string;
+  candidateId: string;
   cvPath: string | null;
+  /** When the CV was uploaded, which tells one CV from the one that replaces it (ATS-35). */
+  cvUploadedAt: string | null;
   job: JobForAssessment;
   /** When the newest assessment of this application was made, or null. */
   lastAssessedAt: string | null;
@@ -52,6 +55,14 @@ export interface Deps {
   /** The caller's user id, or null for a missing, expired or invalid token. */
   getUserId: (authorization: string) => Promise<string | null>;
   getApplication: (authorization: string, id: string) => Promise<ApplicationForAssessment | null>;
+  /**
+   * The candidate's CV as it is now, read as the caller, or null when the candidate has none.
+   * Read again just before saving (ATS-56, AC2).
+   */
+  getCv: (
+    authorization: string,
+    candidateId: string,
+  ) => Promise<{ path: string; uploadedAt: string | null } | null>;
   /** The CV file, downloaded as the caller (AC2), or null when there is no such file. */
   downloadCv: (authorization: string, path: string) => Promise<Uint8Array | null>;
   /** The text of a PDF. Throws when the file is not a readable PDF. */
@@ -136,6 +147,15 @@ export function createHandler(deps: Deps) {
       if (!text.ok) return text.response;
       const result = await modelAssessment(deps, application.job, text.value, language);
       if (!result.ok) return result.response;
+
+      // The model takes a while. A CV removed meanwhile has had its assessments removed with it
+      // (ATS-35), so this one must not be saved after them; a CV replaced meanwhile is not the one
+      // that was read (ATS-56, AC2).
+      const cv = await deps.getCv(authorization, application.candidateId);
+      if (!cv) return json({ error: "cv_missing" }, 409);
+      if (cv.path !== application.cvPath || cv.uploadedAt !== application.cvUploadedAt) {
+        return json({ error: "cv_changed" }, 409);
+      }
 
       const saved = await deps.save(application.id, result.value.assessment, result.value.model);
       return json({ assessment: saved }, 200);

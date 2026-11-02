@@ -59,20 +59,21 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 ## Reference docs
 
 - GitHub Issues: the live tickets and their status, one milestone per epic. Titles start with `[ATS-<N>]`.
-- `TICKETS.md`: the original plan, imported into GitHub Issues with `/ats-create-ticket import`.
+- `TICKETS.md`: the original plan, imported into GitHub Issues with `/ats-create-ticket import`. Now used for its two findings lists, § Found while building and § Found while reviewing PRs, which are triaged and emptied at each epic checkpoint (`/ats-epic-close`).
 - `docs/ui-spec.md`: what the UI does. `docs/prototype.html`: how it looks (open it in a browser). `docs/review-ats-1.md`: review of the Lovable code. `docs/review-epic-<N>.md`: each epic review and where its findings went.
+- `docs/error-codes.md`: every error code and where it comes from. `docs/next-custom-stages.md`: the design of epic 8, own pipeline stages. `docs/next-branding.md`: a design sketch for customer branding.
 - `supabase/migrations/`: the schema. `supabase/tests/rls_test.sql`: the security tests.
 
 ## Security rules — never break these
 
-1. **The service role key is only used in Edge Functions**, and in the local demo seed script (`scripts/seed-demo.ts`, ATS-15), which reads it from your shell or `.env.seed.local` and is never run in CI or deployed. The end-to-end test seed (`scripts/seed-e2e.ts`, ATS-36) uses only the local stack's fixed key and refuses any other host. Never import it, read it or reference it in `src/`.
-2. **Edge Functions read with the caller's JWT.** Use the service role key only for the privileged action the function exists for (creating a user, changing or deleting an account, saving an assessment). Never use it to read data on behalf of a user.
+1. **The service role key is only used in Edge Functions**, and in the local demo seed script (`scripts/seed-demo.ts`, ATS-15), which reads it from your shell or `.env.seed.local` and is never run in CI or deployed. The end-to-end test seed (`scripts/seed-e2e.ts`, ATS-36) and the end-to-end fixtures (`e2e/fixtures.ts`) use only the local stack's fixed key and refuse any other host. Never import it, read it or reference it in `src/`.
+2. **Edge Functions read with the caller's JWT.** Use the service role key only for the privileged action the function exists for (creating a user, changing or deleting an account, saving an assessment). Never use it to read data on behalf of a user. The one exception is `purge-deleted-accounts`: it has no user as caller (pg_cron calls it with a secret it checks) and reads the accounts due for purging with the service role. `delete-candidate` uses no service role at all.
 3. **Public sign-up is disabled.** Accounts are only created by an admin through the `admin-create-user` Edge Function, which checks that the caller is an admin before doing anything.
 4. **`profiles.role` is the role that counts.** RLS reads it through `public.is_admin()`, and the app reads it from the user's own profile. `app_metadata.role` is set when the account is created so the trigger can copy it. Never read the role from `user_metadata`.
 5. **Every table has Row Level Security.** Customers see only rows where `customer_id` is their own id. Admins see everything through `public.is_admin()`. A new table without RLS policies is a bug. Table privileges are explicit too: `anon` has none, and a new table gets no privileges until its migration grants `authenticated` only the operations the app uses (ATS-22).
 6. **Do not rely on the frontend for access control.** Hiding a button is UX, not security. RLS is the security.
 7. **The database sets `customer_id` where it can.** `applications.customer_id` comes from the job and `cv_assessments.customer_id` from the application, both via triggers. Never trust a `customer_id` sent from the client for those tables.
-8. **`cv_assessments` is read-only for clients.** Only `assess-cv` writes to it.
+8. **Clients may read and delete their own assessments; only `assess-cv` creates them.** No client inserts or updates `cv_assessments` (ATS-56).
 9. No secrets in the repo. Use `.env.local`, Vercel environment variables and Supabase secrets.
 
 ## How data access works
@@ -133,10 +134,10 @@ Allowed exceptions: `src/components/ui/` (vendored shadcn/ui code), dynamic valu
 - **Database changes** go in a new migration in `supabase/migrations/`, get a matching check in `supabase/tests/rls_test.sql`, and the test file is run before the PR.
 - **Migrations reach the project before the merge.** A migration is never left to "apply later".
   - Migrations must be backwards compatible with the code on `main`, because they are applied before the PR is merged: add columns with a default or as nullable, and drop or rename only in a later migration once no code on `main` uses the old shape.
-  - Before the merge, with the developer's yes, the migration is applied with `npx supabase db push`. Then the types are regenerated and compared: `npx supabase gen types typescript --linked > src/integrations/supabase/types.ts && npx prettier --write src/integrations/supabase/types.ts`, then `git diff`. A diff is committed to the branch.
+  - Before the merge the developer applies the migration: first `npx supabase db push --dry-run`, which must list only the branch's migrations, then `npx supabase db push`. Then the developer regenerates the types: `npx supabase gen types typescript --linked > src/integrations/supabase/types.ts && npx prettier --write src/integrations/supabase/types.ts`. Claude compares them with `git diff`, and a diff is committed to the branch.
   - If the migration changes tables, policies or functions, the developer runs `supabase/tests/rls_test.sql` in the SQL Editor against the project, and the PR says it passed.
   - If a PR whose migration is already applied is closed without merging, a new migration reverts it.
-- **The Supabase CLI** is always run as `npx supabase`. Read-only commands (`migration list`, `gen types`, `db push --dry-run`) are fine. Commands that write to the remote database (`db push`, `migration repair`) need the developer's yes every time.
+- **The Supabase CLI** is always run as `npx supabase`. Claude never runs a command against the linked project, not even a read-only one (`migration list`, `gen types --linked`, `db push --dry-run`): it prints the command for the developer to run and paste back. Commands that write to the remote database (`db push`, `migration repair`) also need the developer's yes every time. For the local stack, Claude runs only `start`, `stop` and `status`.
 - **Pull requests** target `main` with the template: what changed (database / API / UI), acceptance criteria covered, manual test steps, tradeoffs. CI must be green.
 - **Ask before:** adding a dependency, changing the database schema outside a ticket, deleting files, writing to the remote database (`db push`, `migration repair`), pushing, or opening a PR. Running `/ats-git-ship` is the developer's request to push and open a PR.
 

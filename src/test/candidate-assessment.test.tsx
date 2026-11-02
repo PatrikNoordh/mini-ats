@@ -9,6 +9,8 @@ import type { Application, Candidate, CvAssessment } from "@/types";
 
 const mocks = vi.hoisted(() => ({
   assess: vi.fn(),
+  remove: vi.fn(),
+  removePending: { isPending: false },
   list: {
     data: [] as CvAssessment[],
     isLoading: false,
@@ -23,6 +25,7 @@ vi.mock("sonner", () => ({ toast: mocks.toast }));
 vi.mock("@/hooks/useAssessments", () => ({
   useAssessments: () => mocks.list,
   useAssessCv: () => ({ mutateAsync: mocks.assess, ...mocks.pending }),
+  useRemoveAssessment: () => ({ mutateAsync: mocks.remove, ...mocks.removePending }),
 }));
 
 const CUSTOMER = "00000000-0000-0000-0000-0000000000a1";
@@ -77,6 +80,8 @@ describe("the AI assessment in the candidate panel", () => {
     mocks.pending.isPending = false;
     mocks.pending.variables = undefined;
     mocks.assess.mockResolvedValue(undefined);
+    mocks.remove.mockResolvedValue(undefined);
+    mocks.removePending.isPending = false;
   });
 
   it("is labelled as a suggestion from AI, never a decision", () => {
@@ -200,5 +205,59 @@ describe("the AI assessment in the candidate panel", () => {
     renderBox();
     fireEvent.click(within(screen.getByRole("alert")).getByRole("button", { name: "Try again" }));
     expect(mocks.list.refetch).toHaveBeenCalled();
+  });
+
+  const assessed: CvAssessment = {
+    id: "s1",
+    application_id: "a1",
+    score: 7,
+    summary: "Good match.",
+    strengths: [],
+    gaps: [],
+    created_at: "2026-10-23T12:00:00Z",
+  };
+
+  it("removes a job's assessment after a confirm, and keeps the CV", async () => {
+    mocks.list.data = [assessed];
+    renderBox();
+    // Only an assessed job can have its assessment removed.
+    expect(
+      screen.queryByRole("button", { name: "Remove assessment – Frontendutvecklare" }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Remove assessment – UX-designer" }));
+    const dialog = screen.getByRole("alertdialog", { name: "Remove the assessment?" });
+    expect(dialog).toHaveTextContent(
+      "The AI assessment of the CV against UX-designer will be removed. The CV stays and can be assessed again.",
+    );
+    expect(mocks.remove).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+    await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith("a1"));
+    expect(mocks.toast.success).toHaveBeenCalledWith(
+      "The assessment against UX-designer has been removed.",
+    );
+  });
+
+  it("says why an assessment could not be removed", async () => {
+    mocks.list.data = [assessed];
+    mocks.remove.mockRejectedValue(new AppError("network_error"));
+    renderBox();
+    fireEvent.click(screen.getByRole("button", { name: "Remove assessment – UX-designer" }));
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Delete" }),
+    );
+    await waitFor(() =>
+      expect(mocks.toast.error).toHaveBeenCalledWith(
+        "Could not remove the assessment.",
+        expect.objectContaining({ description: expect.any(String) }),
+      ),
+    );
+  });
+
+  it("cannot remove an assessment while that job is being assessed", () => {
+    mocks.list.data = [assessed];
+    mocks.pending.isPending = true;
+    mocks.pending.variables = { applicationId: "a1" };
+    renderBox();
+    expect(screen.getByRole("button", { name: "Remove assessment – UX-designer" })).toBeDisabled();
   });
 });

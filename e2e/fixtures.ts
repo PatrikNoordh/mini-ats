@@ -74,6 +74,40 @@ export const test = base.extend<Fixtures>({
   },
 });
 
+/** The smallest file the cvs bucket takes as a PDF. */
+const TINY_PDF = "%PDF-1.4\n%%EOF\n";
+
+/**
+ * Gives a seeded candidate a CV, as an upload in the app would: the file in the customer's folder
+ * and cv_path pointing at it. Returns the path.
+ */
+export async function addCv(customerId: string, fullName: string): Promise<string> {
+  const admin = serviceClient();
+  const found = await admin
+    .from("candidates")
+    .select("id")
+    .eq("customer_id", customerId)
+    .eq("full_name", fullName)
+    .single();
+  if (found.error) throw found.error;
+  const path = `${customerId}/${String(found.data.id)}.pdf`;
+  const upload = await admin.storage
+    .from("cvs")
+    .upload(path, new Blob([TINY_PDF], { type: "application/pdf" }), { upsert: true });
+  if (upload.error) throw upload.error;
+  const update = await admin.from("candidates").update({ cv_path: path }).eq("id", found.data.id);
+  if (update.error) throw update.error;
+  return path;
+}
+
+/** Whether a file is in the cvs bucket, looked up past the storage policies. */
+export async function cvExists(path: string): Promise<boolean> {
+  const [folder = "", name = ""] = path.split("/");
+  const { data, error } = await serviceClient().storage.from("cvs").list(folder, { search: name });
+  if (error) throw error;
+  return data.some((file) => file.name === name);
+}
+
 /** An open job for makeCustomer. */
 export function job(key: string, title: string): DemoJob {
   return { key, title, location: "Teststad", description: "", status: "open" };

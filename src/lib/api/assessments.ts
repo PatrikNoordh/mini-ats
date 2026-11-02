@@ -42,6 +42,20 @@ export async function listAssessments(
   return data.map(parseAssessmentRow);
 }
 
+/**
+ * Removes every assessment of one application and keeps the CV (ATS-56). All of them, not only the
+ * newest, or an older one would show in its place. RLS lets a customer remove its own and an
+ * admin any; the filter on customer_id keeps an admin to the active customer.
+ */
+export async function deleteAssessments(customerId: string, applicationId: string): Promise<void> {
+  const { error } = await supabase
+    .from("cv_assessments")
+    .delete()
+    .eq("customer_id", customerId)
+    .eq("application_id", applicationId);
+  if (error) throw error;
+}
+
 /** The newest assessment of each application, from a list ordered newest first. */
 export function latestByApplication(
   assessments: readonly CvAssessment[],

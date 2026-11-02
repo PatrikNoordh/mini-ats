@@ -89,6 +89,7 @@
     "cv_not_found": "The CV file could not be found. Upload it again.",
     "cv_upload_failed": "The candidate was saved, but the CV could not be uploaded. Open the candidate and try again.",
     "cv_missing": "The candidate has no CV. Upload one first.",
+    "cv_changed": "The CV was replaced while it was being assessed. Assess again to use the new one.",
     "cv_unreadable": "The CV file could not be read. Upload it as a regular PDF.",
     "cv_no_text": "The CV has no text to assess. Is it a scanned image? Upload a PDF with text.",
     "cv_too_long": "The CV is too long to be assessed.",
@@ -390,7 +391,12 @@
     "fromEarlierCv": "Made from the previous CV. Assess again to use the current one.",
     "done": "The CV is assessed against {{job}}.",
     "failed": "Could not assess the CV.",
-    "forJob": "{{action}} – {{job}}"
+    "forJob": "{{action}} – {{job}}",
+    "remove": "Remove assessment",
+    "removeTitle": "Remove the assessment?",
+    "removeDescription": "The AI assessment of the CV against {{job}} will be removed. The CV stays and can be assessed again.",
+    "removed": "The assessment against {{job}} has been removed.",
+    "removeFailed": "Could not remove the assessment."
   },
   "changePassword": {
     "menuItem": "Change password",
