@@ -140,7 +140,7 @@ flowchart LR
 | Data layer | `src/lib/api/` | Every Supabase call, one file per table. Errors become codes |
 | Contexts | `src/contexts/` | `AuthContext` (the user and their profile) and `ActiveCustomerContext` |
 | Database | `supabase/migrations/` | Schema, RLS policies, triggers and database functions |
-| Edge Functions | `supabase/functions/` | `admin-create-user` and `admin-manage-account`, the only code with the service role key |
+| Edge Functions | `supabase/functions/` | Accounts, the AI assessment, the nightly purge and deleting a candidate with their CV. The only code with the service role key |
 
 **Rules that follow from it**
 - **Components never fetch.** A page reads data through a hook, and the hook calls `src/lib/api/`.
@@ -211,11 +211,13 @@ The security lives in the database, not in the frontend. Hiding a button is UX; 
 
 The service role key bypasses RLS. Anything in the browser can be read by anyone, so the key never reaches `src/` or the bundle; the frontend only has the public anon key, and RLS limits what it can do.
 
-Three things need more power than a user has: creating accounts, changing or deleting them in Auth, and saving an AI assessment of a CV, which clients may only read. Each is an Edge Function that:
+Three things need more power than a user has: creating accounts, changing or deleting them in Auth, and saving an AI assessment of a CV, which clients may only read and delete. Each is an Edge Function that:
 1. **checks the caller first**: `is_admin()` for the account functions, a valid session for `assess-cv`, run with the caller's own JWT,
 2. **reads with the caller's JWT**, so RLS still applies: `assess-cv` reads the application and downloads the CV as the caller,
 3. uses the **service role only for the write** it exists for,
 4. validates the body with zod and returns error codes, never internal messages.
+
+`delete-candidate` needs no extra power: it runs every step with the caller's JWT, so a candidate and their CV file go in one call and a failure never leaves a CV behind.
 
 `assess-cv` sends only the CV's text and the job to the model (the photo never leaves the PDF), tells it to ignore name, age, gender and anything else not relevant to the job, and checks the JSON answer with zod before saving it.
 
@@ -271,6 +273,7 @@ npx supabase functions deploy admin-manage-account
 npx supabase functions deploy purge-deleted-accounts
 npx supabase secrets set PURGE_CRON_SECRET=<a long random value, e.g. from openssl rand -hex 32>
 npx supabase functions deploy assess-cv
+npx supabase functions deploy delete-candidate
 npx supabase secrets set ANTHROPIC_API_KEY=<your Anthropic API key>
 ```
 

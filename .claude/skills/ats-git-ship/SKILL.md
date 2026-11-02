@@ -47,7 +47,22 @@ npm test
 npm run build
 ```
 
-All four must pass. If the branch touches `supabase/`, the RLS tests must have passed locally or be noted for CI (see `ats-implement-ticket` § Validation).
+All four must pass. Then the same extra checks as `ats-implement-ticket` § Validation:
+
+- If the branch touches `supabase/`, the RLS tests against a local Postgres.
+- If the branch touches `supabase/functions/`, the Deno checks the way the CI `functions` job runs them (`DENO_NO_PACKAGE_JSON=1`):
+  ```bash
+  deno check supabase/functions/*/index.ts
+  deno test --allow-env supabase/functions
+  ```
+- The end-to-end tests when Docker is available. `start`, `stop` and `status` are the only `npx supabase` commands for the local stack, and never anything with `--linked`:
+  ```bash
+  npx supabase start
+  npm run test:e2e
+  npx supabase stop
+  ```
+
+A check that cannot run here (no Postgres, Deno or Docker) is noted for CI in the PR's Validation section, never left out silently.
 
 **If anything fails, stop and fix it before continuing.**
 
@@ -132,14 +147,18 @@ gh pr create --repo "$REPO" --base main --title "<type> [ATS-<N>] <Title Case Su
 
 ## Step 7 — After the PR is open
 
-- If the PR adds a migration, apply it as described in `CLAUDE.md` § Workflow before the merge:
-  1. Ask the developer, then run `npx supabase db push`
-  2. Regenerate and compare the types, and commit and push a diff to the branch:
+- If the PR adds a migration, it reaches the project before the merge as described in `CLAUDE.md` § Workflow. Claude never runs a command against the linked project, not even a read-only one: it prints each command for the developer to run in their own terminal and paste back.
+  1. The developer runs `npx supabase db push --dry-run`. It must list only this branch's migrations; anything else, stop
+  2. With the developer's yes, the developer runs `npx supabase db push`
+  3. The developer regenerates the types, and Claude compares them and commits and pushes a diff to the branch:
      ```bash
+     # the developer runs:
      npx supabase gen types typescript --linked > src/integrations/supabase/types.ts && npx prettier --write src/integrations/supabase/types.ts
+     # Claude runs:
      git diff src/integrations/supabase/types.ts
      ```
-  3. If the migration changes tables, policies or functions, ask the developer to run `supabase/tests/rls_test.sql` in the SQL Editor against the project, and add the result to the PR's Validation section
+  4. If the migration changes tables, policies or functions, ask the developer to run `supabase/tests/rls_test.sql` in the SQL Editor against the project, and add the result to the PR's Validation section
+- If the PR adds or changes an Edge Function, the developer deploys it (`npx supabase functions deploy <name>`) before the merge when the code on `main` will call it, and after the merge otherwise
 - Tell the developer to wait for both CI jobs (app and RLS) and the Vercel preview before merging
 - Suggest running `ats-review-pr <number>` before merging
 - Always ask: "Tick AC1–AC<n> on #<number> now that the PR covers them?" Tick them only after a yes, and only the ACs the PR marks `- [x]`:
