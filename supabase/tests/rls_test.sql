@@ -8,6 +8,13 @@
 -- =============================================================================
 begin;
 
+-- A customer's column by its default key, looked up past RLS, so a check can name another
+-- customer's column. In pg_temp, so it is gone with the session.
+create function pg_temp.stage_of(customer uuid, key text) returns uuid
+language sql security definer set search_path = public as $$
+  select id from public.pipeline_stages where customer_id = customer and default_key = key;
+$$;
+
 -- Test users (fixed ids so the checks are readable)
 insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000ad', 'admin@test.local', '{"role":"admin"}', '{"full_name":"Admin"}'),
@@ -90,8 +97,10 @@ do $$ declare error_code text; begin
 end $$;
 
 do $$ begin
-  update public.applications set stage = 'interview' where id = '30000000-0000-0000-0000-0000000000b1';
-  assert (select stage from public.applications where id = '30000000-0000-0000-0000-0000000000b1') = 'interview', 'stage';
+  update public.applications set stage_id = pg_temp.stage_of('00000000-0000-0000-0000-0000000000b1', 'interview')
+  where id = '30000000-0000-0000-0000-0000000000b1';
+  assert (select stage_id from public.applications where id = '30000000-0000-0000-0000-0000000000b1')
+         = pg_temp.stage_of('00000000-0000-0000-0000-0000000000b1', 'interview'), 'stage';
   raise notice 'OK 7: customer can move own card';
 end $$;
 
@@ -115,21 +124,23 @@ do $$ declare candidate uuid; spoofed uuid; begin
 end $$;
 
 -- move_application (ATS-12) puts a moved card last in its new column, in the same call.
-do $$ declare candidate uuid; second uuid; first_pos int; second_pos int; again_pos int; begin
+do $$ declare candidate uuid; second uuid; first_pos int; second_pos int; again_pos int;
+  offer uuid := pg_temp.stage_of('00000000-0000-0000-0000-0000000000b1', 'offer');
+begin
   insert into public.candidates (customer_id, full_name)
   values ('00000000-0000-0000-0000-0000000000b1', 'Cand B4') returning id into candidate;
   insert into public.applications (job_id, candidate_id)
   values ('10000000-0000-0000-0000-0000000000b1', candidate) returning id into second;
   select position into first_pos from public.move_application(
-    '30000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1', 'offer');
+    '30000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1', offer);
   select position into second_pos from public.move_application(
-    second, '00000000-0000-0000-0000-0000000000b1', 'offer');
+    second, '00000000-0000-0000-0000-0000000000b1', offer);
   select position into again_pos from public.move_application(
-    '30000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1', 'offer');
+    '30000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1', offer);
   assert first_pos = 0, 'first card in an empty column gets position 0';
   assert second_pos = 1, 'next card lands after it';
   assert again_pos = 2, 'a card moved within its column goes last';
-  assert (select stage from public.applications where id = second) = 'offer', 'stage changed';
+  assert (select stage_id from public.applications where id = second) = offer, 'stage changed';
   delete from public.candidates where id = candidate; -- the counts below expect the seed data only
   raise notice 'OK 7c: move_application sets the stage and the next position in one call';
 end $$;
@@ -137,12 +148,14 @@ end $$;
 do $$ declare error_code text; other_code text; begin
   begin
     perform public.move_application(
-      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1', 'hired');
+      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1',
+      pg_temp.stage_of('00000000-0000-0000-0000-0000000000a1', 'hired'));
   exception when raise_exception then error_code := sqlerrm;
   end;
   begin
     perform public.move_application(
-      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1', 'hired');
+      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1',
+      pg_temp.stage_of('00000000-0000-0000-0000-0000000000b1', 'hired'));
   exception when raise_exception then other_code := sqlerrm;
   end;
   if error_code is distinct from 'card_not_found' or other_code is distinct from 'card_not_found' then
@@ -182,15 +195,19 @@ end $$;
 
 -- The admin moves a card for the active customer. The customer id must match the card's.
 do $$ declare error_code text; begin
-  assert (select stage from public.applications where id = '30000000-0000-0000-0000-0000000000a1') = 'new',
+  assert (select stage_id from public.applications where id = '30000000-0000-0000-0000-0000000000a1')
+         = pg_temp.stage_of('00000000-0000-0000-0000-0000000000a1', 'new'),
          'A''s card survived B''s move attempt';
   perform public.move_application(
-    '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1', 'screening');
-  assert (select stage from public.applications where id = '30000000-0000-0000-0000-0000000000a1') = 'screening',
+    '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1',
+    pg_temp.stage_of('00000000-0000-0000-0000-0000000000a1', 'screening'));
+  assert (select stage_id from public.applications where id = '30000000-0000-0000-0000-0000000000a1')
+         = pg_temp.stage_of('00000000-0000-0000-0000-0000000000a1', 'screening'),
          'admin moved A''s card';
   begin
     perform public.move_application(
-      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1', 'hired');
+      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1',
+      pg_temp.stage_of('00000000-0000-0000-0000-0000000000b1', 'hired'));
   exception when raise_exception then error_code := sqlerrm;
   end;
   if error_code is distinct from 'card_not_found' then
@@ -219,7 +236,7 @@ end $$;
 do $$ declare blocked boolean := false; begin
   begin
     perform public.move_application(
-      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1', 'hired');
+      '30000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1', gen_random_uuid());
   exception when insufficient_privilege then blocked := true;
   end;
   if not blocked then raise exception 'FAIL 9b: a signed-out user could call move_application'; end if;
@@ -825,10 +842,6 @@ exception when others then
 end;
 $$;
 
-create function pg_temp.stage_of(customer uuid, key text) returns uuid language sql as $$
-  select id from public.pipeline_stages where customer_id = customer and default_key = key;
-$$;
-
 insert into auth.users (id, email, raw_app_meta_data) values
   ('00000000-0000-0000-0000-0000000038a1', 'stages-a-38@test.local', '{"role":"customer"}'),
   ('00000000-0000-0000-0000-0000000038b1', 'stages-b-38@test.local', '{"role":"customer"}');
@@ -859,8 +872,10 @@ do $$ begin
   raise notice 'OK 35: every account has the six default columns, and every card a column';
 end $$;
 
--- stage and stage_id follow each other, and stage_changed_at follows either. now() is the same
--- for the whole transaction, so the card's stage_changed_at is set back before each change.
+-- stage_changed_at follows stage_id, and not a move within the column. now() is the same for the
+-- whole transaction, so the card's stage_changed_at is set back before each change. Since ATS-42
+-- stage_id is the only column a card has: applications.stage and the functions that kept it in
+-- step are gone, and stage_id is required.
 do $$ declare
   a uuid := '00000000-0000-0000-0000-0000000038a1';
   card uuid := '30000000-0000-0000-0000-0000000038a1';
@@ -868,35 +883,37 @@ do $$ declare
   long_ago timestamptz := '2026-01-01';
 begin
   update public.applications set stage_changed_at = long_ago where id = card;
-  update public.applications set stage = 'interview' where id = card;
-  assert (select stage_id = pg_temp.stage_of(a, 'interview') and stage_changed_at = now()
-          from public.applications where id = card), 'a stage name change sets stage_id and stage_changed_at';
-
-  update public.applications set stage_changed_at = long_ago where id = card;
   update public.applications set stage_id = pg_temp.stage_of(a, 'offer') where id = card;
-  assert (select stage = 'offer' and stage_changed_at = now() from public.applications where id = card),
-         'a stage_id change sets the stage name and stage_changed_at';
+  assert (select stage_changed_at = now() from public.applications where id = card),
+         'a stage_id change did not set stage_changed_at';
 
   insert into public.pipeline_stages (customer_id, name, position, kind, colour)
   values (a, 'Kodtest', 6, 'open', 'teal') returning id into custom;
   update public.applications set stage_changed_at = long_ago where id = card;
   update public.applications set stage_id = custom where id = card;
-  assert (select stage = 'new' and stage_changed_at = now() from public.applications where id = card),
-         'a column that is not a default is stage new to the old code, and the move still counts';
+  assert (select stage_changed_at = now() from public.applications where id = card),
+         'a move to a column the customer added did not set stage_changed_at';
 
   update public.applications set stage_changed_at = long_ago where id = card;
   update public.applications set position = 7 where id = card;
   assert (select stage_changed_at = long_ago from public.applications where id = card),
          'a move within the column changed stage_changed_at';
 
-  update public.applications set stage = 'hired', stage_id = pg_temp.stage_of(a, 'rejected') where id = card;
-  assert (select stage = 'rejected' from public.applications where id = card), 'stage_id decides when both change';
-
-  update public.applications set stage = 'new' where id = card;
-  assert (select stage_id = pg_temp.stage_of(a, 'new') from public.applications where id = card),
-         'the stage name new goes back to the default new column';
+  update public.applications set stage_id = pg_temp.stage_of(a, 'new') where id = card;
   delete from public.pipeline_stages where id = custom;
-  raise notice 'OK 36: stage and stage_id stay in step both ways, and stage_changed_at follows either';
+
+  assert not exists (select 1 from information_schema.columns
+                     where table_schema = 'public' and table_name = 'applications' and column_name = 'stage'),
+         'applications.stage is still there';
+  assert (select is_nullable = 'NO' from information_schema.columns
+          where table_schema = 'public' and table_name = 'applications' and column_name = 'stage_id'),
+         'stage_id is not required';
+  assert to_regprocedure('public.move_application(uuid, uuid, text)') is null, 'move_application by stage name is still there';
+  assert to_regprocedure('public.stage_id_for_key(uuid, text)') is null, 'stage_id_for_key is still there';
+  assert to_regprocedure('public.sync_application_stage()') is null, 'the sync trigger function is still there';
+  assert pg_temp.error_of(format('update public.applications set stage_id = null where id = %L', card)) = '23502',
+         'a card could lose its column';
+  raise notice 'OK 36: stage_changed_at follows stage_id, and stage_id is the only, required column a card has';
 end $$;
 
 -- The kind rules, the name rules and the limit, as customer A2.
@@ -990,9 +1007,8 @@ begin
   insert into public.applications (job_id, candidate_id)
   values ('10000000-0000-0000-0000-0000000038a1', candidate) returning id into second;
   moved := public.move_application(second, a, pg_temp.stage_of(a, 'screening'));
-  assert moved.stage = 'screening' and moved.position = 1, 'a card moved by id goes last in its column';
-  moved := public.move_application(second, a, 'hired');
-  assert moved.stage_id = pg_temp.stage_of(a, 'hired') and moved.position = 0, 'the stage name version moves by id too';
+  assert moved.stage_id = pg_temp.stage_of(a, 'screening') and moved.position = 1,
+         'a card moved by id goes last in its column';
 
   select array_agg(id order by position desc) into ids from public.pipeline_stages where customer_id = a;
   assert (select array_agg(id) from public.reorder_stages(a, ids)) = ids, 'reorder_stages returns the new order';
@@ -1039,8 +1055,10 @@ begin
   assert pg_temp.error_of(format('select public.reorder_stages(%L, %L)', b, a_ids)) = 'stage_not_found', 'B reordered A''s columns as its own';
   assert pg_temp.error_of(format('select public.move_application(%L, %L, %L::uuid)', '30000000-0000-0000-0000-0000000038b1', b, a_stage))
          = 'stage_not_found', 'B moved its card into A''s column';
+  -- Since ATS-42 no trigger looks at an update: the foreign key alone keeps a card in its own
+  -- customer's columns.
   assert pg_temp.error_of(format('update public.applications set stage_id = %L where id = %L', a_stage, '30000000-0000-0000-0000-0000000038b1'))
-         = 'stage_not_found', 'B pointed its card at A''s column';
+         = '23503', 'B pointed its card at A''s column';
   assert pg_temp.error_of(format('select public.move_application(%L, %L, %L::uuid)', '30000000-0000-0000-0000-0000000038a1', a, a_stage))
          = 'card_not_found', 'B moved A''s card';
 
@@ -1049,11 +1067,6 @@ begin
          'A''s columns were changed, removed or reordered';
   assert not exists (select 1 from public.pipeline_stages where customer_id = a and name = 'hacked'), 'B renamed A''s column';
 
-  -- Under the trigger, the foreign key alone keeps a card in its own customer's columns.
-  alter table public.applications disable trigger applications_sync_stage;
-  assert pg_temp.error_of(format('update public.applications set stage_id = %L where id = %L', a_stage, '30000000-0000-0000-0000-0000000038b1'))
-         = '23503', 'the foreign key let a card point at another customer''s column';
-  alter table public.applications enable trigger applications_sync_stage;
   raise notice 'OK 40: customer B cannot read, create, rename, reorder or delete A''s columns, or move a card into one';
 end $$;
 
@@ -1187,8 +1200,8 @@ insert into public.jobs (id, customer_id, title) values
   ('10000000-0000-0000-0000-0000000040a1', '00000000-0000-0000-0000-0000000040a1', 'Job A 40');
 
 -- A new card lands in the first open column: after New is renamed, after the columns are
--- reordered, and after New is removed. An insert with the stage name 'new', as the code on main
--- and v1.0-submission do, still works.
+-- reordered, and after New is removed. Since ATS-42 that is an insert without a column, or with the
+-- nil placeholder that is stage_id's default. A column of another customer is refused (23503).
 do $$ declare
   a uuid := '00000000-0000-0000-0000-0000000040a1';
   job uuid := '10000000-0000-0000-0000-0000000040a1';
@@ -1196,9 +1209,10 @@ do $$ declare
   new_card uuid;
 begin
   insert into public.candidates (customer_id, full_name) values (a, 'First 40') returning id into new_card;
-  insert into public.applications (job_id, candidate_id, stage) values (job, new_card, 'new');
+  insert into public.applications (job_id, candidate_id, stage_id)
+  values (job, new_card, '00000000-0000-0000-0000-000000000000');
   assert (select stage_id from public.applications where candidate_id = new_card) = pg_temp.stage_of(a, 'new'),
-         'an insert with stage new did not land in New';
+         'an insert with the nil placeholder did not land in New';
 
   update public.pipeline_stages set name = 'Inkommen' where id = pg_temp.stage_of(a, 'new');
   insert into public.candidates (customer_id, full_name) values (a, 'Second 40') returning id into new_card;
@@ -1220,10 +1234,14 @@ begin
   where stage_id = pg_temp.stage_of(a, 'new');
   delete from public.pipeline_stages where id = pg_temp.stage_of(a, 'new');
   insert into public.candidates (customer_id, full_name) values (a, 'Fourth 40') returning id into new_card;
-  insert into public.applications (job_id, candidate_id, stage) values (job, new_card, 'new');
+  insert into public.applications (job_id, candidate_id) values (job, new_card);
   assert (select stage_id from public.applications where candidate_id = new_card) = pg_temp.stage_of(a, 'screening'),
          'after New was removed, a new card did not land in the first open column';
-  raise notice 'OK 45: a new card lands in the first open column after New is renamed, moved or removed';
+  insert into public.candidates (customer_id, full_name) values (a, 'Fifth 40') returning id into new_card;
+  assert pg_temp.error_of(format('insert into public.applications (job_id, candidate_id, stage_id) values (%L, %L, %L)',
+           job, new_card, pg_temp.stage_of('00000000-0000-0000-0000-0000000040b1', 'new')))
+         = '23503', 'a new card got another customer''s column';
+  raise notice 'OK 45: a new card lands in the first open column after New is renamed, moved or removed, and never in another customer''s';
 end $$;
 
 -- At least one open column: removing the last one, or changing its kind, is refused.

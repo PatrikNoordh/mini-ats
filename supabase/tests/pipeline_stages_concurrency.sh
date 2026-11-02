@@ -164,7 +164,7 @@ wait "$REMOVE" || fail "the removal failed"
 wait "$MOVE_IN" && fail "a card was moved into a removed column"
 grep -q "applications_stage_id_fkey" "$SECOND_ERROR" \
   || fail "the move failed without the foreign key: $(cat "$SECOND_ERROR")"
-[[ $(q -c "select stage from public.applications where id = '$CARD_2'") == new ]] \
+[[ $(q -c "select stage_id from public.applications where id = '$CARD_2'") == "$(stage "default_key = 'new'")" ]] \
   || fail "the card left the new column"
 echo "OK 3: a move into a column being removed waits for the removal, then fails on the foreign key"
 
