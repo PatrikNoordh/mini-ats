@@ -89,6 +89,7 @@
     "cv_not_found": "CV-filen hittades inte. Ladda upp den igen.",
     "cv_upload_failed": "Kandidaten sparades, men CV:t kunde inte laddas upp. Öppna kandidaten och försök igen.",
     "cv_missing": "Kandidaten har inget CV. Ladda upp ett först.",
+    "cv_changed": "CV:t byttes medan det bedömdes. Bedöm igen för att använda det nya.",
     "cv_unreadable": "CV-filen kunde inte läsas. Ladda upp den som en vanlig PDF.",
     "cv_no_text": "CV:t innehåller ingen text att bedöma. Är det en inskannad bild? Ladda upp en PDF med text.",
     "cv_too_long": "CV:t är för långt för att bedömas.",
@@ -390,7 +391,12 @@
     "fromEarlierCv": "Gjord från det tidigare CV:t. Bedöm igen för att använda det nuvarande.",
     "done": "CV:t är bedömt mot {{job}}.",
     "failed": "Kunde inte bedöma CV:t.",
-    "forJob": "{{action}} – {{job}}"
+    "forJob": "{{action}} – {{job}}",
+    "remove": "Ta bort bedömning",
+    "removeTitle": "Ta bort bedömningen?",
+    "removeDescription": "AI-bedömningen av CV:t mot {{job}} tas bort. CV:t finns kvar och kan bedömas igen.",
+    "removed": "Bedömningen mot {{job}} är borttagen.",
+    "removeFailed": "Kunde inte ta bort bedömningen."
   },
   "changePassword": {
     "menuItem": "Byt lösenord",
