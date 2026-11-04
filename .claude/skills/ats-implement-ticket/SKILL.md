@@ -166,7 +166,7 @@ npx supabase stop
 
 If Docker is not available, say so in the summary. CI runs the same job on the PR.
 
-If the branch adds a migration, it must follow the migration rules in `CLAUDE.md` § Workflow. It must be backwards compatible with the code on `main` and with `v1.0-submission`, because both deployments use the same Supabase project. Print the dry run for the developer to run in their own terminal and paste back. Never run a command against the linked project yourself, not even a read-only one:
+If the branch adds a migration, it must follow the migration rules in `CLAUDE.md` § Workflow. It must be backwards compatible with the code on `main`, because it reaches the project before the merge. Print the dry run for the developer to run in their own terminal and paste back. Never run a command against the linked project yourself, not even a read-only one:
 
 ```bash
 npx supabase db push --dry-run

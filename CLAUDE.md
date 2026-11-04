@@ -18,18 +18,18 @@ A small applicant tracking system (ATS) for companies that recruit. The goal is 
 | Account | `profiles` | One row per user. `role` is `admin` or `customer`. |
 | Job | `jobs` | Belongs to one customer. |
 | Candidate | `candidates` | Belongs to one customer. Can be linked to several jobs. |
-| Application | `applications` | Links a candidate to a job. One card on the kanban board. Has a `stage` and `stage_changed_at`. |
+| Application | `applications` | Links a candidate to a job. One card on the kanban board. Has a `stage_id` (its column) and `stage_changed_at`. |
+| Pipeline stage | `pipeline_stages` | One column of a customer's board, ordered by `position`. Its `kind` is `open`, `hired` or `rejected`. |
 | CV assessment | `cv_assessments` | Optional AI feature. A suggestion for the recruiter, never a decision. |
 
-**Pipeline stages, in order:** `new` → `screening` → `interview` → `offer` → `hired`, plus `rejected`.
+**Pipeline stages:** every customer starts with six default columns, `new` → `screening` → `interview` → `offer` → `hired`, plus `rejected`, and can rename, recolour, add, remove and reorder them (epic 8). A board always keeps exactly one Hired column, at least one Rejected and at least one open column.
 
 ## Context
 
 - The repo is public. Never commit personal data, private correspondence or anything that is not part of the project.
-- The code test is done. The submitted version is the tag `v1.0-submission` (release on GitHub), deployed from the `submission` branch to https://mini-ats-submission.vercel.app. Never commit to `submission` or move the tag.
+- The code test is done. The submitted version is kept as the tag and release `v1.0-submission` on GitHub. Never move the tag.
 - The project now continues as a portfolio project, with no deadline. Prefer finished and solid over fast and half-done.
 - The repo is read by people judging the work, so the process stays visible step by step. Keep `main` deployable, ship each finished ticket through a PR, and keep commits, PR descriptions and issue updates clear enough for someone reading along.
-- Both deployments use the same Supabase project, so every migration must stay backwards compatible with the submitted code too (see § Workflow).
 
 ## Quality bar
 

@@ -3,9 +3,7 @@
 # Mini-ATS — two move_application calls into the same column at the same time
 #
 # rls_test.sql runs in one session, so it cannot show that concurrent moves wait for each other.
-# This script runs two sessions, A and B, that move two cards into the same empty column. A moves
-# by stage name, the way the code on main does, and B by stage id (ATS-38), so it also shows that
-# both versions of move_application take the same lock:
+# This script runs two sessions, A and B, that move two cards into the same empty column:
 #
 #   1. A holder session takes advisory lock HOLD_KEY.
 #   2. A moves card 1 (taking the customer's lock), then waits for HOLD_KEY inside its transaction.
@@ -65,8 +63,7 @@ insert into public.applications (id, job_id, candidate_id) values
   ('$CARD_2', '$JOB', '20000000-0000-0000-0000-0000000000c2');
 SQL
 
-OFFER_BY_NAME="'offer'"
-OFFER_BY_ID="(select id from public.pipeline_stages where customer_id = '$CUSTOMER' and default_key = 'offer')"
+OFFER="(select id from public.pipeline_stages where customer_id = '$CUSTOMER' and default_key = 'offer')"
 
 # One move as the customer, in its own transaction. Extra SQL runs before the commit.
 move() {
@@ -86,11 +83,11 @@ PGAPPNAME=move_test_holder q -c "select pg_advisory_lock($HOLD_KEY), pg_sleep($T
 wait_until "the holder's lock" \
   "select exists (select 1 from pg_locks where locktype = 'advisory' and objid = $HOLD_KEY and granted)"
 
-move move_test_a "$CARD_1" "$OFFER_BY_NAME" "select pg_advisory_xact_lock_shared($HOLD_KEY);" &
+move move_test_a "$CARD_1" "$OFFER" "select pg_advisory_xact_lock_shared($HOLD_KEY);" &
 A=$!
 wait_until "A to hold the customer's lock" "$(waiting_on_advisory_lock move_test_a)"
 
-move move_test_b "$CARD_2" "$OFFER_BY_ID" &
+move move_test_b "$CARD_2" "$OFFER" &
 B=$!
 wait_until "B to wait for A's lock" "$(waiting_on_advisory_lock move_test_b)"
 
@@ -100,7 +97,7 @@ wait "$A" || { echo "FAIL move_application concurrency: A failed" >&2; exit 1; }
 wait "$B" || { echo "FAIL move_application concurrency: B failed" >&2; exit 1; }
 
 positions=$(q -c "select string_agg(position::text, ',' order by position) from public.applications
-                  where id in ('$CARD_1', '$CARD_2') and stage = 'offer'")
+                  where id in ('$CARD_1', '$CARD_2') and stage_id = $OFFER")
 if [[ $positions != "0,1" ]]; then
   echo "FAIL move_application concurrency: expected positions 0,1 in the offer column, got '$positions'" >&2
   exit 1

@@ -41,9 +41,8 @@ export type Database = {
           id: string;
           job_id: string;
           position: number;
-          stage: string;
           stage_changed_at: string;
-          stage_id: string | null;
+          stage_id: string;
           updated_at: string;
         };
         Insert: {
@@ -53,9 +52,8 @@ export type Database = {
           id?: string;
           job_id: string;
           position?: number;
-          stage?: string;
           stage_changed_at?: string;
-          stage_id?: string | null;
+          stage_id?: string;
           updated_at?: string;
         };
         Update: {
@@ -65,9 +63,8 @@ export type Database = {
           id?: string;
           job_id?: string;
           position?: number;
-          stage?: string;
           stage_changed_at?: string;
-          stage_id?: string | null;
+          stage_id?: string;
           updated_at?: string;
         };
         Relationships: [
@@ -351,57 +348,30 @@ export type Database = {
         }[];
       };
       is_admin: { Args: never; Returns: boolean };
-      move_application:
-        | {
-            Args: {
-              application_id: string;
-              customer_id: string;
-              new_stage: string;
-            };
-            Returns: {
-              candidate_id: string;
-              created_at: string;
-              customer_id: string;
-              id: string;
-              job_id: string;
-              position: number;
-              stage: string;
-              stage_changed_at: string;
-              stage_id: string | null;
-              updated_at: string;
-            };
-            SetofOptions: {
-              from: "*";
-              to: "applications";
-              isOneToOne: true;
-              isSetofReturn: false;
-            };
-          }
-        | {
-            Args: {
-              application_id: string;
-              customer_id: string;
-              new_stage_id: string;
-            };
-            Returns: {
-              candidate_id: string;
-              created_at: string;
-              customer_id: string;
-              id: string;
-              job_id: string;
-              position: number;
-              stage: string;
-              stage_changed_at: string;
-              stage_id: string | null;
-              updated_at: string;
-            };
-            SetofOptions: {
-              from: "*";
-              to: "applications";
-              isOneToOne: true;
-              isSetofReturn: false;
-            };
-          };
+      move_application: {
+        Args: {
+          application_id: string;
+          customer_id: string;
+          new_stage_id: string;
+        };
+        Returns: {
+          candidate_id: string;
+          created_at: string;
+          customer_id: string;
+          id: string;
+          job_id: string;
+          position: number;
+          stage_changed_at: string;
+          stage_id: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "applications";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       reorder_stages: {
         Args: { customer_id: string; stage_ids: string[] };
         Returns: {
@@ -443,10 +413,6 @@ export type Database = {
       soft_delete_or_demote_account: {
         Args: { account_id: string; change: string };
         Returns: undefined;
-      };
-      stage_id_for_key: {
-        Args: { customer: string; key: string };
-        Returns: string;
       };
     };
     Enums: {

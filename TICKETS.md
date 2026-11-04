@@ -618,6 +618,8 @@ Small problems and improvements noticed while working on a ticket but outside it
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
 - [ ] Screen readers hear dnd-kit's English role descriptions ("sortable" on the column handles, "draggable" on the cards) also in Swedish; pass a translated `aria-roledescription` to both — `src/components/pipeline/Board.tsx` (found in ATS-41)
+- [ ] The Supabase CLI is not pinned for local use, so `npx supabase` jumped to 3.0.0, which changes `db push`'s default target and warns that `auth.email.enable_signup` in `supabase/config.toml` is deprecated. Use 2.122.0 locally as CI does, in `CLAUDE.md`, the skills and `package.json`, and plan the v3 upgrade as its own ticket — `CLAUDE.md`, `.claude/skills/`, `supabase/config.toml` (found in ATS-42)
+- [ ] Nothing technical stops Claude Code from running remote Supabase commands: the CLI token is in `~/.supabase/access-token`. Add deny rules in `.claude/settings.json` for `db push`, `migration repair`, `link`, `db reset`, `functions deploy`, `secrets set` and anything with `--linked` or `--remote`, for `npx supabase` and `npx supabase@<version>` — `.claude/settings.json` (found in ATS-42)
 
 ## Found while reviewing PRs
 
