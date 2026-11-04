@@ -483,18 +483,81 @@ Today `customer_id` is the customer's own user id, and every RLS policy, query k
 - [ ] AC1: `docs/next-teams.md` decides what `customer_id` means: a company id in a new `companies` table, or the first user's id
 - [ ] AC2: It describes the membership table, the roles inside a company (if any), and how RLS, `ActiveCustomerContext`, the Edge Functions and the deleted-accounts flow change
 - [ ] AC3: It splits the work into tickets, which replace ATS-44–46 below
+- [ ] AC4: It lists every database function that checks ownership itself instead of through RLS, such as `reset_stages`, and every trigger that depends on another one running first, such as `applications_start_stage` after `applications_set_customer` (name order), and says how each changes when `customer_id` becomes a company (found in the epic 8 review)
 
-### ATS-44 · feat · Teams in the database
+### ATS-44 · feat · Companies and memberships in the database
 
-Defined by ATS-43.
+Defined by ATS-43 (`docs/next-teams.md`).
 
-### ATS-45 · feat · Teams in the data layer and contexts
+**Context**
+`customer_id` is the customer's own user id today. This ticket makes it a company id, in a new `companies` table, without changing what the app shows. Each existing customer's company gets the customer's own id, so no customer data moves. Backwards compatible: the code on `main` keeps working until ATS-45, ATS-46 and ATS-58.
 
-Defined by ATS-43.
+**Acceptance Criteria**
+- [ ] AC1: `companies` (`id`, `name`, `created_at`, `deleted_at`) and `company_members` (primary key `(company_id, user_id)`, `unique (user_id)`) as described in `docs/next-teams.md`, with RLS and explicit grants. Only admins and the service role write memberships, and an admin account is never a member
+- [ ] AC2: The migration gives every customer profile a company with the profile's own id and `company_name`, and a membership. It stops with a clear message, changing nothing, if a job, candidate, card or assessment belongs to a profile that is not a customer (the admins' own columns are removed instead)
+- [ ] AC3: `current_company_id()` (security definer): the signed-in user's company while both the user and the company are active. Every customer policy, and the four `cvs` storage policies, check `current_company_id()` instead of `auth.uid()`
+- [ ] AC4: The `customer_id` foreign keys reference `companies (id)`, still `on delete cascade`. New companies get the six default columns in a trigger on `companies`; profiles no longer do, and the admins' columns are removed
+- [ ] AC5: `reset_stages` checks the caller by company, and `check_pipeline_stage_kinds` skips its rules when the company is gone. The application triggers are renamed `applications_1_set_customer` and `applications_2_start_stage`, and `applications.customer_id` defaults to the nil UUID
+- [ ] AC6: Until ATS-46, a new customer user gets a company with their own id; until ATS-58, deleting a profile deletes the company with the same id. Both bridges are commented with the ticket that removes them
+- [ ] AC7: `rls_test.sql` signs in as a second member of the same company for every customer check, so a check that still compares with `auth.uid()` fails: two members share rows and CVs, another company sees none, a deleted member and the members of a deleted company see nothing, a client cannot join or switch a company, and the application triggers run in the named order
 
-### ATS-46 · feat · Manage a company's members
+**Scope Boundary**
+In scope: the database and its tests.
+Out of scope: the app (ATS-45), managing members (ATS-46), deleting companies (ATS-58).
 
-Defined by ATS-43.
+### ATS-45 · refactor · Companies in the data layer and contexts
+
+Defined by ATS-43 (`docs/next-teams.md`).
+
+**Context**
+After ATS-44 the database knows companies, but the app still treats a customer as a profile. This ticket moves the app to companies, with no visible change for a company of one user.
+
+**Acceptance Criteria**
+- [ ] AC1: A `Company` type and `src/lib/api/companies.ts` with a hook, under query keys that keep the active customer id. The signed-in profile carries its `company_id`
+- [ ] AC2: `ActiveCustomerContext` gives a customer user their company id, and signs out a user without an active company. An admin chooses among the active companies; a stored choice from before still works, since the ids are the same
+- [ ] AC3: The shell, the chooser and every other screen take the company name from `companies.name`
+- [ ] AC4: The demo and end-to-end seeds create a company and then its users. The end-to-end fixtures can add a second user to a company
+- [ ] AC5: An end-to-end test signs in as two users of one company, who see the same board and a change the other made, and as a user of another company, who sees none of it
+
+**Scope Boundary**
+In scope: types, data layer, contexts, seeds and tests.
+Out of scope: changing members on the accounts page (ATS-46).
+
+### ATS-46 · feat · Admins manage a company's users
+
+Defined by ATS-43 (`docs/next-teams.md`).
+
+**Context**
+An admin creates companies and their users, moves a user to another company and removes a user from one. There are no roles inside a company: all members are equal, and only admins change who is in it.
+
+**Acceptance Criteria**
+- [ ] AC1: The accounts page lists companies with their users. An admin creates a company, and creates a user into an existing company or a new one
+- [ ] AC2: `admin-create-user` takes a `company_id` or a new company's name, adds the membership with the service role after creating the user, and deletes the new user again if the membership fails. An admin account gets no company
+- [ ] AC3: `admin-manage-account` moves a user to another company and demotes an admin to a customer of a given company; promoting a customer to admin removes the membership. Deleting, restoring and deleting a user for good touch only that user, never the company's data
+- [ ] AC4: The creation bridge from ATS-44 is removed. Security rules 3 and 5 in `CLAUDE.md` describe companies
+- [ ] AC5: The Deno tests and `rls_test.sql` cover each new action as an admin, as a member and as a second member of the same company, and refuse them for customers and signed-out users
+
+**Scope Boundary**
+In scope: members, the account Edge Functions, the accounts page.
+Out of scope: deleting a company (ATS-58), roles inside a company.
+
+### ATS-58 · feat · Delete and restore a company
+
+Defined by ATS-43 (`docs/next-teams.md`).
+
+**Context**
+The 30-day delete and the nightly purge move from accounts to companies: deleting a user removes one login, deleting a company removes its data.
+
+**Acceptance Criteria**
+- [ ] AC1: A new `admin-manage-company` Edge Function deletes a company (sets `deleted_at` and bans its users), restores it, and deletes it for good, after checking `is_admin()` with the caller's JWT
+- [ ] AC2: `companies_due_for_purge`, and `purge-deleted-accounts` also purges companies deleted more than 30 days ago: their CV folder, their users, then the company and everything in it
+- [ ] AC3: The accounts page has the deleted companies, with restore and delete for good behind the type-the-name confirm, like deleted accounts today
+- [ ] AC4: The deletion bridge from ATS-44 is removed, and a later migration drops `profiles.company_name` once no code on `main` reads it
+- [ ] AC5: Tests show that deleting a user keeps the company's data, deleting a company hides it from every member and removes it after 30 days, and restoring a company brings back its members
+
+**Scope Boundary**
+In scope: deleting, restoring and purging companies.
+Out of scope: anything about users that ATS-46 covers.
 
 ### ATS-57 · chore · Small hygiene fixes from epic 8
 
