@@ -18,10 +18,11 @@ A small applicant tracking system (ATS) for companies that recruit. The goal is 
 | Account | `profiles` | One row per user. `role` is `admin` or `customer`. |
 | Job | `jobs` | Belongs to one customer. |
 | Candidate | `candidates` | Belongs to one customer. Can be linked to several jobs. |
-| Application | `applications` | Links a candidate to a job. One card on the kanban board. Has a `stage` and `stage_changed_at`. |
+| Application | `applications` | Links a candidate to a job. One card on the kanban board. Has a `stage_id` (its column) and `stage_changed_at`. |
+| Pipeline stage | `pipeline_stages` | One column of a customer's board, ordered by `position`. Its `kind` is `open`, `hired` or `rejected`. |
 | CV assessment | `cv_assessments` | Optional AI feature. A suggestion for the recruiter, never a decision. |
 
-**Pipeline stages, in order:** `new` → `screening` → `interview` → `offer` → `hired`, plus `rejected`.
+**Pipeline stages:** every customer starts with six default columns, `new` → `screening` → `interview` → `offer` → `hired`, plus `rejected`, and can rename, recolour, add, remove and reorder them (epic 8). A board always keeps exactly one Hired column, at least one Rejected and at least one open column.
 
 ## Context
 
