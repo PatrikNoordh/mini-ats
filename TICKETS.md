@@ -696,6 +696,7 @@ Tracked in #95.
 Small problems and improvements noticed while working on a ticket but outside its scope. Add one line per finding as soon as it is found, with the ticket where it was found. At each epic checkpoint the list is triaged and emptied: a finding becomes an extra AC on the open ticket that touches the same code, or goes into one hygiene ticket for the epic, or is dropped. The AC says where it came from, for example "(found while building ATS-2)". `/ats-epic-close` does the triage and records where each line went in `docs/review-epic-<N>.md`.
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
+- [ ] `ats-create-ticket` runs `gh label create <label> --force` for every label it uses, and `--force` resets an existing label's colour: it changed `feat`, `security` and `database` while creating #109–#112 (restored by hand), and maybe `chore` and `refactor`. Create a label only when `gh label list` does not have it, and never pass `--force` for a label that exists — `.claude/skills/ats-create-ticket/SKILL.md` (found in ATS-43)
 
 ## Found while reviewing PRs
 
