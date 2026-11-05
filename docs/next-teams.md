@@ -145,10 +145,10 @@ The last-admin rule and its lock are unchanged; admins belong to no company.
 
 These replace ATS-44–46 in `TICKETS.md` (AC3), in this order:
 
-1. **ATS-44 · Companies and memberships in the database (step 1).**
-2. **ATS-45 · Companies in the data layer and contexts.**
-3. **ATS-46 · The members page for admins**, with deleting and restoring a company and the purge by company.
-4. **ATS-58 · The login swap (step 2)**, with the demo seed.
+1. **ATS-44 (#109) · Companies and memberships in the database (step 1).**
+2. **ATS-45 (#110) · Companies in the data layer and contexts.**
+3. **ATS-46 (#111) · The members page for admins**, with deleting and restoring a company and the purge by company.
+4. **ATS-58 (#112) · The login swap (step 2)**, with the demo seed.
 
 Each rule above is an acceptance criterion of the ticket that builds it.
 

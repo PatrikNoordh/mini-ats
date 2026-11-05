@@ -487,7 +487,7 @@ Today `customer_id` is the customer's own user id, and every RLS policy, query k
 
 ### ATS-44 · feat · Companies and memberships in the database
 
-Defined by ATS-43 (`docs/next-teams.md`, step 1).
+Tracked in #109. Defined by ATS-43 (`docs/next-teams.md`, step 1).
 
 **Context**
 `customer_id` is the customer's own user id today. This ticket makes it a company id, in a new `companies` table, without changing what the app shows. Backwards compatible: each existing customer's first user stays a member under the same id, so the code on `main` keeps working until ATS-45.
@@ -511,7 +511,7 @@ Out of scope: the app (ATS-45), members and company deletes (ATS-46), the login 
 
 ### ATS-45 · refactor · Companies in the data layer and contexts
 
-Defined by ATS-43 (`docs/next-teams.md`).
+Tracked in #110. Defined by ATS-43 (`docs/next-teams.md`).
 
 **Context**
 After ATS-44 the database knows companies, but the app still treats a customer as a profile. This ticket moves the app to companies, with no visible change for a company of one user.
@@ -531,7 +531,7 @@ Out of scope: the members page (ATS-46), the login swap (ATS-58).
 
 ### ATS-46 · feat · The members page for admins
 
-Defined by ATS-43 (`docs/next-teams.md`).
+Tracked in #111. Defined by ATS-43 (`docs/next-teams.md`).
 
 **Context**
 Admins create companies and their users, and the 30-day delete and the nightly purge move from accounts to companies. There are no roles inside a company: all members are equal, and only admins change who is in it.
@@ -552,7 +552,7 @@ Out of scope: roles inside a company, the login swap (ATS-58).
 
 ### ATS-58 · chore · The login swap
 
-Defined by ATS-43 (`docs/next-teams.md`, step 2 and "Login swap safety").
+Tracked in #112. Defined by ATS-43 (`docs/next-teams.md`, step 2 and "Login swap safety").
 
 **Context**
 After ATS-44 each existing company's first user still has the company's id, so an old `customer_id = auth.uid()` check passes for them. Once the new code is live, their logins are replaced by new accounts, so no user id equals a company id and a missed policy fails for everyone.
