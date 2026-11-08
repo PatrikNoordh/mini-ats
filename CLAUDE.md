@@ -52,7 +52,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 - TanStack Query for data fetching, @dnd-kit for drag and drop, zod for search params and forms
 - Vitest for unit tests, Playwright for end-to-end tests in `e2e/` against the local Supabase stack (`supabase/config.toml`)
 - npm with `package-lock.json` (`.npmrc` sets `legacy-peer-deps=true`). Do not use bun
-- Supabase: Postgres, Auth, Storage, Edge Functions
+- Supabase: Postgres, Auth, Storage, Edge Functions. The Supabase CLI is an exact dev dependency, `2.122.0`, the same version CI pins: bump `package.json` and `.github/workflows/ci.yml` together
 - Hosting: Vercel, deployed from `main`, with a preview per pull request
 - Schema and RLS: `supabase/migrations/`. RLS tests: `supabase/tests/rls_test.sql`. Generated types: `src/integrations/supabase/types.ts`
 
