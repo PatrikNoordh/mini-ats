@@ -118,9 +118,10 @@ export async function setCandidateCvPath(
  * Deletes a candidate with their CV file, in one call to the delete-candidate Edge Function
  * (ATS-56). Their cards and assessments go with them through the database's cascades. The
  * function reads the candidate with the caller's JWT, so RLS decides whose candidate it is, and
- * removes the file first: a deleted candidate never leaves a CV behind, and one that could not be
- * deleted never points at a removed file. Failures come back as codes, such as
- * `candidate_not_found` for a candidate that is not there for the caller.
+ * removes the file first, so a deleted candidate never leaves a CV behind. If the row delete then
+ * fails, the function clears cv_path; only if that fails too does the candidate keep a cv_path to
+ * the removed file (accepted, see delete-candidate/handler.ts). Failures come back as codes, such
+ * as `candidate_not_found` for a candidate that is not there for the caller.
  */
 export async function deleteCandidate(id: string): Promise<void> {
   await invokeFunction("delete-candidate", { candidate_id: id });
