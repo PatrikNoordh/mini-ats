@@ -42,6 +42,7 @@ vi.mock("@/hooks/useJobs", () => ({
   }),
 }));
 vi.mock("@/hooks/useCandidates", () => ({
+  useCandidates: () => ({ data: [] }),
   useSaveCandidate: () => ({ mutateAsync: mocks.save, isPending: false }),
   useDeleteCandidate: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));

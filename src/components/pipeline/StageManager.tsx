@@ -16,8 +16,19 @@ import {
 } from "@/hooks/useStages";
 import { MAX_PIPELINE_STAGES } from "@/lib/constants";
 import { useFormat } from "@/lib/format";
-import { resetBlockers, stageLabel, stageRemoveBlock, unusedColour } from "@/lib/stages";
+import {
+  resetBlockers,
+  stageLabel,
+  stageNamesInLanguages,
+  stageRemoveBlock,
+  unusedColour,
+} from "@/lib/stages";
+import { getT } from "@/lib/i18n";
+import { LANGUAGES } from "@/lib/language";
 import type { PipelineStage } from "@/types";
+
+/** A t function per language, to check a new column name against every default name. */
+const LANGUAGE_TS = LANGUAGES.map(getT);
 
 /**
  * Editing the customer's columns from the board (ATS-40): Add column and Reset columns above the
@@ -55,8 +66,9 @@ export function StageManager({
   const resetHintId = useId();
 
   const label = (stage: PipelineStage) => stageLabel(stage, t);
+  // Default columns count with their names in every language (stageNamesInLanguages).
   const namesBut = (stage: PipelineStage | null) =>
-    stages.filter((s) => s.id !== stage?.id).map(label);
+    stages.filter((s) => s.id !== stage?.id).flatMap((s) => stageNamesInLanguages(s, LANGUAGE_TS));
   const atLimit = stages.length >= MAX_PIPELINE_STAGES;
   const blockers = resetBlockers(stages, cardCounts);
   const cannotReset = blockers.length > 0;

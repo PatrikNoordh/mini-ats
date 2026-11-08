@@ -117,7 +117,7 @@
     "location_required": "Ange en ort.",
     "linkedin_invalid": "Ange en länk till en LinkedIn-profil, till exempel https://www.linkedin.com/in/namn.",
     "login_required": "Fyll i både e-post och lösenord.",
-    "stage_name_taken": "Det finns redan en kolumn med det namnet.",
+    "stage_name_taken": "Det finns redan en kolumn med det namnet, på svenska eller engelska.",
     "too_long": "Texten är för lång.",
     "email_taken_deleted": "Ett borttaget konto har den e-postadressen. Återställ det under Borttagna konton.",
     "cv_not_pdf": "CV:t måste vara en PDF-fil.",
@@ -197,6 +197,8 @@
     },
     "reorderFailed": "Kunde inte flytta kolumnen. Ändringen har ångrats.",
     "columnHandle": "Flytta kolumnen {{stage}}",
+    "columnRole": "flyttbar kolumn",
+    "cardRole": "flyttbart kort",
     "columnInstructions": "Tryck mellanslag för att lyfta kolumnen, flytta den med vänster- och högerpil och tryck mellanslag igen för att släppa den. Escape avbryter flytten.",
     "announceColumn": {
       "pickedUp": "Kolumnen {{stage}} lyft från plats {{position}} av {{count}}.",
@@ -290,7 +292,9 @@
     "cvReplace": "Byt CV",
     "cvChosen": "Vald fil: {{name}}",
     "cvClear": "Ångra valet",
-    "cvReplacesOnSave": "Den nya filen ersätter nuvarande CV när du sparar."
+    "cvReplacesOnSave": "Den nya filen ersätter nuvarande CV när du sparar.",
+    "duplicateEmail": "Det finns redan en kandidat med den här e-postadressen: {{name}}. Du kan ändå spara.",
+    "duplicateName": "Det finns redan en kandidat som heter {{name}}. Du kan ändå spara om det är någon annan."
   },
   "jobs": {
     "title": "Jobb",

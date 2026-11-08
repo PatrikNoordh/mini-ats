@@ -19,7 +19,7 @@ import { Field } from "@/components/Field";
 import { ErrorState, LoadingRows } from "@/components/States";
 import { useJobs } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
-import { useDeleteCandidate, useSaveCandidate } from "@/hooks/useCandidates";
+import { useCandidates, useDeleteCandidate, useSaveCandidate } from "@/hooks/useCandidates";
 import { useErrorToast } from "@/hooks/useErrorToast";
 import {
   MAX_EMAIL_LENGTH,
@@ -28,6 +28,7 @@ import {
   MAX_PHONE_LENGTH,
   MAX_URL_LENGTH,
 } from "@/lib/constants";
+import { findLikelyDuplicate } from "@/lib/candidate-duplicates";
 import { errorCode } from "@/lib/errors";
 import { useFormat } from "@/lib/format";
 import {
@@ -59,6 +60,8 @@ export function CandidateDialog({
   const apps = useApplications(customerId);
   const save = useSaveCandidate(customerId);
   const remove = useDeleteCandidate(customerId);
+  // Only a new candidate is checked against the others, so the list loads only then (ATS-57).
+  const others = useCandidates(open && !candidate ? customerId : null);
   const errorToast = useErrorToast();
   const [confirming, setConfirming] = useState(false);
   const [form, setForm] = useState(empty);
@@ -105,6 +108,12 @@ export function CandidateDialog({
     setCvError(invalid ?? undefined);
     setCvFile(invalid ? null : file);
   };
+
+  // A warning only: the save is never blocked, since two people can share a name.
+  const duplicate = useMemo(
+    () => (candidate ? null : findLikelyDuplicate(others.data ?? [], form)),
+    [candidate, others.data, form],
+  );
 
   const set = (k: keyof typeof empty) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -229,6 +238,16 @@ export function CandidateDialog({
                 />
               )}
             </Field>
+          </div>
+          {/* Always rendered, so a screen reader announces the warning when it appears. */}
+          <div role="status">
+            {duplicate && (
+              <p className="rounded-md border border-warning/40 bg-warning-muted px-3 py-2 text-xs text-warning-foreground">
+                {duplicate.match === "email"
+                  ? t("candidateDialog.duplicateEmail", { name: duplicate.candidate.full_name })
+                  : t("candidateDialog.duplicateName", { name: duplicate.candidate.full_name })}
+              </p>
+            )}
           </div>
           <Field id="c-li" label={t("candidateDialog.linkedin")} error={errors.linkedin_url}>
             {(control) => (

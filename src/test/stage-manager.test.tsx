@@ -69,6 +69,8 @@ async function pick(menu: HTMLElement, name: string) {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+const TAKEN = "There is already a column with that name, in Swedish or English.";
+
 describe("editing the columns from the board", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -86,9 +88,7 @@ describe("editing the columns from the board", () => {
 
     fireEvent.change(input, { target: { value: " screening " } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(
-      await within(dialog).findByText("There is already a column with that name."),
-    ).toBeTruthy();
+    expect(await within(dialog).findByText(TAKEN)).toBeTruthy();
     expect(mocks.rename).not.toHaveBeenCalled();
 
     fireEvent.change(input, { target: { value: "  Kodtest " } });
@@ -99,6 +99,16 @@ describe("editing the columns from the board", () => {
     expect(mocks.toast.success).toHaveBeenCalledWith("The column is now called Kodtest.");
   });
 
+  it("refuses a default column's name in the other language too", async () => {
+    renderManager();
+    await pick(await openMenu("Offer"), "Rename");
+    const dialog = await screen.findByRole("dialog", { name: "Rename the column" });
+    fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "intervju" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(await within(dialog).findByText(TAKEN)).toBeTruthy();
+    expect(mocks.rename).not.toHaveBeenCalled();
+  });
+
   it("shows a name the database finds taken as a field error", async () => {
     mocks.rename.mockRejectedValue(new AppError("stage_name_taken"));
     renderManager();
@@ -106,9 +116,7 @@ describe("editing the columns from the board", () => {
     const dialog = await screen.findByRole("dialog");
     fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "Taken" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(
-      await within(dialog).findByText("There is already a column with that name."),
-    ).toBeTruthy();
+    expect(await within(dialog).findByText(TAKEN)).toBeTruthy();
     expect(mocks.toast.error).not.toHaveBeenCalled();
   });
 

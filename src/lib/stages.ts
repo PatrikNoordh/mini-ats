@@ -55,6 +55,19 @@ export function stageLabel(
 }
 
 /**
+ * Every name a stage can show: a typed name, or a default stage's name in each language given. A
+ * new name must differ from all of them, so the default Interview column on a Swedish board also
+ * keeps "Interview" free, and an English board never shows two columns called Interview.
+ */
+export function stageNamesInLanguages(
+  stage: Pick<PipelineStage, "name" | "default_key">,
+  ts: readonly TFunction[],
+): string[] {
+  if (stage.name !== null) return [stage.name];
+  return [...new Set(ts.map((t) => stageLabel(stage, t)))];
+}
+
+/**
  * The id of the stage next to a stage on the board, one step left (-1) or right (1). None past
  * the ends. `stages` is in board order.
  */

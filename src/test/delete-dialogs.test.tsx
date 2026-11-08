@@ -26,6 +26,7 @@ vi.mock("@/hooks/useJobs", () => ({
   useJobs: () => ({ data: [], isLoading: false, isError: false }),
 }));
 vi.mock("@/hooks/useCandidates", () => ({
+  useCandidates: () => ({ data: [] }),
   useSaveCandidate: () => idle,
   useDeleteCandidate: () => ({ mutateAsync: mocks.deleteCandidate, isPending: false }),
 }));

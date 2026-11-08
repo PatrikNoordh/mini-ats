@@ -1,3 +1,4 @@
+import { E2E_ADMIN } from "../scripts/e2e-data.ts";
 import { candidate, card, expect, job, signIn, sv, test, text } from "./fixtures.ts";
 
 test("a customer renames a column, adds one before Anställd, and resets to the defaults", async ({
@@ -159,4 +160,88 @@ test("at 390 px the board scrolls on its own and a column still moves by keyboar
   await page.keyboard.press("Space");
   await saved;
   await expect(headings.first()).toHaveText(sv.stages.screening);
+});
+
+test("an admin acting for customer A changes A's columns, and customer B's board is unchanged", async ({
+  page,
+  makeCustomer,
+  tag,
+}) => {
+  const nameA = `Elsa ${tag}`;
+  const a = await makeCustomer("KundA", {
+    jobs: [job("a", `Platschef ${tag}`)],
+    candidates: [candidate(nameA, "a")],
+  });
+  const b = await makeCustomer("KundB");
+  await signIn(page, E2E_ADMIN.email);
+  await page.getByRole("button", { name: new RegExp(a.company) }).click();
+  await expect(card(page, nameA)).toBeVisible();
+  const headings = page.getByRole("group").locator("span[id]");
+
+  // Rename Ny, and add a column, which lands just before Anställd.
+  await page
+    .getByRole("button", { name: text(sv.stageEditor.menu, { stage: sv.stages.new }) })
+    .click();
+  await page.getByRole("menuitem", { name: sv.stageEditor.rename }).click();
+  const rename = page.getByRole("dialog", { name: sv.stageEditor.renameTitle });
+  await rename.getByLabel(sv.stageEditor.name, { exact: true }).fill("Inkommen");
+  await rename.getByRole("button", { name: sv.common.save }).click();
+  await expect(rename).toBeHidden();
+  await page.getByRole("button", { name: sv.stageEditor.add }).click();
+  const add = page.getByRole("dialog", { name: sv.stageEditor.addTitle });
+  await add.getByLabel(sv.stageEditor.name, { exact: true }).fill("Referenser");
+  await add.getByRole("button", { name: sv.common.save }).click();
+  await expect(add).toBeHidden();
+
+  // Move Intervju one step left by keyboard, past Screening.
+  const saved = page.waitForResponse((r) => r.url().includes("/rpc/reorder_stages") && r.ok());
+  await page
+    .getByRole("button", { name: text(sv.pipeline.columnHandle, { stage: sv.stages.interview }) })
+    .focus();
+  await page.keyboard.press("Space");
+  const atTwo = page.getByText(
+    text(sv.pipeline.announceColumn.over, {
+      stage: sv.stages.interview,
+      position: "2",
+      count: "7",
+    }),
+  );
+  // The board measures its columns just after the pick-up; press again until the column moved.
+  await expect(async () => {
+    if ((await atTwo.count()) === 0) await page.keyboard.press("ArrowLeft");
+    await expect(atTwo).toBeAttached({ timeout: 500 });
+  }).toPass();
+  await page.keyboard.press("Space");
+  await saved;
+  const changed = [
+    "Inkommen",
+    sv.stages.interview,
+    sv.stages.screening,
+    sv.stages.offer,
+    "Referenser",
+    sv.stages.hired,
+    sv.stages.rejected,
+  ];
+  await expect(headings).toHaveText(changed);
+
+  // Customer B still has the six defaults.
+  await page.getByRole("combobox", { name: sv.shell.customerLabel }).click();
+  await page.getByRole("option", { name: b.company }).click();
+  await expect(headings).toHaveText([
+    sv.stages.new,
+    sv.stages.screening,
+    sv.stages.interview,
+    sv.stages.offer,
+    sv.stages.hired,
+    sv.stages.rejected,
+  ]);
+  await expect(page.getByText(nameA)).toHaveCount(0);
+
+  // And A keeps the changes.
+  await page.getByRole("combobox", { name: sv.shell.customerLabel }).click();
+  await page.getByRole("option", { name: a.company }).click();
+  await expect(headings).toHaveText(changed);
+  await expect(
+    card(page.getByRole("group", { name: "Inkommen", exact: true }), nameA),
+  ).toBeVisible();
 });

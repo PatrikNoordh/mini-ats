@@ -262,6 +262,8 @@ cd mini-ats
 npm install
 ```
 
+`npm install` also installs the Supabase CLI as a dev dependency, pinned to exactly `2.122.0`, so `npx supabase` always runs that version and never jumps to a new major version. CI pins the same version (`supabase/setup-cli` in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)): bump `package.json` and CI together, in the same pull request.
+
 ### 3. Set up Supabase
 
 ```bash

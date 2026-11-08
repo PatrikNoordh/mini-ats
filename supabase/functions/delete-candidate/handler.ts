@@ -24,7 +24,7 @@ export interface Deps {
   removeCv: (authorization: string, path: string) => Promise<void>;
   /** Deletes the candidate row; false when no row was deleted. */
   deleteCandidate: (authorization: string, candidate: CandidateToDelete) => Promise<boolean>;
-  /** Clears cv_path, so a candidate that could not be deleted never points at a removed file. */
+  /** After a failed row delete: clears cv_path, which named the file just removed. */
   clearCvPath: (authorization: string, candidate: CandidateToDelete) => Promise<void>;
 }
 
@@ -40,10 +40,13 @@ export function cvPath(candidate: CandidateToDelete): string {
  *   1. The CV file is removed first. If that fails, nothing is deleted.
  *   2. Then the row, which takes the cards and assessments with it through the cascades.
  *   3. If the row delete fails, cv_path is cleared, so the candidate stays without a CV and can be
- *      deleted again. It never points at the removed file.
+ *      deleted again.
  *
- * So a deleted candidate never leaves a CV behind (ATS-17), and nobody is left holding an orphan
- * file nobody can see.
+ * What this guarantees: a deleted candidate never leaves a CV behind (ATS-17), and no file is
+ * left that no candidate points at. What it does not: if the row delete and the cv_path clear
+ * both fail, the candidate stays and its cv_path still names the removed file, so opening the CV
+ * fails until it is replaced or the candidate is deleted again. That leftover is accepted, not
+ * fixed (epic 8 review, ATS-57): it needs two database failures in a row, and it is logged.
  */
 export function createHandler(deps: Deps) {
   return async (req: Request): Promise<Response> => {

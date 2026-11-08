@@ -110,6 +110,7 @@ function DraggableCard({ card, onOpen }: { card: BoardCard; onOpen: (c: BoardCar
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card.app.id,
+    attributes: { roleDescription: t("pipeline.cardRole") },
   });
   return (
     <div
@@ -169,7 +170,10 @@ function Column({
     transition,
     isOver,
     isDragging,
-  } = useSortable({ id: stage.id });
+  } = useSortable({
+    id: stage.id,
+    attributes: { roleDescription: t("pipeline.columnRole") },
+  });
   const headingId = useId();
   const label = stageLabel(stage, t);
   return (

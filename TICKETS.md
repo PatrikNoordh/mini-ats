@@ -576,6 +576,10 @@ Out of scope: any change to the schema or the app.
 
 Tracked in #107.
 
+### ATS-59 · chore · Upgrade the Supabase CLI to v3
+
+Tracked in #114. Created by ATS-57 AC2: the CLI stays pinned to 2.122.0 until this ticket moves `package.json` and CI to v3 together.
+
 **Checkpoint:** two users in the same company see the same board; a user in another company sees none of it.
 
 ---
@@ -698,10 +702,13 @@ Small problems and improvements noticed while working on a ticket but outside it
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
 - [ ] `ats-create-ticket` runs `gh label create <label> --force` for every label it uses, and `--force` resets an existing label's colour: it changed `feat`, `security` and `database` while creating #109–#112 (restored by hand), and maybe `chore` and `refactor`. Create a label only when `gh label list` does not have it, and never pass `--force` for a label that exists — `.claude/skills/ats-create-ticket/SKILL.md` (found in ATS-43)
+- [ ] `npm audit` reports high-severity advisories for `vite` and `zod` and moderate ones for `typescript-eslint` and `seroval`, all from before ATS-57 (the Supabase CLI adds none). Check each against how the app uses it and bump what is safe — `package.json` (found in ATS-57)
 
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
+
+- [ ] The Supabase deny list still has gaps no prefix rule closes well: remote commands it does not name (`sso`, `domains`, `vanity-subdomains`, `network-bans`, `network-restrictions`, `ssl-enforcement`, `orgs`, `snippets`, `bootstrap`, `encryption`), and the CLI token read through a glob such as `~/.supa*`, through `find`, or from the macOS keychain, where the CLI can keep it instead of the file. A Claude Code sandbox read block on `~/.supabase/` would close the shell paths for good — `.claude/settings.json` (PR #115, ATS-57)
 

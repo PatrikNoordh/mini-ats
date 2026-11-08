@@ -47,7 +47,9 @@ function renderBoard(stages: readonly PipelineStage[] = DEFAULT_TEST_STAGES) {
       </I18nextProvider>,
     );
   });
-  const cardButton = container.querySelector<HTMLElement>('[aria-roledescription="draggable"]');
+  const cardButton = container.querySelector<HTMLElement>(
+    '[aria-roledescription="draggable card"]',
+  );
   if (!cardButton) throw new Error("Board did not render the card");
   return { onOpen, onMove, onReorder, cardButton };
 }
@@ -69,6 +71,14 @@ describe("the board with a keyboard", () => {
     expect(cardButton).toHaveAttribute("role", "button");
     expect(cardButton).toHaveAttribute("aria-label", "Test Testsson, Platschef, 0 days in stage");
     expect(cardButton).toHaveAttribute("tabindex", "0");
+  });
+
+  it("describes cards and column handles with translated roles", () => {
+    renderBoard();
+    const handles = document.querySelectorAll('[aria-roledescription="movable column"]');
+    expect(handles).toHaveLength(DEFAULT_TEST_STAGES.length);
+    expect(document.querySelector('[aria-roledescription="draggable"]')).toBeNull();
+    expect(document.querySelector('[aria-roledescription="sortable"]')).toBeNull();
   });
 
   it("names each column after its stage, and the card sits in its own stage's column", () => {
