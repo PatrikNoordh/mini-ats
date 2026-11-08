@@ -580,6 +580,10 @@ Tracked in #107.
 
 Tracked in #114. Created by ATS-57 AC2: the CLI stays pinned to 2.122.0 until this ticket moves `package.json` and CI to v3 together.
 
+### ATS-60 · chore · Add a data-safety check to the PR review and the epic checkpoint
+
+Tracked in #116. Built before ATS-44: `docs/data-safety.md` maps how the data is protected, and `/ats-data-safety` checks a diff against it in `/ats-review-pr` and the whole app in `/ats-epic-close`.
+
 **Checkpoint:** two users in the same company see the same board; a user in another company sees none of it.
 
 ---
@@ -703,6 +707,9 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 
 - [ ] `ats-create-ticket` runs `gh label create <label> --force` for every label it uses, and `--force` resets an existing label's colour: it changed `feat`, `security` and `database` while creating #109–#112 (restored by hand), and maybe `chore` and `refactor`. Create a label only when `gh label list` does not have it, and never pass `--force` for a label that exists — `.claude/skills/ats-create-ticket/SKILL.md` (found in ATS-43)
 - [ ] `npm audit` reports high-severity advisories for `vite` and `zod` and moderate ones for `typescript-eslint` and `seroval`, all from before ATS-57 (the Supabase CLI adds none). Check each against how the app uses it and bump what is safe — `package.json` (found in ATS-57)
+- [ ] An admin can change `customer_id` on a job or a candidate: the row moves, but the job's cards keep the old customer, so a card points at another customer's job (shown in a rolled-back transaction). The app never sends it; a trigger or the column grants should refuse a change of owner, with an RLS check. Fits ATS-44, which rewrites ownership — `supabase/migrations/`, `supabase/tests/rls_test.sql` (found in ATS-60)
+- [ ] The deny rules in `.claude/settings.json` have no automated test; they were checked by hand in ATS-57. A small script that feeds each denied form to the rule matcher, or a checklist in the PR template when the file changes — `.claude/settings.json` (found in ATS-60)
+- [ ] No test proves that public sign-up is off (security rule 3). An end-to-end test can call `signUp` on the local stack and expect a refusal — `e2e/`, `supabase/config.toml` (found in ATS-60)
 
 ## Found while reviewing PRs
 
