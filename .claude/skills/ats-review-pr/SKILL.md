@@ -98,6 +98,12 @@ Read each file completely before forming an opinion. Do not review code you have
 - PR body: Summary, What Changed, Acceptance Criteria, Manual Test Steps, Tradeoffs, and `Closes #<n>`
 - Every acceptance criterion in the issue is either covered or explained
 
+### Data safety
+- Run `/ats-data-safety` in diff mode on the PR's branch (`docs/data-safety.md`, ATS-60). It answers in one line when no data path is touched; otherwise it returns a risk table, which goes into the review as it is
+- A 🔴 row (data lost, or seen or changed by another customer) is a blocker, fixed on the branch before the merge
+- 🟡 and 🟢 rows follow the rules below: fixed if quick, otherwise one line each in `TICKETS.md` § Found while reviewing PRs
+- If the diff changes a chain, a policy or a guard, `docs/data-safety.md` is updated on the branch, and the review says so
+
 ---
 
 ## Step 4 — Output
@@ -116,6 +122,9 @@ Read each file completely before forming an opinion. Do not review code you have
 | 🔴 Blocker | path/to/file.ts:12 | <description> |
 | 🟡 Warning | path/to/file.tsx:40 | <description> |
 | 🟢 Suggestion | path/to/file.tsx:7 | <description> |
+
+### Data Safety
+<The risk table from /ats-data-safety, or its one line when no data path is touched>
 
 ### Acceptance Criteria
 - AC1: <text> — ✅ <file:line> / ⚠️ partial / ❌ missing
@@ -139,7 +148,7 @@ When the status is ✅ Approved, the same yes also ticks the issue's ACs that th
 
 ## Severity
 
-- 🔴 **Blocker:** security rule broken, missing RLS, failing CI, type error, AC claimed but not implemented. Do not merge
+- 🔴 **Blocker:** security rule broken, missing RLS, a 🔴 data-safety risk, failing CI, type error, AC claimed but not implemented. Do not merge
 - 🟡 **Warning:** missing state, missing test, hardcoded value, hygiene issue. Fix before merge if it is quick
 - 🟢 **Suggestion:** optional improvement. Can merge as is
 
