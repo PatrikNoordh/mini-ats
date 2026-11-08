@@ -61,7 +61,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 - GitHub Issues: the live tickets and their status, one milestone per epic. Titles start with `[ATS-<N>]`.
 - `TICKETS.md`: the original plan, imported into GitHub Issues with `/ats-create-ticket import`. Now used for its two findings lists, § Found while building and § Found while reviewing PRs, which are triaged and emptied at each epic checkpoint (`/ats-epic-close`).
 - `docs/ui-spec.md`: what the UI does. `docs/prototype.html`: how it looks (open it in a browser). `docs/review-ats-1.md`: review of the Lovable code. `docs/review-epic-<N>.md`: each epic review and where its findings went.
-- `docs/error-codes.md`: every error code and where it comes from. `docs/next-custom-stages.md`: the design of epic 8, own pipeline stages. `docs/next-branding.md`: a design sketch for customer branding.
+- `docs/error-codes.md`: every error code and where it comes from. `docs/next-custom-stages.md`: the design of epic 8, own pipeline stages. `docs/next-teams.md`: the design of epic 9, several users per company. `docs/next-branding.md`: a design sketch for customer branding.
 - `supabase/migrations/`: the schema. `supabase/tests/rls_test.sql`: the security tests.
 
 ## Security rules — never break these
