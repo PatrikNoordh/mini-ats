@@ -292,7 +292,9 @@
     "cvReplace": "Byt CV",
     "cvChosen": "Vald fil: {{name}}",
     "cvClear": "Ångra valet",
-    "cvReplacesOnSave": "Den nya filen ersätter nuvarande CV när du sparar."
+    "cvReplacesOnSave": "Den nya filen ersätter nuvarande CV när du sparar.",
+    "duplicateEmail": "Det finns redan en kandidat med den här e-postadressen: {{name}}. Du kan ändå spara.",
+    "duplicateName": "Det finns redan en kandidat som heter {{name}}. Du kan ändå spara om det är någon annan."
   },
   "jobs": {
     "title": "Jobb",
