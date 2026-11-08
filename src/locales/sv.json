@@ -197,6 +197,8 @@
     },
     "reorderFailed": "Kunde inte flytta kolumnen. Ändringen har ångrats.",
     "columnHandle": "Flytta kolumnen {{stage}}",
+    "columnRole": "flyttbar kolumn",
+    "cardRole": "flyttbart kort",
     "columnInstructions": "Tryck mellanslag för att lyfta kolumnen, flytta den med vänster- och högerpil och tryck mellanslag igen för att släppa den. Escape avbryter flytten.",
     "announceColumn": {
       "pickedUp": "Kolumnen {{stage}} lyft från plats {{position}} av {{count}}.",

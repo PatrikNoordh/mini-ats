@@ -197,6 +197,8 @@
     },
     "reorderFailed": "Could not move the column. The change has been undone.",
     "columnHandle": "Move the column {{stage}}",
+    "columnRole": "movable column",
+    "cardRole": "draggable card",
     "columnInstructions": "Press space to pick up the column, move it with the left and right arrow keys and press space again to drop it. Escape cancels the move.",
     "announceColumn": {
       "pickedUp": "Picked up the column {{stage}} from position {{position}} of {{count}}.",
