@@ -576,6 +576,10 @@ Out of scope: any change to the schema or the app.
 
 Tracked in #107.
 
+### ATS-59 · chore · Upgrade the Supabase CLI to v3
+
+Tracked in #114. Created by ATS-57 AC2: the CLI stays pinned to 2.122.0 until this ticket moves `package.json` and CI to v3 together.
+
 **Checkpoint:** two users in the same company see the same board; a user in another company sees none of it.
 
 ---
@@ -698,6 +702,7 @@ Small problems and improvements noticed while working on a ticket but outside it
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
 - [ ] `ats-create-ticket` runs `gh label create <label> --force` for every label it uses, and `--force` resets an existing label's colour: it changed `feat`, `security` and `database` while creating #109–#112 (restored by hand), and maybe `chore` and `refactor`. Create a label only when `gh label list` does not have it, and never pass `--force` for a label that exists — `.claude/skills/ats-create-ticket/SKILL.md` (found in ATS-43)
+- [ ] `npm audit` reports high-severity advisories for `vite` and `zod` and moderate ones for `typescript-eslint` and `seroval`, all from before ATS-57 (the Supabase CLI adds none). Check each against how the app uses it and bump what is safe — `package.json` (found in ATS-57)
 
 ## Found while reviewing PRs
 
