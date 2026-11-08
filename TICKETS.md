@@ -710,3 +710,5 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
+- [ ] The Supabase deny list still has gaps no prefix rule closes well: remote commands it does not name (`sso`, `domains`, `vanity-subdomains`, `network-bans`, `network-restrictions`, `ssl-enforcement`, `orgs`, `snippets`, `bootstrap`, `encryption`), and the CLI token read through a glob such as `~/.supa*`, through `find`, or from the macOS keychain, where the CLI can keep it instead of the file. A Claude Code sandbox read block on `~/.supabase/` would close the shell paths for good — `.claude/settings.json` (PR #115, ATS-57)
+

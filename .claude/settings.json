@@ -93,8 +93,32 @@
       "Bash(supabase storage*)",
       "Bash(supabase * --linked*)",
       "Bash(supabase * --remote*)",
+      "Bash(npx supabase* config push*)",
+      "Bash(npx supabase* migration fetch*)",
+      "Bash(npx supabase* functions download*)",
+      "Bash(npx supabase* branches*)",
+      "Bash(npx supabase* backups*)",
+      "Bash(npx supabase* postgres-config*)",
+      "Bash(npx supabase* --project-ref*)",
+      "Bash(npx supabase* --project-id*)",
+      "Bash(npx supabase* --db-url*)",
+      "Bash(supabase config push*)",
+      "Bash(supabase migration fetch*)",
+      "Bash(supabase functions download*)",
+      "Bash(supabase branches*)",
+      "Bash(supabase backups*)",
+      "Bash(supabase postgres-config*)",
+      "Bash(supabase * --project-ref*)",
+      "Bash(supabase * --project-id*)",
+      "Bash(supabase * --db-url*)",
+      "Bash(*node_modules/.bin/supabase*)",
+      "Bash(*node_modules/supabase/*)",
+      "Bash(npm exec*supabase*)",
+      "Bash(npx -y supabase*)",
+      "Bash(npx --yes supabase*)",
       "Read(~/.supabase/**)",
-      "Bash(*/.supabase*)"
+      "Bash(*/.supabase*)",
+      "Bash(*.supabase/*)"
     ]
   }
 }
