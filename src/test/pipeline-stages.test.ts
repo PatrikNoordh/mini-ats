@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { listStages, parseStageRow } from "@/lib/api/pipelineStages";
 import { getT } from "@/lib/i18n";
-import { firstStageOfKind, queryKeys, stageLabel } from "@/lib/stages";
+import { firstStageOfKind, queryKeys, stageLabel, stageNamesInLanguages } from "@/lib/stages";
 import { customStage, DEFAULT_TEST_STAGES, TEST_CUSTOMER } from "./stage-fixtures";
 
 const { from, select, eq, order } = vi.hoisted(() => {
@@ -68,6 +68,15 @@ describe("stage names and kinds", () => {
     const renamed = { ...screening, name: "Telefonintervju" };
     expect(stageLabel(renamed, getT("en"))).toBe("Telefonintervju");
     expect(stageLabel(renamed, getT("sv"))).toBe("Telefonintervju");
+  });
+
+  it("lists a default stage's name in every language, and a typed name once", () => {
+    const ts = [getT("sv"), getT("en")];
+    const interview = DEFAULT_TEST_STAGES[2]!;
+    expect(stageNamesInLanguages(interview, ts)).toEqual(["Intervju", "Interview"]);
+    // Screening is the same word in both languages, so it is listed once.
+    expect(stageNamesInLanguages(DEFAULT_TEST_STAGES[1]!, ts)).toEqual(["Screening"]);
+    expect(stageNamesInLanguages({ ...interview, name: "Kodtest" }, ts)).toEqual(["Kodtest"]);
   });
 
   it("finds the first stage of a kind in board order", () => {

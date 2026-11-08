@@ -72,9 +72,9 @@ export const jobInputSchema = z.object({
 export type JobInput = z.infer<typeof jobInputSchema>;
 
 /**
- * A column name. `takenNames` are the names the other columns show, translated defaults
- * included, so "Intervju" is refused while the default Interview column is on the board. The
- * database only knows typed names, so it checks those again.
+ * A column name. `takenNames` are the names the other columns can show, the defaults in every
+ * language, so "Intervju" and "Interview" are both refused while the default Interview column is
+ * on the board. The database only knows typed names, so it checks those again.
  */
 export function stageNameSchema(takenNames: readonly string[]) {
   const taken = new Set(takenNames.map((name) => name.trim().toLocaleLowerCase()));
