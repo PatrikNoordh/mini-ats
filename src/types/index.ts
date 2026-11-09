@@ -1,9 +1,24 @@
 export type Role = "admin" | "customer";
 
+/**
+ * A customer: the recruiting company (ATS-44). Every `customer_id` is a company id, and its users
+ * are its members.
+ */
+export interface Company {
+  id: string;
+  name: string;
+  created_at: string;
+  /** Set when an admin deleted the company; it is deleted for good ACCOUNT_DELETE_GRACE_DAYS later. */
+  deleted_at: string | null;
+}
+
 export interface Profile {
   id: string;
   role: Role;
   full_name: string;
+  /** The company the user is a member of, or null: an admin, or a customer without a company. */
+  company_id: string | null;
+  /** That company's name from `companies.name`, or "" without one. */
   company_name: string;
   email: string;
   created_at: string;

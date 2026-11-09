@@ -75,6 +75,7 @@
     "invalid_credentials": "Wrong email or password.",
     "too_many_attempts": "Too many sign-in attempts. Wait a moment and try again.",
     "profile_not_found": "This account has no profile. Contact an administrator.",
+    "no_company": "This account does not belong to an active company. Contact an administrator.",
     "job_candidate_customer_mismatch": "The job and the candidate must belong to the same customer.",
     "application_not_found": "The application could not be found.",
     "already_linked": "The candidate is already linked to this job.",

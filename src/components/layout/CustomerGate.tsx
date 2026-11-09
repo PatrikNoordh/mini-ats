@@ -6,8 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState, LoadingRows } from "@/components/States";
 import { useActiveCustomer } from "@/contexts/ActiveCustomerContext";
 import { CHOOSER_LOADING_CARDS } from "@/lib/constants";
-import { useOpenJobCounts, useProfiles } from "@/hooks/useProfiles";
-import type { Profile } from "@/types";
+import { useCompanies } from "@/hooks/useCompanies";
+import { useOpenJobCounts } from "@/hooks/useProfiles";
+import type { Company } from "@/types";
 
 function CustomerCard({
   customer,
@@ -15,7 +16,7 @@ function CustomerCard({
   countsLoading,
   onPick,
 }: {
-  customer: Profile;
+  customer: Company;
   /** undefined while the counts load or after they failed. */
   openJobs: number | undefined;
   countsLoading: boolean;
@@ -28,7 +29,7 @@ function CustomerCard({
       onClick={onPick}
       className="rounded-lg border bg-card p-4 text-left transition-colors hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className="font-semibold">{customer.company_name}</div>
+      <div className="font-semibold">{customer.name}</div>
       <div className="text-sm text-muted-foreground">
         {openJobs !== undefined ? (
           t("gate.openJobs", { count: openJobs })
@@ -42,15 +43,15 @@ function CustomerCard({
   );
 }
 
-/** The admin's list of customers to act for, with each one's number of open jobs. */
+/** The admin's list of companies to act for, with each one's number of open jobs. */
 function CustomerChooser() {
   const { t } = useTranslation();
   const { customers, setCustomerId } = useActiveCustomer();
-  const profiles = useProfiles();
+  const companies = useCompanies();
   const counts = useOpenJobCounts();
 
-  if (profiles.isError) return <ErrorState onRetry={() => profiles.refetch()} />;
-  if (profiles.isLoading) {
+  if (companies.isError) return <ErrorState onRetry={() => companies.refetch()} />;
+  if (companies.isLoading) {
     return (
       <div className="grid gap-3 sm:grid-cols-2" aria-label={t("common.loading")}>
         {Array.from({ length: CHOOSER_LOADING_CARDS }).map((_, i) => (

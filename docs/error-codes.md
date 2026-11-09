@@ -76,6 +76,7 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 | `same_password`                   | auth (change password)                      | Auth refused a new password equal to the current one       |
 | `weak_password`                   | auth (change password)                      | Auth refused the new password as too weak                  |
 | `profile_not_found`               | auth                                        | The account has no `profiles` row                          |
+| `no_company`                      | auth                                        | A customer user without an active company (ATS-45)         |
 | `stage_not_found`                 | pipeline stages (functions, trigger)        | The column does not exist for this customer                |
 | `stage_hired_required`            | pipeline stages (trigger)                   | The change would leave the customer without a hired column |
 | `stage_rejected_required`         | pipeline stages (trigger)                   | The change would leave no rejected column                  |

@@ -17,6 +17,7 @@ import {
   type AuthUser,
 } from "@/lib/api/auth";
 import { getProfile } from "@/lib/api/profiles";
+import { hasNoCompany } from "@/lib/accounts";
 import { AppError } from "@/lib/errors";
 import type { Profile, Role } from "@/types";
 
@@ -72,6 +73,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // A newer sign-in or sign-out has taken over: drop this result.
           if (inflight.current?.profile !== profile) return loaded;
           inflight.current = null;
+          // A customer user sees data only through an active company (ATS-45). Without one the
+          // session must not survive, also when it was restored on a reload.
+          if (loaded && hasNoCompany(loaded)) {
+            commit(null);
+            void signOutUser().catch(() => {});
+            throw new AppError("no_company");
+          }
           commit(loaded ? { user, profile: loaded } : null);
           return loaded;
         },

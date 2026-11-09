@@ -10,19 +10,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useActiveCustomer } from "@/contexts/ActiveCustomerContext";
-import { useProfiles } from "@/hooks/useProfiles";
+import { useCompanies } from "@/hooks/useCompanies";
 
 export function CustomerPicker() {
   const { t } = useTranslation();
   const { customers, customerId, setCustomerId } = useActiveCustomer();
-  const profiles = useProfiles();
+  const companies = useCompanies();
   const id = useId();
-  if (profiles.isError) {
+  if (companies.isError) {
     return (
       <div role="alert" className="flex min-w-0 items-center gap-2 text-sm text-destructive">
         {/* Visible from sm, read by screen readers at every width. */}
         <span className="sr-only sm:not-sr-only">{t("shell.customersFailed")}</span>
-        <Button variant="outline" size="sm" onClick={() => profiles.refetch()}>
+        <Button variant="outline" size="sm" onClick={() => companies.refetch()}>
           {t("common.retry")}
         </Button>
       </div>
@@ -41,7 +41,7 @@ export function CustomerPicker() {
         <SelectContent>
           {customers.map((c) => (
             <SelectItem key={c.id} value={c.id}>
-              {c.company_name}
+              {c.name}
             </SelectItem>
           ))}
         </SelectContent>

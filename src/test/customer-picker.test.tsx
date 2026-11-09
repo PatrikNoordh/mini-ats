@@ -9,8 +9,8 @@ const refetch = vi.fn();
 vi.mock("@/contexts/ActiveCustomerContext", () => ({
   useActiveCustomer: () => ({ customers: [], customerId: null, setCustomerId: vi.fn() }),
 }));
-vi.mock("@/hooks/useProfiles", () => ({
-  useProfiles: () => ({ isError: true, refetch }),
+vi.mock("@/hooks/useCompanies", () => ({
+  useCompanies: () => ({ isError: true, refetch }),
 }));
 
 describe("the header customer picker", () => {

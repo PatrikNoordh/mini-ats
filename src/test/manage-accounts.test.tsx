@@ -36,6 +36,7 @@ function account(id: string, role: Profile["role"], extra: Partial<Profile> = {}
     id,
     role,
     full_name: "Erik Exempel",
+    company_id: role === "customer" ? `${id}-company` : null,
     company_name: "Exempelbygg AB",
     email: "kund@exempelbygg.test",
     created_at: "2026-10-22T08:00:00Z",

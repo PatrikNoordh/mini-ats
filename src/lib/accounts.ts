@@ -1,9 +1,18 @@
 import { ACCOUNT_DELETE_GRACE_DAYS, MS_PER_DAY } from "./constants";
 import type { Profile } from "@/types";
 
-/** An account that is not deleted. */
-export function isActive(profile: Pick<Profile, "deleted_at">): boolean {
-  return profile.deleted_at === null;
+/** An account or a company that is not deleted. */
+export function isActive(row: { deleted_at: string | null }): boolean {
+  return row.deleted_at === null;
+}
+
+/**
+ * A customer user without an active company: no membership, or RLS no longer shows it because the
+ * company or the user is deleted (ATS-45). Such a user sees nothing and is signed out. Admins
+ * belong to no company.
+ */
+export function hasNoCompany(profile: Pick<Profile, "role" | "company_id">): boolean {
+  return profile.role === "customer" && profile.company_id === null;
 }
 
 /** When an account deleted at `deletedAt` is deleted for good. */

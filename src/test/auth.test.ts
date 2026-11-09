@@ -34,10 +34,13 @@ describe("profile row", () => {
     id: "00000000-0000-0000-0000-0000000000a1",
     role: "customer",
     full_name: "Karin Exempel",
-    company_name: "Nordkust Bygg AB",
     email: "karin@nordkust.test",
     created_at: "2026-10-20T08:00:00+00:00",
     deleted_at: null,
+    company_members: {
+      company_id: "00000000-0000-0000-0000-0000000000c1",
+      companies: { name: "Nordkust Bygg AB" },
+    },
   };
 
   it("reads the role from the row", () => {
@@ -46,8 +49,21 @@ describe("profile row", () => {
   });
 
   it("shows missing names and email as empty text", () => {
-    const profile = parseProfileRow({ ...row, full_name: null, company_name: null, email: null });
-    expect(profile).toMatchObject({ full_name: "", company_name: "", email: "" });
+    const profile = parseProfileRow({ ...row, full_name: null, email: null });
+    expect(profile).toMatchObject({ full_name: "", email: "" });
+  });
+
+  it("reads the company and its name from the membership, not from the profile", () => {
+    const profile = parseProfileRow({ ...row, company_name: "An old name" });
+    expect(profile).toMatchObject({
+      company_id: "00000000-0000-0000-0000-0000000000c1",
+      company_name: "Nordkust Bygg AB",
+    });
+  });
+
+  it("has no company without a membership, as for an admin", () => {
+    const profile = parseProfileRow({ ...row, role: "admin", company_members: null });
+    expect(profile).toMatchObject({ company_id: null, company_name: "" });
   });
 
   it("reads when the account was deleted", () => {
