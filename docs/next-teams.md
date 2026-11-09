@@ -1,6 +1,6 @@
 # Next: teams
 
-A design sketch for epic 9 (ATS-43). Nothing here is built yet. The decisions below were made with the developer, and the work is split into tickets at the end.
+A design sketch for epic 9 (ATS-43). Step 1, the migration, is built (ATS-44, `supabase/migrations/20261109120000_companies.sql`); the rest is not yet. The decisions below were made with the developer, and the work is split into tickets at the end.
 
 ## Today
 
@@ -28,6 +28,12 @@ Several users per company instead of one shared login. They see and edit the sam
 - **`profiles.company_name` stays for now**, as `applications.stage` did until ATS-42. The code on `main` reads it in the header and on the accounts page, and `handle_new_user` writes it. ATS-44 copies it to `companies.name`, and a trigger keeps `companies.name` in step while `main` still edits the profile. A later ticket drops it once no code reads it.
 
 ## Step 1: the migration (ATS-44)
+
+Built as designed, with three choices made while building it:
+
+- **Clients only read the new tables.** An admin writes companies and memberships through the admin Edge Functions in ATS-46, with the service role, not with a client grant.
+- **The first user's profile also deletes and restores its company**, not only renames it, so a customer deleted or restored on the accounts page of `main` deletes or restores the company, and the company purge in ATS-46 finds it.
+- **An account promoted to admin leaves its company**, and a membership for an admin is refused, so an admin is never a member.
 
 Backwards compatible: the code on `main` keeps working until the app moves over in ATS-45, because every existing customer's first user is a member of a company with their own id.
 

@@ -16,6 +16,8 @@ A small applicant tracking system (ATS) for companies that recruit. The goal is 
 | Concept | Table | Notes |
 |---|---|---|
 | Account | `profiles` | One row per user. `role` is `admin` or `customer`. |
+| Company | `companies` | A customer: the recruiting company. Every `customer_id` is a company id (ATS-44). |
+| Membership | `company_members` | Links a user to their company: one company per user, and never an admin. |
 | Job | `jobs` | Belongs to one customer. |
 | Candidate | `candidates` | Belongs to one customer. Can be linked to several jobs. |
 | Application | `applications` | Links a candidate to a job. One card on the kanban board. Has a `stage_id` (its column) and `stage_changed_at`. |
@@ -68,9 +70,9 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 
 1. **The service role key is only used in Edge Functions**, and in the local demo seed script (`scripts/seed-demo.ts`, ATS-15), which reads it from your shell or `.env.seed.local` and is never run in CI or deployed. The end-to-end test seed (`scripts/seed-e2e.ts`, ATS-36) and the end-to-end fixtures (`e2e/fixtures.ts`) use only the local stack's fixed key and refuse any other host. Never import it, read it or reference it in `src/`.
 2. **Edge Functions read with the caller's JWT.** Use the service role key only for the privileged action the function exists for (creating a user, changing or deleting an account, saving an assessment). Never use it to read data on behalf of a user. The one exception is `purge-deleted-accounts`: it has no user as caller (pg_cron calls it with a secret it checks) and reads the accounts due for purging with the service role. `delete-candidate` uses no service role at all.
-3. **Public sign-up is disabled.** Accounts are only created by an admin through the `admin-create-user` Edge Function, which checks that the caller is an admin before doing anything.
+3. **Public sign-up is disabled.** Accounts are only created by an admin through the `admin-create-user` Edge Function, which checks that the caller is an admin before doing anything. Clients only read `companies` and `company_members`: a user joins, moves between or leaves a company only through the admin Edge Functions (ATS-46).
 4. **`profiles.role` is the role that counts.** RLS reads it through `public.is_admin()`, and the app reads it from the user's own profile. `app_metadata.role` is set when the account is created so the trigger can copy it. Never read the role from `user_metadata`.
-5. **Every table has Row Level Security.** Customers see only rows where `customer_id` is their own id. Admins see everything through `public.is_admin()`. A new table without RLS policies is a bug. Table privileges are explicit too: `anon` has none, and a new table gets no privileges until its migration grants `authenticated` only the operations the app uses (ATS-22).
+5. **Every table has Row Level Security.** Customers see only rows where `customer_id` is their company's id, through `public.current_company_id()`, and no customer table references `profiles` or `auth.users`, so deleting a user never reaches company data (ATS-44). Admins see everything through `public.is_admin()`. A new table without RLS policies is a bug. Table privileges are explicit too: `anon` has none, and a new table gets no privileges until its migration grants `authenticated` only the operations the app uses (ATS-22).
 6. **Do not rely on the frontend for access control.** Hiding a button is UX, not security. RLS is the security.
 7. **The database sets `customer_id` where it can.** `applications.customer_id` comes from the job and `cv_assessments.customer_id` from the application, both via triggers. Never trust a `customer_id` sent from the client for those tables.
 8. **Clients may read and delete their own assessments; only `assess-cv` creates them.** No client inserts or updates `cv_assessments` (ATS-56).
@@ -78,7 +80,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 
 ## How data access works
 
-- Customers: every query is scoped to their own `customer_id`, and RLS enforces the same thing in the database.
+- Customers: every query is scoped to their own `customer_id`, which is their company's id, and RLS enforces the same thing in the database.
 - Admins acting for a customer: the app holds an **active customer** in `ActiveCustomerContext`. All customer screens read and write with that customer's id. For a customer, the active customer is always themselves.
 - Keep Supabase calls in `src/lib/api/` (one file per table), wrapped in TanStack Query hooks in `src/hooks/`. Components never call Supabase directly.
 - **Every query key that returns customer data includes the active customer id**, for example `["jobs", customerId]`. Switching customer must never show cached data from the previous customer.
