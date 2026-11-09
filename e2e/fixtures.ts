@@ -10,7 +10,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { DemoCandidate, DemoCustomer, DemoJob } from "../scripts/demo-data.ts";
 import { E2E_PASSWORD } from "../scripts/e2e-data.ts";
 import { localStack } from "../scripts/local-stack.ts";
-import { seedCustomer, upsertAccount } from "../scripts/seed-shared.ts";
+import { seedCustomer, upsertCustomer } from "../scripts/seed-shared.ts";
 import sv from "../src/locales/sv.json" with { type: "json" };
 
 export { expect, sv };
@@ -33,7 +33,10 @@ export interface CustomerData {
 interface Fixtures {
   /** Unique to this attempt; goes into every name the test creates. */
   tag: string;
-  /** Creates a customer account with the given data. The account is removed after the test. */
+  /**
+   * Creates a customer, a company with its first user under the same id (ATS-44), with the given
+   * data. The company and the account are removed after the test.
+   */
   makeCustomer: (name: string, data?: CustomerData) => Promise<TestCustomer>;
 }
 
@@ -61,13 +64,16 @@ export const test = base.extend<Fixtures>({
         jobs: data.jobs ?? [],
         candidates: data.candidates ?? [],
       };
-      const id = await upsertAccount(admin, new Map(), customer.account, E2E_PASSWORD);
+      const id = await upsertCustomer(admin, new Map(), customer.account, E2E_PASSWORD);
       created.push(id);
       if (customer.jobs.length > 0) await seedCustomer(admin, id, customer);
       return { id, email, fullName, company };
     });
-    // Removing the account removes its rows too (on delete cascade from auth.users).
+    // Removing the company removes its rows (on delete cascade from companies); removing the
+    // account removes only the login, its profile and its membership.
     for (const id of created) {
+      const company = await admin.from("companies").delete().eq("id", id);
+      if (company.error) throw company.error;
       const { error } = await admin.auth.admin.deleteUser(id);
       if (error) throw error;
     }
