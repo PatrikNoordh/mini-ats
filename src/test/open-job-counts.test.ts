@@ -28,22 +28,21 @@ describe("open jobs per customer", () => {
     ]);
   });
 
-  it("asks for the counts of open jobs only, in one request", async () => {
+  it("asks for the counts of open jobs per company, in one request", async () => {
     const result = { data: [{ id: "a", jobs: [{ count: 3 }] }], error: null };
-    const statusEq = vi.fn().mockResolvedValue(result);
-    eq.mockReturnValueOnce({ eq: statusEq });
+    eq.mockResolvedValueOnce(result);
     const counts = await countOpenJobsByCustomer();
     expect(from).toHaveBeenCalledTimes(1);
-    expect(from).toHaveBeenCalledWith("profiles");
+    // Jobs reference companies since ATS-44, so a count embedded from profiles finds no relation.
+    expect(from).toHaveBeenCalledWith("companies");
     expect(select).toHaveBeenCalledWith("id, jobs(count)");
-    expect(eq).toHaveBeenCalledWith("role", "customer");
-    expect(statusEq).toHaveBeenCalledWith("jobs.status", "open");
+    expect(eq).toHaveBeenCalledWith("jobs.status", "open");
     expect(counts.get("a")).toBe(3);
   });
 
   it("throws when the request fails", async () => {
     const failure = { data: null, error: new Error("network") };
-    eq.mockReturnValueOnce({ eq: vi.fn().mockResolvedValue(failure) });
+    eq.mockResolvedValueOnce(failure);
     await expect(countOpenJobsByCustomer()).rejects.toThrow("network");
   });
 });
