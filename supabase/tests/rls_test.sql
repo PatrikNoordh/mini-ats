@@ -783,6 +783,9 @@ begin
   update storage.objects set name = name where bucket_id = 'cvs' and name = cv_owner || '/cv-owner.pdf';
   get diagnostics n = row_count;
   assert n = 1, 'a member could not replace its company''s CV';
+  -- Supabase refuses a delete from storage.objects unless this is set, as the Storage API sets it;
+  -- the policies still decide which rows it reaches. The plain Postgres in CI has no such guard.
+  perform set_config('storage.allow_delete_query', 'true', true);
   delete from storage.objects where bucket_id = 'cvs' and name = cv_owner || '/new.pdf';
   get diagnostics n = row_count;
   assert n = 1, 'a member could not remove its company''s CV';
