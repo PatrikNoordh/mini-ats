@@ -36,13 +36,18 @@ export function useCreateProfile() {
   });
 }
 
-/** One account change through admin-manage-account. The lists and the chooser's counts follow. */
+/**
+ * One account change through admin-manage-account. The lists and the chooser's counts follow, and
+ * the companies too: a change to a company's first user can rename, delete or restore a company
+ * that has the user's id (the sync from ATS-44).
+ */
 function useAccountMutation<T>(mutationFn: (input: T) => Promise<void>) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn,
     onSettled: () => {
       qc.invalidateQueries({ queryKey: queryKeys.profiles() });
+      qc.invalidateQueries({ queryKey: queryKeys.companies() });
       qc.invalidateQueries({ queryKey: queryKeys.openJobCounts() });
     },
   });

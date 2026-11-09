@@ -8,23 +8,25 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "./AuthContext";
-import { useProfiles } from "@/hooks/useProfiles";
+import { useCompanies, useCompany } from "@/hooks/useCompanies";
 import {
   clearStoredCustomer,
   readStoredCustomer,
   storeCustomer,
 } from "@/lib/active-customer-storage";
 import { isActive } from "@/lib/accounts";
-import type { Profile } from "@/types";
+import type { Company } from "@/types";
 
-/** A deleted customer is hidden from the chooser and the picker, and drops a stored choice. */
-const isActiveCustomer = (p: Profile) => p.role === "customer" && isActive(p);
-
+/**
+ * The active customer is a company (ATS-45). A customer user's is always their own company; an
+ * admin belongs to none and picks one among the active companies.
+ */
 interface ActiveCustomerValue {
-  /** Customer whose data is shown. null = admin hasn't picked one. */
+  /** The company whose data is shown. null = an admin hasn't picked one. */
   customerId: string | null;
-  customer: Profile | null;
-  customers: Profile[];
+  /** That company, once loaded. */
+  customer: Company | null;
+  customers: Company[];
   /** True when an admin is acting on behalf of a customer. */
   isActingAs: boolean;
   /** True while an admin's choice from before a reload waits for the customer list. */
@@ -41,10 +43,13 @@ interface Choice {
 }
 
 export function ActiveCustomerProvider({ children }: { children: ReactNode }) {
-  const { profile, isLoading } = useAuth();
+  const { profile, isLoading, signOut } = useAuth();
   const isAdmin = profile?.role === "admin";
   const userId = profile?.id ?? null;
-  const profiles = useProfiles(isAdmin);
+  const companies = useCompanies(isAdmin);
+  // A customer user's own company. Sign-in already refused a user without one (hasNoCompany).
+  const ownCompanyId = !isAdmin ? (profile?.company_id ?? null) : null;
+  const ownCompany = useCompany(ownCompanyId);
   const [choice, setChoice] = useState<Choice>({ userId: null, customerId: null });
 
   // Another user signed in: an admin gets back the customer chosen earlier in this tab, anyone
@@ -59,9 +64,17 @@ export function ActiveCustomerProvider({ children }: { children: ReactNode }) {
     if (!isLoading && !profile) clearStoredCustomer();
   }, [isLoading, profile]);
 
-  // A stored customer the admin cannot see (deleted, or never valid) is dropped once the list
-  // is in. While the list loads, the choice waits for it.
-  const customerIds = profiles.data?.filter(isActiveCustomer).map((p) => p.id);
+  // The company was deleted, or the user removed from it, while signed in: RLS no longer shows it.
+  // Without an active company the user sees nothing, so they are signed out.
+  const lostCompany = !!ownCompanyId && ownCompany.isSuccess && ownCompany.data === null;
+  useEffect(() => {
+    if (lostCompany) void signOut().catch(() => {});
+  }, [lostCompany, signOut]);
+
+  // A stored company the admin cannot pick (deleted, or never valid) is dropped once the list is
+  // in. While the list loads, the choice waits for it. A choice stored before ATS-45 is a customer's
+  // profile id, which is their company's id, so it still works.
+  const customerIds = companies.data?.filter(isActive).map((c) => c.id);
   const isStale = !!selected && !!customerIds && !customerIds.includes(selected);
   useEffect(() => {
     if (!isStale) return;
@@ -89,26 +102,37 @@ export function ActiveCustomerProvider({ children }: { children: ReactNode }) {
         isRestoring: false,
         setCustomerId,
       };
-    if (!isAdmin)
+    if (!isAdmin) {
+      const customer = ownCompany.data ?? null;
       return {
-        customerId: profile.id,
-        customer: profile,
-        customers: [profile],
+        customerId: ownCompanyId,
+        customer,
+        customers: customer ? [customer] : [],
         isActingAs: false,
         isRestoring: false,
         setCustomerId,
       };
-    const customers = (profiles.data ?? []).filter(isActiveCustomer);
+    }
+    const customers = (companies.data ?? []).filter(isActive);
     const customer = customers.find((c) => c.id === selected) ?? null;
     return {
       customerId: customer?.id ?? null,
       customer,
       customers,
       isActingAs: !!customer,
-      isRestoring: !!selected && profiles.isPending,
+      isRestoring: !!selected && companies.isPending,
       setCustomerId,
     };
-  }, [profile, isAdmin, profiles.data, profiles.isPending, selected, setCustomerId]);
+  }, [
+    profile,
+    isAdmin,
+    ownCompanyId,
+    ownCompany.data,
+    companies.data,
+    companies.isPending,
+    selected,
+    setCustomerId,
+  ]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

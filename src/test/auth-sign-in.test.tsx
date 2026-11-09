@@ -27,6 +27,7 @@ const profile: Profile = {
   id: "u1",
   role: "customer",
   full_name: "Anna",
+  company_id: "c1",
   company_name: "Nordkust",
   email: "anna@test.local",
   created_at: "2026-10-01T00:00:00Z",
@@ -93,6 +94,53 @@ describe("sign-in", () => {
     );
 
     expect(api.signOut).toHaveBeenCalledOnce();
+    expect(result.current.user).toBeNull();
+  });
+
+  it("signs out a customer user without an active company", async () => {
+    api.getProfile.mockResolvedValue({ ...profile, company_id: null, company_name: "" });
+    const { result } = renderAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(() =>
+      expect(result.current.signIn("anna@test.local", "secret-pass")).rejects.toMatchObject({
+        code: "no_company",
+      }),
+    );
+
+    expect(api.signOut).toHaveBeenCalled();
+    expect(result.current.user).toBeNull();
+  });
+
+  it("signs in an admin, who belongs to no company", async () => {
+    const admin: Profile = { ...profile, role: "admin", company_id: null, company_name: "" };
+    api.getProfile.mockResolvedValue(admin);
+    const { result } = renderAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(() => result.current.signIn("anna@test.local", "secret-pass"));
+
+    expect(result.current.profile).toEqual(admin);
+    expect(api.signOut).not.toHaveBeenCalled();
+  });
+});
+
+describe("a session restored on a reload", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    api.onAuthUserChange.mockImplementation((onChange: (u: typeof user) => void) => {
+      onChange(user);
+      return () => {};
+    });
+    api.signOut.mockResolvedValue(undefined);
+    api.sessionIsGone.mockResolvedValue(false);
+  });
+
+  it("is ended for a customer user whose company is no longer active", async () => {
+    api.getProfile.mockResolvedValue({ ...profile, company_id: null, company_name: "" });
+    const { result } = renderAuth();
+    await waitFor(() => expect(api.signOut).toHaveBeenCalled());
+    expect(result.current.isLoading).toBe(false);
     expect(result.current.user).toBeNull();
   });
 });

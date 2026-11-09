@@ -5,30 +5,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CustomerGate } from "@/components/layout/CustomerGate";
 import { getI18n } from "@/lib/i18n";
-import type { Profile } from "@/types";
+import type { Company } from "@/types";
 
-const { activeCustomer, profiles, counts } = vi.hoisted(() => ({
+const { activeCustomer, companies, counts } = vi.hoisted(() => ({
   activeCustomer: vi.fn(),
-  profiles: vi.fn(),
+  companies: vi.fn(),
   counts: vi.fn(),
 }));
 
 vi.mock("@/contexts/ActiveCustomerContext", () => ({ useActiveCustomer: activeCustomer }));
-vi.mock("@/hooks/useProfiles", () => ({ useProfiles: profiles, useOpenJobCounts: counts }));
+vi.mock("@/hooks/useCompanies", () => ({ useCompanies: companies }));
+vi.mock("@/hooks/useProfiles", () => ({ useOpenJobCounts: counts }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a>,
 }));
 
-function customer(id: string, company: string): Profile {
-  return {
-    id,
-    role: "customer",
-    full_name: "",
-    company_name: company,
-    email: "",
-    created_at: "2026-10-01T08:00:00.000Z",
-    deleted_at: null,
-  };
+function customer(id: string, name: string): Company {
+  return { id, name, created_at: "2026-10-01T08:00:00.000Z", deleted_at: null };
 }
 
 const nordkust = customer("a", "Nordkust Bygg AB");
@@ -63,14 +56,14 @@ function Page({ id }: { id: string }) {
   );
 }
 
-function acting(customerId: string | null, customers: Profile[] = [nordkust, lumen]) {
+function acting(customerId: string | null, customers: Company[] = [nordkust, lumen]) {
   activeCustomer.mockReturnValue({ customerId, customers, setCustomerId });
 }
 
 describe("the admin's customer chooser", () => {
   beforeEach(() => {
     container = document.body.appendChild(document.createElement("div"));
-    profiles.mockReturnValue(query({ data: [nordkust, lumen] }));
+    companies.mockReturnValue(query({ data: [nordkust, lumen] }));
     counts.mockReturnValue(query({ data: new Map([["a", 2]]) }));
     acting(null);
   });
@@ -114,8 +107,8 @@ describe("the admin's customer chooser", () => {
   });
 
   it("shows an error with a retry when the customers fail to load", () => {
-    const failed = query<Profile[]>({ isError: true });
-    profiles.mockReturnValue(failed);
+    const failed = query<Company[]>({ isError: true });
+    companies.mockReturnValue(failed);
     acting(null, []);
     render(chooser());
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("Försök igen");

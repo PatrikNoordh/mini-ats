@@ -5,16 +5,25 @@ import type { Profile, Role } from "@/types";
 import { roleSchema } from "@/lib/validation";
 import { invokeFunction } from "./functions";
 
-const PROFILE_COLUMNS = "id, role, full_name, company_name, email, created_at, deleted_at";
+/**
+ * The profile with its membership and the company's name (ATS-45). `profiles.company_name` is not
+ * read: the name comes from `companies.name`. A user is a member of at most one company.
+ */
+const PROFILE_COLUMNS =
+  "id, role, full_name, email, created_at, deleted_at, company_members(company_id, companies(name))";
 
 const profileRowSchema = z.object({
   id: z.string(),
   role: roleSchema,
   full_name: z.string().nullable(),
-  company_name: z.string().nullable(),
   email: z.string().nullable(),
   created_at: z.string(),
   deleted_at: z.string().nullable(),
+  // RLS shows a customer user their membership only while they and the company are active, and
+  // every membership to an admin.
+  company_members: z
+    .object({ company_id: z.string(), companies: z.object({ name: z.string() }).nullable() })
+    .nullable(),
 });
 
 /** A `profiles` row as the app's Profile. Throws on a role the app does not know. */
@@ -24,7 +33,8 @@ export function parseProfileRow(row: unknown): Profile {
     id: p.id,
     role: p.role,
     full_name: p.full_name ?? "",
-    company_name: p.company_name ?? "",
+    company_id: p.company_members?.company_id ?? null,
+    company_name: p.company_members?.companies?.name ?? "",
     email: p.email ?? "",
     created_at: p.created_at,
     deleted_at: p.deleted_at,

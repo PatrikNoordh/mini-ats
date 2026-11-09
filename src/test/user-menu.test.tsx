@@ -18,6 +18,7 @@ vi.mock("@/contexts/AuthContext", () => {
     id: "u1",
     role,
     full_name: "Erik Exempel",
+    company_id: role === "customer" ? "c1" : null,
     company_name: "Exempelbygg AB",
     email: "kund@exempelbygg.test",
     created_at: "2026-10-01T08:00:00Z",

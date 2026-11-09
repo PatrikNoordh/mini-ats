@@ -26,6 +26,7 @@ export const ERROR_CODES = [
   "same_password",
   "weak_password",
   "profile_not_found",
+  "no_company",
   "job_candidate_customer_mismatch",
   "application_not_found",
   "links_failed",

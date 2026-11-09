@@ -245,6 +245,10 @@ export function otherOpenApplications<
 
 export const queryKeys = {
   profiles: () => ["profiles"] as const,
+  /** Every company, for the admin's chooser and picker. Admin only, so it holds no single id. */
+  companies: () => ["companies"] as const,
+  /** One company: a customer user's own, under its id like every other customer key. */
+  company: (customerId: string | null) => ["company", customerId] as const,
   /** Every customer's open-job count. Admin only, so it holds no single customer's id. */
   openJobCounts: () => ["openJobCounts"] as const,
   jobs: (customerId: string | null) => ["jobs", customerId] as const,

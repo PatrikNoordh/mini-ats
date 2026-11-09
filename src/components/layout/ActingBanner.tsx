@@ -11,7 +11,7 @@ export function ActingBanner() {
       <span>
         <Trans
           i18nKey="shell.actingAs"
-          values={{ company: customer.company_name }}
+          values={{ company: customer.name }}
           components={{ bold: <strong className="font-bold" /> }}
         />
       </span>

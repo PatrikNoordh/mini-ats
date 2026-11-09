@@ -75,6 +75,7 @@
     "invalid_credentials": "Fel e-post eller lösenord.",
     "too_many_attempts": "För många inloggningsförsök. Vänta en stund och försök igen.",
     "profile_not_found": "Kontot saknar en profil. Kontakta en administratör.",
+    "no_company": "Kontot tillhör inget aktivt företag. Kontakta en administratör.",
     "job_candidate_customer_mismatch": "Jobbet och kandidaten måste tillhöra samma kund.",
     "application_not_found": "Ansökan hittades inte.",
     "already_linked": "Kandidaten är redan kopplad till det här jobbet.",
