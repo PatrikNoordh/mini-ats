@@ -28,9 +28,10 @@ export function useCreateProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateProfileInput) => createProfile(input),
-    // A new customer needs a count too, or its chooser card says the count is unavailable.
+    // A new customer can come with a new company, which needs a count in the chooser too.
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.profiles() });
+      qc.invalidateQueries({ queryKey: queryKeys.companies() });
       qc.invalidateQueries({ queryKey: queryKeys.openJobCounts() });
     },
   });
@@ -38,8 +39,7 @@ export function useCreateProfile() {
 
 /**
  * One account change through admin-manage-account. The lists and the chooser's counts follow, and
- * the companies too: a change to a company's first user can rename, delete or restore a company
- * that has the user's id (the sync from ATS-44).
+ * the companies too, whose member lists a move changes (ATS-46).
  */
 function useAccountMutation<T>(mutationFn: (input: T) => Promise<void>) {
   const qc = useQueryClient();

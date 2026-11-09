@@ -20,8 +20,8 @@ import { useFormat } from "@/lib/format";
 import type { Profile } from "@/types";
 
 /**
- * The deleted accounts, each kept until its date: Återställ brings it back with everything in it,
- * Radera för gott deletes it now after the admin types its company name (or email).
+ * The deleted accounts, each kept until its date: Återställ brings the login back, Radera för gott
+ * deletes it now after the admin types its email. The company's data is never part of it (ATS-46).
  */
 export function DeletedAccounts({ accounts }: { accounts: Profile[] }) {
   const { t } = useTranslation();
@@ -82,10 +82,8 @@ export function DeletedAccounts({ accounts }: { accounts: Profile[] }) {
                 return (
                   <TableRow key={a.id}>
                     <TableCell className="wrap-anywhere">
-                      <div className="font-semibold">
-                        {a.company_name || a.full_name || a.email}
-                      </div>
-                      <div className="text-xs text-muted-foreground">{a.full_name}</div>
+                      <div className="font-semibold">{a.full_name || a.email}</div>
+                      <div className="text-xs text-muted-foreground">{a.company_name}</div>
                       <div className="text-xs text-muted-foreground md:hidden">
                         {t("accounts.purgeOn", { date })}
                       </div>
@@ -126,9 +124,7 @@ export function DeletedAccounts({ accounts }: { accounts: Profile[] }) {
           open={!!purging}
           onOpenChange={(open) => !open && setPurging(null)}
           title={t("accounts.deleteNowTitle")}
-          description={t("accounts.deleteNowDescription", {
-            name: purging.company_name || purging.email,
-          })}
+          description={t("accounts.deleteNowDescription", { name: purging.email })}
           confirmLabel={t("accounts.deleteNow")}
           typeToConfirm={{
             text: deleteConfirmText(purging),

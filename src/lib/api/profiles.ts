@@ -91,19 +91,25 @@ export async function getProfile(id: string): Promise<Profile | null> {
   return data ? parseProfileRow(data) : null;
 }
 
+/**
+ * A new account. A customer joins an existing company (`company_id`) or a new one
+ * (`company_name`); an admin has neither (ATS-46).
+ */
 export interface CreateProfileInput {
   role: Role;
   full_name: string;
-  company_name: string;
   email: string;
   password: string;
+  company_id?: string;
+  company_name?: string;
 }
 
 const createdSchema = z.object({ id: z.string() });
 
 /**
  * Creates an account through the admin-create-user Edge Function, which checks that the caller
- * is an admin. The profile is made by the database trigger. Returns the new account's id.
+ * is an admin, and adds a customer to their company. The profile is made by the database trigger.
+ * Returns the new account's id.
  */
 export async function createProfile(input: CreateProfileInput): Promise<string> {
   return createdSchema.parse(await invokeFunction("admin-create-user", input)).id;
@@ -113,10 +119,11 @@ export interface UpdateProfileInput {
   id: string;
   role: Role;
   full_name: string;
-  company_name: string;
   email: string;
   /** Left out to keep the password. */
   password?: string;
+  /** Moves the user to this company, or out of theirs for null. Left out to keep it. */
+  company_id?: string | null;
 }
 
 /**
@@ -140,7 +147,10 @@ export async function restoreProfile(id: string): Promise<void> {
   await invokeFunction("admin-manage-account", { action: "restore", id });
 }
 
-/** Deletes a deleted account for good, with all its data, before its 30 days are up. */
+/**
+ * Deletes a deleted account for good before its 30 days are up: the login and the profile. The
+ * company's data stays with the company (ATS-44).
+ */
 export async function deleteProfileNow(id: string): Promise<void> {
   await invokeFunction("admin-manage-account", { action: "delete_now", id });
 }
