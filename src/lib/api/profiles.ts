@@ -55,13 +55,13 @@ export function parseOpenJobCounts(rows: unknown): Map<string, number> {
 
 /**
  * The number of open jobs of every customer, in one request, for the admin's customer chooser.
- * Only the counts come back, not the jobs. RLS returns every customer to an admin.
+ * Only the counts come back, not the jobs. RLS returns every company to an admin. Counted per
+ * company, since jobs reference companies, not profiles (ATS-44); a customer's id is its company's.
  */
 export async function countOpenJobsByCustomer(): Promise<Map<string, number>> {
   const { data, error } = await supabase
-    .from("profiles")
+    .from("companies")
     .select("id, jobs(count)")
-    .eq("role", "customer")
     .eq("jobs.status", "open");
   if (error) throw error;
   return parseOpenJobCounts(data);

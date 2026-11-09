@@ -1,5 +1,6 @@
-// CV files of an account deleted for good (ATS-17). The cvs bucket keeps each customer's CVs in a
-// folder named after the customer id, so removing that folder removes all of them.
+// The cvs bucket keeps each company's CVs in a folder named after the company id (the customer
+// id), so removing that folder removes all of them. Since ATS-44 no user's delete removes a folder:
+// removeCvFolder waits for the company purge in ATS-46, which removes a deleted company's folder.
 
 /** The private bucket for CVs, the same as CV_BUCKET in src/lib/api/cvs.ts. */
 export const CV_BUCKET = "cvs";

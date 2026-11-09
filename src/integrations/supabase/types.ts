@@ -79,7 +79,7 @@ export type Database = {
             foreignKeyName: "applications_customer_id_fkey";
             columns: ["customer_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
           {
@@ -143,6 +143,60 @@ export type Database = {
             foreignKeyName: "candidates_customer_id_fkey";
             columns: ["customer_id"];
             isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      companies: {
+        Row: {
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
+      company_members: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          user_id: string;
+        };
+        Insert: {
+          company_id: string;
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          company_id?: string;
+          created_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "company_members_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
@@ -194,7 +248,7 @@ export type Database = {
             foreignKeyName: "cv_assessments_customer_id_fkey";
             columns: ["customer_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
         ];
@@ -235,7 +289,7 @@ export type Database = {
             foreignKeyName: "jobs_customer_id_fkey";
             columns: ["customer_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
         ];
@@ -276,7 +330,7 @@ export type Database = {
             foreignKeyName: "pipeline_stages_customer_id_fkey";
             columns: ["customer_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "companies";
             referencedColumns: ["id"];
           },
         ];
@@ -338,6 +392,7 @@ export type Database = {
         };
       };
       create_default_stages: { Args: { customer: string }; Returns: undefined };
+      current_company_id: { Args: never; Returns: string };
       default_stage_specs: {
         Args: never;
         Returns: {

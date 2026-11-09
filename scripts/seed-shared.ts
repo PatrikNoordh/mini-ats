@@ -1,6 +1,8 @@
 /// <reference types="node" />
 // The parts the demo seed (seed-demo.ts, ATS-15) and the end-to-end test seed (seed-e2e.ts,
-// ATS-36) share: accounts through the Auth admin API, and a customer's jobs, candidates and cards.
+// ATS-36) share: accounts through the Auth admin API, customers' companies (ATS-44), and a
+// customer's jobs, candidates and cards.
+import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { DemoAccount, DemoCustomer } from "./demo-data.ts";
@@ -22,13 +24,15 @@ export async function existingUsers(admin: SupabaseClient): Promise<Map<string, 
 
 /**
  * Creates the account if it is missing, or sets the password of an existing one when a password
- * is given. A new account needs a password. Returns the account's id.
+ * is given. A new account needs a password, and gets the given id, or a new one. Returns the
+ * account's id.
  */
 export async function upsertAccount(
   admin: SupabaseClient,
   existing: Map<string, string>,
   account: DemoAccount,
   password: string | null,
+  newId?: string,
 ): Promise<string> {
   const id = existing.get(account.email);
   if (id) {
@@ -40,6 +44,7 @@ export async function upsertAccount(
   }
   if (!password) throw new Error(`A new account needs a password: ${account.email}`);
   const { data, error } = await admin.auth.admin.createUser({
+    ...(newId ? { id: newId } : {}),
     email: account.email,
     password,
     email_confirm: true,
@@ -51,9 +56,45 @@ export async function upsertAccount(
   return data.user.id;
 }
 
+/**
+ * Creates a customer the way a company is shaped until ATS-45: the company first, then the account
+ * under the company's id, as its first member. A customer that exists keeps its id, and gets its
+ * company and membership if either is missing. Returns the id, both the account's and the
+ * company's. A new user without a company sees nothing (docs/next-teams.md), so a customer is
+ * never created without one.
+ */
+export async function upsertCustomer(
+  admin: SupabaseClient,
+  existing: Map<string, string>,
+  account: DemoAccount,
+  password: string | null,
+): Promise<string> {
+  const known = existing.get(account.email);
+  const id = known ?? randomUUID();
+  const company = await admin
+    .from("companies")
+    .upsert({ id, name: account.company_name }, { onConflict: "id" });
+  if (company.error) throw company.error;
+  try {
+    await upsertAccount(admin, existing, account, password, id);
+  } catch (error) {
+    // A company made for an account that could not be created would have no member.
+    if (!known) await admin.from("companies").delete().eq("id", id);
+    throw error;
+  }
+  const membership = await admin
+    .from("company_members")
+    .upsert(
+      { company_id: id, user_id: id },
+      { onConflict: "company_id,user_id", ignoreDuplicates: true },
+    );
+  if (membership.error) throw membership.error;
+  return id;
+}
+
 const daysAgo = (days: number) => new Date(Date.now() - days * MS_PER_DAY).toISOString();
 
-/** The ids of the customer's default stages, by key. Every account gets them (ATS-38). */
+/** The ids of the customer's default stages, by key. Every company gets them (ATS-38, ATS-44). */
 async function defaultStageIds(
   admin: SupabaseClient,
   customerId: string,

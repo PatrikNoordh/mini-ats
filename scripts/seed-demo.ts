@@ -8,14 +8,21 @@
 // reads, and never in the repo.
 //
 // The accounts are made through the Auth admin API, like admin-create-user, so the profile
-// trigger runs. A new account gets the password from DEMO_<KEY>_PASSWORD, or a generated one that
+// trigger runs. Each customer gets its company first, and its account under the company's id
+// (ATS-44). A new account gets the password from DEMO_<KEY>_PASSWORD, or a generated one that
 // is printed once. An existing account keeps its password unless one is given. Every run rebuilds
 // the jobs, candidates and cards of the demo customers, and touches no other customer's rows.
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 import { DEMO_ACCOUNTS, DEMO_CUSTOMERS } from "./demo-data.ts";
-import { errorMessage, existingUsers, seedCustomer, upsertAccount } from "./seed-shared.ts";
+import {
+  errorMessage,
+  existingUsers,
+  seedCustomer,
+  upsertAccount,
+  upsertCustomer,
+} from "./seed-shared.ts";
 
 /** Bytes of randomness in a generated password: 24 characters of base64url. */
 const PASSWORD_BYTES = 18;
@@ -46,7 +53,8 @@ async function main() {
     const password = existing.has(account.email)
       ? chosen
       : (chosen ?? randomBytes(PASSWORD_BYTES).toString("base64url"));
-    const id = await upsertAccount(admin, existing, account, password);
+    const upsert = account.role === "customer" ? upsertCustomer : upsertAccount;
+    const id = await upsert(admin, existing, account, password);
     ids.set(account.email, id);
     const state = existing.has(account.email) ? "exists" : "created";
     console.log(`  ${account.role.padEnd(8)} ${account.email}  ${state}`);

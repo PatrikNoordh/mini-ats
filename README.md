@@ -201,11 +201,11 @@ The security lives in the database, not in the frontend. Hiding a button is UX; 
 
 ### Row Level Security
 
-- Every table has RLS. A customer sees only rows whose `customer_id` is their own id; an admin sees everything through `is_admin()`.
-- A deleted account gets nothing, even with a session it still holds: `account_is_active()` gates every customer row, and a deleted admin is no longer an admin.
+- Every table has RLS. A customer sees only rows whose `customer_id` is their company's id, through `current_company_id()`; an admin sees everything through `is_admin()`. No customer table references a user, so deleting a user never reaches company data (ATS-44).
+- A deleted account gets nothing, even with a session it still holds: `current_company_id()` is null for a deleted user and for every member of a deleted company, and a deleted admin is no longer an admin.
 - **Explicit table grants**: `anon` has no privileges at all, and `authenticated` only the operations the app uses.
 - Triggers set `customer_id` on applications and assessments, and check that a job and a candidate belong to the same customer. Text has length limits in the database too.
-- CVs (for the AI feature) go in a private bucket, in a folder per customer, with the same rules.
+- CVs (for the AI feature) go in a private bucket, in a folder per company, with the same rules.
 
 ### Why the service role key only lives in Edge Functions
 
@@ -279,7 +279,7 @@ npx supabase functions deploy delete-candidate
 npx supabase secrets set ANTHROPIC_API_KEY=<your Anthropic API key>
 ```
 
-The daily purge runs in the `purge-deleted-accounts` Edge Function, because only the Storage API can remove the CV files. `pg_cron` calls it through `pg_net`, with three Vault secrets. Set them once in the **SQL Editor**:
+The daily purge runs in the `purge-deleted-accounts` Edge Function, because only the Storage API can remove CV files. Since ATS-44 it deletes only a deleted user's login: the CV files belong to the company, and the company purge removes them (ATS-46). `pg_cron` calls it through `pg_net`, with three Vault secrets. Set them once in the **SQL Editor**:
 
 ```sql
 select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url');

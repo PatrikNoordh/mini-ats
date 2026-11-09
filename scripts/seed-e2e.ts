@@ -12,7 +12,13 @@ import { createClient } from "@supabase/supabase-js";
 
 import { E2E_ACCOUNTS, E2E_CUSTOMERS, E2E_PASSWORD } from "./e2e-data.ts";
 import { localStack } from "./local-stack.ts";
-import { errorMessage, existingUsers, seedCustomer, upsertAccount } from "./seed-shared.ts";
+import {
+  errorMessage,
+  existingUsers,
+  seedCustomer,
+  upsertAccount,
+  upsertCustomer,
+} from "./seed-shared.ts";
 
 export async function seedE2e() {
   const stack = localStack();
@@ -22,7 +28,8 @@ export async function seedE2e() {
   const existing = await existingUsers(admin);
   const ids = new Map<string, string>();
   for (const account of E2E_ACCOUNTS) {
-    ids.set(account.email, await upsertAccount(admin, existing, account, E2E_PASSWORD));
+    const upsert = account.role === "customer" ? upsertCustomer : upsertAccount;
+    ids.set(account.email, await upsert(admin, existing, account, E2E_PASSWORD));
   }
   for (const customer of E2E_CUSTOMERS) {
     const id = ids.get(customer.account.email);

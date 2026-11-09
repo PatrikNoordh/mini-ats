@@ -30,6 +30,7 @@ q() { psql -X -v ON_ERROR_STOP=1 -qtA "$@"; }
 cleanup() {
   q -c "select pg_terminate_backend(pid) from pg_stat_activity
         where application_name like 'move_test_%' and pid <> pg_backend_pid()" >/dev/null || true
+  q -c "delete from public.companies where id = '$CUSTOMER'" >/dev/null || true
   q -c "delete from auth.users where id = '$CUSTOMER'" >/dev/null || true
 }
 trap cleanup EXIT
@@ -51,9 +52,12 @@ waiting_on_advisory_lock() {
          where application_name = '$1' and wait_event_type = 'Lock' and wait_event = 'advisory')"
 }
 
-# Seed one customer with two cards in the new column. Deleting the user removes them again.
+# Seed one customer, a company under its user's id with the user as member (ATS-44), with two
+# cards in the new column. Deleting the company and the user removes them again.
 q <<SQL
 insert into auth.users (id, email, raw_app_meta_data) values ('$CUSTOMER', 'c@test.local', '{"role":"customer"}');
+insert into public.companies (id, name) values ('$CUSTOMER', 'Company C');
+insert into public.company_members (company_id, user_id) values ('$CUSTOMER', '$CUSTOMER');
 insert into public.jobs (id, customer_id, title) values ('$JOB', '$CUSTOMER', 'Job C');
 insert into public.candidates (id, customer_id, full_name) values
   ('20000000-0000-0000-0000-0000000000c1', '$CUSTOMER', 'Cand C1'),
