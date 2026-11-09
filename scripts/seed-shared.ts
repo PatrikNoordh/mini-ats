@@ -24,15 +24,13 @@ export async function existingUsers(admin: SupabaseClient): Promise<Map<string, 
 
 /**
  * Creates the account if it is missing, or sets the password of an existing one when a password
- * is given. A new account needs a password, and gets the given id, or a new one. Returns the
- * account's id.
+ * is given. A new account needs a password. Returns the account's id.
  */
 export async function upsertAccount(
   admin: SupabaseClient,
   existing: Map<string, string>,
   account: DemoAccount,
   password: string | null,
-  newId?: string,
 ): Promise<string> {
   const id = existing.get(account.email);
   if (id) {
@@ -44,7 +42,6 @@ export async function upsertAccount(
   }
   if (!password) throw new Error(`A new account needs a password: ${account.email}`);
   const { data, error } = await admin.auth.admin.createUser({
-    ...(newId ? { id: newId } : {}),
     email: account.email,
     password,
     email_confirm: true,
@@ -57,39 +54,78 @@ export async function upsertAccount(
 }
 
 /**
- * Creates a customer the way a company is shaped until ATS-45: the company first, then the account
- * under the company's id, as its first member. A customer that exists keeps its id, and gets its
- * company and membership if either is missing. Returns the id, both the account's and the
- * company's. A new user without a company sees nothing (docs/next-teams.md), so a customer is
- * never created without one.
+ * Creates a customer: a company with a new id of its own, then the account as its first member
+ * (ATS-45). A customer whose account exists keeps its company, whatever its id, and the company
+ * takes the name from the data. Returns the company's id and the account's. A new user without a company sees
+ * nothing (docs/next-teams.md), so a customer is never created without one.
  */
 export async function upsertCustomer(
   admin: SupabaseClient,
   existing: Map<string, string>,
   account: DemoAccount,
   password: string | null,
-): Promise<string> {
-  const known = existing.get(account.email);
-  const id = known ?? randomUUID();
+): Promise<{ companyId: string; userId: string }> {
+  const known = await companyOf(admin, existing.get(account.email));
+  if (known) {
+    const renamed = await admin
+      .from("companies")
+      .update({ name: account.company_name })
+      .eq("id", known);
+    if (renamed.error) throw renamed.error;
+    const userId = await upsertAccount(admin, existing, account, password);
+    return { companyId: known, userId };
+  }
+  const companyId = randomUUID();
   const company = await admin
     .from("companies")
-    .upsert({ id, name: account.company_name }, { onConflict: "id" });
+    .insert({ id: companyId, name: account.company_name });
   if (company.error) throw company.error;
   try {
-    await upsertAccount(admin, existing, account, password, id);
+    const userId = await addMember(admin, existing, companyId, account, password);
+    return { companyId, userId };
   } catch (error) {
-    // A company made for an account that could not be created would have no member.
-    if (!known) await admin.from("companies").delete().eq("id", id);
+    // A company made for an account that could not join it would have no member.
+    await admin.from("companies").delete().eq("id", companyId);
     throw error;
   }
+}
+
+/**
+ * Creates the account if it is missing, and makes it a member of the company. Running it again
+ * changes nothing. An account that is a member of another company is refused by the database.
+ * Returns the account's id.
+ */
+export async function addMember(
+  admin: SupabaseClient,
+  existing: Map<string, string>,
+  companyId: string,
+  account: DemoAccount,
+  password: string | null,
+): Promise<string> {
+  const userId = await upsertAccount(admin, existing, account, password);
   const membership = await admin
     .from("company_members")
     .upsert(
-      { company_id: id, user_id: id },
+      { company_id: companyId, user_id: userId },
       { onConflict: "company_id,user_id", ignoreDuplicates: true },
     );
   if (membership.error) throw membership.error;
-  return id;
+  return userId;
+}
+
+/** The company the user is a member of, or null for no user or no membership. */
+async function companyOf(
+  admin: SupabaseClient,
+  userId: string | undefined,
+): Promise<string | null> {
+  if (!userId) return null;
+  const { data, error } = await admin
+    .from("company_members")
+    .select("company_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? String(data.company_id) : null;
 }
 
 const daysAgo = (days: number) => new Date(Date.now() - days * MS_PER_DAY).toISOString();

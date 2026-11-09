@@ -26,10 +26,15 @@ export async function seedE2e() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const existing = await existingUsers(admin);
+  // The company of each customer account, by email.
   const ids = new Map<string, string>();
   for (const account of E2E_ACCOUNTS) {
-    const upsert = account.role === "customer" ? upsertCustomer : upsertAccount;
-    ids.set(account.email, await upsert(admin, existing, account, E2E_PASSWORD));
+    if (account.role === "customer") {
+      const { companyId } = await upsertCustomer(admin, existing, account, E2E_PASSWORD);
+      ids.set(account.email, companyId);
+    } else {
+      await upsertAccount(admin, existing, account, E2E_PASSWORD);
+    }
   }
   for (const customer of E2E_CUSTOMERS) {
     const id = ids.get(customer.account.email);

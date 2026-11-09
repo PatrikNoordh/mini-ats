@@ -7,10 +7,10 @@ import { randomBytes } from "node:crypto";
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-import type { DemoCandidate, DemoCustomer, DemoJob } from "../scripts/demo-data.ts";
+import type { DemoAccount, DemoCandidate, DemoCustomer, DemoJob } from "../scripts/demo-data.ts";
 import { E2E_PASSWORD } from "../scripts/e2e-data.ts";
 import { localStack } from "../scripts/local-stack.ts";
-import { seedCustomer, upsertCustomer } from "../scripts/seed-shared.ts";
+import { addMember, seedCustomer, upsertCustomer } from "../scripts/seed-shared.ts";
 import sv from "../src/locales/sv.json" with { type: "json" };
 
 export { expect, sv };
@@ -18,12 +18,30 @@ export { expect, sv };
 /** Bytes of randomness in a tag: 8 hex characters, together with the time. */
 const TAG_BYTES = 4;
 
-export interface TestCustomer {
+/** A user the test can sign in as. */
+export interface TestUser {
   id: string;
   email: string;
   fullName: string;
-  company: string;
 }
+
+/** A company with its first user. `email` and `fullName` are the first user's. */
+export interface TestCustomer {
+  /** The company's id: every customer_id of its data, and its CV folder. */
+  id: string;
+  company: string;
+  /** The first user's id, never the company's (ATS-45). */
+  userId: string;
+  email: string;
+  fullName: string;
+}
+
+/**
+ * The members a customer test signs in as: every test that acts as a customer runs as the
+ * company's first user and again as a second user of the same company (ATS-45, AC6).
+ */
+export const MEMBERS = ["first", "second"] as const;
+export type Member = (typeof MEMBERS)[number];
 
 export interface CustomerData {
   jobs?: DemoJob[];
@@ -33,11 +51,17 @@ export interface CustomerData {
 interface Fixtures {
   /** Unique to this attempt; goes into every name the test creates. */
   tag: string;
+  /** The ids of the users the test made, deleted after it. */
+  users: string[];
   /**
-   * Creates a customer, a company with its first user under the same id (ATS-44), with the given
-   * data. The company and the account are removed after the test.
+   * Creates a customer, a company with a new id and its first user, with the given data. The
+   * company and its users are removed after the test.
    */
   makeCustomer: (name: string, data?: CustomerData) => Promise<TestCustomer>;
+  /** Adds another user to the customer's company. */
+  addMember: (customer: TestCustomer, name: string) => Promise<TestUser>;
+  /** The customer's first user, or a second user added to the company for the test. */
+  memberOf: (customer: TestCustomer, member: Member) => Promise<TestUser>;
 }
 
 function serviceClient(): SupabaseClient {
@@ -52,7 +76,7 @@ export const test = base.extend<Fixtures>({
   tag: async ({}, use) => {
     await use(`${Date.now().toString(36)}${randomBytes(TAG_BYTES).toString("hex")}`);
   },
-  makeCustomer: async ({ tag }, use) => {
+  makeCustomer: async ({ tag, users }, use) => {
     const admin = serviceClient();
     const created: string[] = [];
     await use(async (name, data = {}) => {
@@ -64,16 +88,55 @@ export const test = base.extend<Fixtures>({
         jobs: data.jobs ?? [],
         candidates: data.candidates ?? [],
       };
-      const id = await upsertCustomer(admin, new Map(), customer.account, E2E_PASSWORD);
+      const { companyId: id, userId } = await upsertCustomer(
+        admin,
+        new Map(),
+        customer.account,
+        E2E_PASSWORD,
+      );
       created.push(id);
+      users.push(userId);
       if (customer.jobs.length > 0) await seedCustomer(admin, id, customer);
-      return { id, email, fullName, company };
+      return { id, company, userId, email, fullName };
     });
-    // Removing the company removes its rows (on delete cascade from companies); removing the
-    // account removes only the login, its profile and its membership.
+    // Removing the company removes its rows (on delete cascade from companies); removing a user
+    // removes only the login, its profile and its membership. The users go in the users fixture.
     for (const id of created) {
-      const company = await admin.from("companies").delete().eq("id", id);
-      if (company.error) throw company.error;
+      const { error } = await admin.from("companies").delete().eq("id", id);
+      if (error) throw error;
+    }
+  },
+  addMember: async ({ tag, users }, use) => {
+    const admin = serviceClient();
+    await use(async (customer, name) => {
+      const email = `${name.toLowerCase()}-${tag}@e2e.test`;
+      const fullName = `${name} Testsson ${tag}`;
+      const account: DemoAccount = {
+        key: name,
+        role: "customer",
+        email,
+        full_name: fullName,
+        company_name: customer.company,
+      };
+      const id = await addMember(admin, new Map(), customer.id, account, E2E_PASSWORD);
+      users.push(id);
+      return { id, email, fullName };
+    });
+  },
+  memberOf: async ({ addMember: add }, use) => {
+    await use(async (customer, member) =>
+      member === "first"
+        ? { id: customer.userId, email: customer.email, fullName: customer.fullName }
+        : add(customer, "Kollega"),
+    );
+  },
+  // Every user a test made, removed after the companies (the fixtures above depend on it).
+  // eslint-disable-next-line no-empty-pattern -- Playwright reads the fixtures from the pattern.
+  users: async ({}, use) => {
+    const created: string[] = [];
+    await use(created);
+    const admin = serviceClient();
+    for (const id of created) {
       const { error } = await admin.auth.admin.deleteUser(id);
       if (error) throw error;
     }
@@ -104,6 +167,25 @@ export async function addCv(customerId: string, fullName: string): Promise<strin
   const update = await admin.from("candidates").update({ cv_path: path }).eq("id", found.data.id);
   if (update.error) throw update.error;
   return path;
+}
+
+/** Takes the user out of their company, as an admin will on the members page (ATS-46). */
+export async function removeMembership(userId: string): Promise<void> {
+  const { error } = await serviceClient().from("company_members").delete().eq("user_id", userId);
+  if (error) throw error;
+}
+
+/** Where the candidate's CV is in the cvs bucket, looked up past RLS. */
+export async function cvPathOf(customerId: string, fullName: string): Promise<string> {
+  const { data, error } = await serviceClient()
+    .from("candidates")
+    .select("cv_path")
+    .eq("customer_id", customerId)
+    .eq("full_name", fullName)
+    .single();
+  if (error) throw error;
+  if (!data.cv_path) throw new Error(`${fullName} has no CV`);
+  return String(data.cv_path);
 }
 
 /** Whether a file is in the cvs bucket, looked up past the storage policies. */

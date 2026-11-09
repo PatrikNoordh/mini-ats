@@ -8,10 +8,11 @@
 // reads, and never in the repo.
 //
 // The accounts are made through the Auth admin API, like admin-create-user, so the profile
-// trigger runs. Each customer gets its company first, and its account under the company's id
-// (ATS-44). A new account gets the password from DEMO_<KEY>_PASSWORD, or a generated one that
-// is printed once. An existing account keeps its password unless one is given. Every run rebuilds
-// the jobs, candidates and cards of the demo customers, and touches no other customer's rows.
+// trigger runs. Each customer gets its company first, with a new id of its own, and its account
+// as the company's first member (ATS-45); a customer that exists keeps its company. A new account
+// gets the password from DEMO_<KEY>_PASSWORD, or a generated one that is printed once. An existing
+// account keeps its password unless one is given. Every run rebuilds the jobs, candidates and
+// cards of the demo customers, and touches no other customer's rows.
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
@@ -47,15 +48,19 @@ async function main() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const existing = await existingUsers(admin);
+  // The company of each customer account, by email.
   const ids = new Map<string, string>();
   for (const account of DEMO_ACCOUNTS) {
     const chosen = process.env[`DEMO_${account.key}_PASSWORD`] ?? null;
     const password = existing.has(account.email)
       ? chosen
       : (chosen ?? randomBytes(PASSWORD_BYTES).toString("base64url"));
-    const upsert = account.role === "customer" ? upsertCustomer : upsertAccount;
-    const id = await upsert(admin, existing, account, password);
-    ids.set(account.email, id);
+    if (account.role === "customer") {
+      const { companyId } = await upsertCustomer(admin, existing, account, password);
+      ids.set(account.email, companyId);
+    } else {
+      await upsertAccount(admin, existing, account, password);
+    }
     const state = existing.has(account.email) ? "exists" : "created";
     console.log(`  ${account.role.padEnd(8)} ${account.email}  ${state}`);
     // Printed once, here only. Hand it to the reviewers privately.
