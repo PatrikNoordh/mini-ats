@@ -392,9 +392,10 @@ One convention worth knowing: a `beforeEach` or `beforeAll` callback has a block
 1. A ticket becomes a GitHub issue.
 2. It's implemented on its own branch, in small commits that each pass lint, types, tests and build.
 3. Claude self-reviews the whole diff before a pull request is opened.
-4. I test it, and it merges once CI is green.
+4. The PR review includes a data-safety check ([`docs/data-safety.md`](docs/data-safety.md), ATS-60): for each change that touches data, it asks whether anything can be lost or left half done, or seen or changed by another customer, and names the guard and the test that stop it. It reads only the parts of the map the change reaches.
+5. I test it, and it merges once CI is green.
 
-After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [`docs/review-epic-4.md`](docs/review-epic-4.md)) checks the epic as a whole. Problems found along the way are listed in `TICKETS.md` and triaged into tickets at the next checkpoint, so they never get lost and never bloat a ticket.
+After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [`docs/review-epic-4.md`](docs/review-epic-4.md)) checks the epic as a whole. Problems found along the way are listed in `TICKETS.md` and triaged into tickets at the next checkpoint, so they never get lost and never bloat a ticket. The checkpoint also runs the data-safety check over the whole app and rebuilds the map.
 
 ---
 

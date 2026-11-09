@@ -580,6 +580,10 @@ Tracked in #107.
 
 Tracked in #114. Created by ATS-57 AC2: the CLI stays pinned to 2.122.0 until this ticket moves `package.json` and CI to v3 together.
 
+### ATS-60 · chore · Add a data-safety check to the PR review and the epic checkpoint
+
+Tracked in #116. Built before ATS-44: `docs/data-safety.md` maps how the data is protected, and `/ats-data-safety` checks a diff against it in `/ats-review-pr` and the whole app in `/ats-epic-close`.
+
 **Checkpoint:** two users in the same company see the same board; a user in another company sees none of it.
 
 ---
@@ -703,6 +707,8 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 
 - [ ] `ats-create-ticket` runs `gh label create <label> --force` for every label it uses, and `--force` resets an existing label's colour: it changed `feat`, `security` and `database` while creating #109–#112 (restored by hand), and maybe `chore` and `refactor`. Create a label only when `gh label list` does not have it, and never pass `--force` for a label that exists — `.claude/skills/ats-create-ticket/SKILL.md` (found in ATS-43)
 - [ ] `npm audit` reports high-severity advisories for `vite` and `zod` and moderate ones for `typescript-eslint` and `seroval`, all from before ATS-57 (the Supabase CLI adds none). Check each against how the app uses it and bump what is safe — `package.json` (found in ATS-57)
+- [ ] The deny rules in `.claude/settings.json` have no automated test; they were checked by hand in ATS-57. A small script that feeds each denied form to the rule matcher, or a checklist in the PR template when the file changes — `.claude/settings.json` (found in ATS-60)
+- [ ] No test proves that public sign-up is off (security rule 3). An end-to-end test can call `signUp` on the local stack and expect a refusal — `e2e/`, `supabase/config.toml` (found in ATS-60)
 
 ## Found while reviewing PRs
 
@@ -711,4 +717,5 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
 - [ ] The Supabase deny list still has gaps no prefix rule closes well: remote commands it does not name (`sso`, `domains`, `vanity-subdomains`, `network-bans`, `network-restrictions`, `ssl-enforcement`, `orgs`, `snippets`, `bootstrap`, `encryption`), and the CLI token read through a glob such as `~/.supa*`, through `find`, or from the macOS keychain, where the CLI can keep it instead of the file. A Claude Code sandbox read block on `~/.supabase/` would close the shell paths for good — `.claude/settings.json` (PR #115, ATS-57)
+- [ ] Two guards in `docs/data-safety.md` § 3 have no test that fails when they are removed: the TanStack Query cache clear when the signed-in user changes (a unit test that signs in as A, fills the cache, signs in as B and expects it empty), and the host check in `scripts/local-stack.ts` (a unit test that expects a refusal for any host but `127.0.0.1` and `localhost`) — `src/contexts/AuthContext.tsx`, `scripts/local-stack.ts` (PR #117, ATS-60)
 

@@ -33,6 +33,8 @@ REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
    gh issue list --repo "$REPO" --state open --json number,title,milestone,body --limit 100
    ```
 
+4. A **full data-safety run**: `/ats-data-safety full` on `main` (ATS-60). It rebuilds `docs/data-safety.md` and returns a risk table for the whole app. Each 🟡 and 🟢 row is a finding like the others and is triaged in Step 3; a 🔴 row is a blocker (Step 1) and stops the close-out. Keep the map's diff for the report.
+
 Check each finding against the current code (`grep -rn`). Files move between tickets, so fix stale paths now.
 
 ---
@@ -127,6 +129,9 @@ Reviewed on <date> with `/ats-epic-review`, on `main` at `<sha>` (after PR #<n>)
 ### New tickets
 - **#<n> [ATS-<N>] <Title>** — <type>, milestone <Epic>. <What it holds.>
 
+## Data safety
+<The full run: when, on which sha, what changed in `docs/data-safety.md` since the last run (new chains, policies, guards and gaps, and gaps closed), and where each risk row went.>
+
 ## Notes for epic <N+1>
 <2–3 bullets: what to watch in the next epic.>
 ```
@@ -139,7 +144,7 @@ Facts only, from the review and from what was actually done in this run. "Moved 
 
 1. Branch from an up-to-date `main`: `ats/epic-<N>-review`.
 2. Run `npm run lint`, `npx tsc --noEmit`, `npm test` and `npm run build`.
-3. One commit with `TICKETS.md` and the report, using the `ats-git-commit` format with `[Epic <N>]` in place of `[ATS-<N>]`:
+3. One commit with `TICKETS.md`, `docs/data-safety.md` and the report, using the `ats-git-commit` format with `[Epic <N>]` in place of `[ATS-<N>]`:
 
    ```
    (MODEL_NAME) docs [Epic <N>] add the epic <N> review and empty the findings lists

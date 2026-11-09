@@ -61,7 +61,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 - GitHub Issues: the live tickets and their status, one milestone per epic. Titles start with `[ATS-<N>]`.
 - `TICKETS.md`: the original plan, imported into GitHub Issues with `/ats-create-ticket import`. Now used for its two findings lists, § Found while building and § Found while reviewing PRs, which are triaged and emptied at each epic checkpoint (`/ats-epic-close`).
 - `docs/ui-spec.md`: what the UI does. `docs/prototype.html`: how it looks (open it in a browser). `docs/review-ats-1.md`: review of the Lovable code. `docs/review-epic-<N>.md`: each epic review and where its findings went.
-- `docs/error-codes.md`: every error code and where it comes from. `docs/next-custom-stages.md`: the design of epic 8, own pipeline stages. `docs/next-teams.md`: the design of epic 9, several users per company. `docs/next-branding.md`: a design sketch for customer branding.
+- `docs/error-codes.md`: every error code and where it comes from. `docs/next-custom-stages.md`: the design of epic 8, own pipeline stages. `docs/next-teams.md`: the design of epic 9, several users per company. `docs/next-branding.md`: a design sketch for customer branding. `docs/data-safety.md`: where the data lives, what a delete takes with it, who may read and write what, and the guard and test behind each rule.
 - `supabase/migrations/`: the schema. `supabase/tests/rls_test.sql`: the security tests.
 
 ## Security rules — never break these
@@ -126,7 +126,7 @@ Allowed exceptions: `src/components/ui/` (vendored shadcn/ui code), dynamic valu
 ## Workflow
 
 - **Tickets:** GitHub issues titled `[ATS-<N>] ...`. One ticket per branch. PRs close their issue with `Closes #<n>`.
-- **Skills:** the project skills in `.claude/skills/` run the workflow: `ats-create-ticket`, `ats-implement-ticket`, `ats-git-commit`, `ats-git-ship`, `ats-git-branch-and-ship`, `ats-review-pr`, `ats-epic-review`, `ats-epic-close`, `ats-audit-to-issues`. Use them instead of the personal skills with similar names.
+- **Skills:** the project skills in `.claude/skills/` run the workflow: `ats-create-ticket`, `ats-implement-ticket`, `ats-git-commit`, `ats-git-ship`, `ats-git-branch-and-ship`, `ats-review-pr`, `ats-data-safety`, `ats-epic-review`, `ats-epic-close`, `ats-audit-to-issues`. Use them instead of the personal skills with similar names.
 - **Branch:** `ats/ATS-<N>-short-description`
 - **Commit:** `(MODEL_NAME) <type> [ATS-<N>] description`. Types: feat, fix, style, refactor, chore, docs, test.
 - **Commits are small and each one builds.** Order within a feature: database → data layer → UI.
@@ -138,6 +138,7 @@ Allowed exceptions: `src/components/ui/` (vendored shadcn/ui code), dynamic valu
   - If the migration changes tables, policies or functions, the developer runs `supabase/tests/rls_test.sql` in the SQL Editor against the project, and the PR says it passed.
   - If a PR whose migration is already applied is closed without merging, a new migration reverts it.
 - **The Supabase CLI** is always run as `npx supabase`. Claude never runs a command against the linked project, not even a read-only one (`migration list`, `gen types --linked`, `db push --dry-run`): it prints the command for the developer to run and paste back. Commands that write to the remote database (`db push`, `migration repair`) also need the developer's yes every time. For the local stack, Claude runs only `start`, `stop` and `status`. `.claude/settings.json` enforces this: it denies the remote commands (`db push`, `migration repair`, `migration list`, `link`, `functions deploy`, `secrets set`, anything with `--linked`, `--remote`, `--project-ref`, `--project-id` or `--db-url`, and more) in every form (`npx supabase`, `npx supabase@<version>`, `npx -y supabase`, `npm exec supabase`, `node_modules/.bin/supabase`, `supabase`), and reading `~/.supabase/`, where the CLI keeps its access token (ATS-57). The command rules match from the start of a command, but the `.supabase/` rules match anywhere in it, so a commit message or `grep` that names that folder is refused too: write such text with the file tools and commit with `git commit -F`. No deny list is complete, so the rule above still applies on top.
+- **Data safety:** `/ats-review-pr` runs `/ats-data-safety` in diff mode, which checks the change against `docs/data-safety.md` and reads only the chains it touches: can data be lost or left half done, or seen or changed by another customer, and which guard and test stop it. A 🔴 risk is a blocker fixed on the branch; a change to a chain, policy or guard updates the map in the same PR. `/ats-epic-close` runs the full mode over the whole app and rebuilds the map (ATS-60).
 - **Pull requests** target `main` with the template: what changed (database / API / UI), acceptance criteria covered, manual test steps, tradeoffs. CI must be green.
 - **Ask before:** adding a dependency, changing the database schema outside a ticket, deleting files, writing to the remote database (`db push`, `migration repair`), pushing, or opening a PR. Running `/ats-git-ship` is the developer's request to push and open a PR.
 
