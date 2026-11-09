@@ -5,17 +5,13 @@ import { createHandler, CRON_SECRET_HEADER, type Deps } from "./handler.ts";
 const SECRET = "cron-secret-for-tests";
 
 /** The handler with fake Supabase actions that record what ran, in order. */
-function setup(due: string[], failing: { cvs?: string; user?: string } = {}) {
+function setup(due: string[], failing: string[] = []) {
   const ran: string[] = [];
   const deps: Deps = {
     listDue: () => Promise.resolve(due),
-    removeCvs: (id) => {
-      ran.push(`cvs ${id}`);
-      return id === failing.cvs ? Promise.reject(new Error("storage down")) : Promise.resolve();
-    },
     deleteUser: (id) => {
       ran.push(`user ${id}`);
-      return id === failing.user ? Promise.reject(new Error("auth down")) : Promise.resolve();
+      return failing.includes(id) ? Promise.reject(new Error("auth down")) : Promise.resolve();
     },
   };
   return { handler: createHandler(SECRET, deps), ran };
@@ -54,11 +50,11 @@ Deno.test("purges nothing without the cron secret, or with a wrong one", async (
   assertEquals((await call(handler, post(SECRET, "GET"))).status, 405);
 });
 
-Deno.test("removes each account's CV files before its user", async () => {
+Deno.test("deletes each due account's user, and nothing else", async () => {
   const { handler, ran } = setup(["a", "b"]);
   const res = await call(handler, post());
   assertEquals([res.status, res.body], [200, { purged: 2, failed: 0 }]);
-  assertEquals(ran, ["cvs a", "user a", "cvs b", "user b"]);
+  assertEquals(ran, ["user a", "user b"]);
 });
 
 Deno.test("does nothing when no account is due", async () => {
@@ -67,9 +63,9 @@ Deno.test("does nothing when no account is due", async () => {
   assertEquals(ran, []);
 });
 
-Deno.test("keeps an account whose files cannot be removed, and purges the others", async () => {
-  const { handler, ran } = setup(["a", "b", "c"], { cvs: "a", user: "c" });
+Deno.test("keeps an account that cannot be deleted, and purges the others", async () => {
+  const { handler, ran } = setup(["a", "b", "c"], ["a", "c"]);
   const res = await quietly(() => call(handler, post()));
   assertEquals([res.status, res.body], [500, { purged: 1, failed: 2 }]);
-  assertEquals(ran, ["cvs a", "cvs b", "user b", "cvs c", "user c"]);
+  assertEquals(ran, ["user a", "user b", "user c"]);
 });
