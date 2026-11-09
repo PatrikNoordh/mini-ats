@@ -597,14 +597,13 @@ begin
   raise notice 'OK 27: a deleted admin is not an admin, and an active admin still sees deleted accounts';
 
   -- 28. Only accounts deleted more than 30 days ago are due for the purge (the
-  -- purge-deleted-accounts function, ATS-17), and never one whose id is a company's: the purge
-  -- deployed from main removes the CV folder named after the user, which for a company's first
-  -- user is the company's (ATS-44). Deleting a member's user leaves the company's data.
+  -- purge-deleted-accounts function, ATS-17), a company's first user too since the purge removes
+  -- only the login (ATS-46). Deleting a member's user leaves the company's data.
   update public.profiles set deleted_at = now() - interval '29 days' where id = member;
   update public.profiles set deleted_at = now() - interval '31 days' where id in (admin2, customer);
   assert admin2 in (select public.accounts_due_for_purge()), 'deleted 31 days ago: due';
   assert member not in (select public.accounts_due_for_purge()), 'deleted 29 days ago: not due';
-  assert customer not in (select public.accounts_due_for_purge()), 'a company''s first user is due';
+  assert customer in (select public.accounts_due_for_purge()), 'a company''s first user deleted 31 days ago: not due';
   update public.profiles set deleted_at = now() - interval '31 days' where id = member;
   assert member in (select public.accounts_due_for_purge()), 'a member deleted 31 days ago: due';
   assert '00000000-0000-0000-0000-0000000000ad' not in (select public.accounts_due_for_purge()), 'active admin not due';
@@ -613,7 +612,7 @@ begin
   assert to_regprocedure('public.purge_deleted_accounts()') is null, 'the SQL purge is gone';
   delete from auth.users where id = member;
   assert exists (select 1 from public.jobs where id = job), 'deleting a member removed the company''s jobs';
-  raise notice 'OK 28: only accounts deleted more than 30 days ago are due for the purge, never a company''s first user, and no client can list them';
+  raise notice 'OK 28: only accounts deleted more than 30 days ago are due for the purge, a company''s first user too, and no client can list them';
 end $$;
 
 -- ---------------------------------------------------------------- removing a job link (ATS-30)
@@ -1666,8 +1665,9 @@ begin
   raise notice 'OK 55: no customer, admin or service role changes the owner of a job or a candidate';
 end $$;
 
--- Until company_name is dropped, the first user's profile names and deletes the company, the way
--- main's accounts page changes them. A new company gets the six default columns, a new user none.
+-- Until company_name is dropped, the first user's profile names the company. Deleting or restoring
+-- a user never deletes or restores a company (ATS-46). A new company gets the six default
+-- columns, a new user none.
 reset role;
 do $$ declare
   e uuid := '00000000-0000-0000-0000-0000000044e1'; e2 uuid := '00000000-0000-0000-0000-0000000044e2';
@@ -1681,9 +1681,11 @@ begin
   assert (select name from public.companies where id = e) = 'Bolaget E', 'a second member renamed the company';
 
   update public.profiles set deleted_at = now() where id = e;
-  assert (select deleted_at is not null from public.companies where id = e), 'deleting the first user did not delete the company';
+  assert (select deleted_at is null from public.companies where id = e), 'deleting the first user deleted the company';
+  update public.companies set deleted_at = now() where id = e;
   update public.profiles set deleted_at = null where id = e;
-  assert (select deleted_at is null from public.companies where id = e), 'restoring the first user did not restore the company';
+  assert (select deleted_at is not null from public.companies where id = e), 'restoring the first user restored the company';
+  update public.companies set deleted_at = null where id = e;
   update public.profiles set deleted_at = now() where id = e2;
   assert (select deleted_at is null from public.companies where id = e), 'deleting a second member deleted the company';
   update public.profiles set deleted_at = null where id = e2;
@@ -1698,7 +1700,43 @@ begin
   assert pg_temp.error_of(format('insert into public.companies (name) values (%L)', repeat('x', 201))) = '23514',
          'a company name over 200 characters was accepted';
   assert pg_temp.error_of('insert into public.companies (name) values (''  '')') = '23514', 'a blank company name was accepted';
-  raise notice 'OK 56: the first user''s profile names, deletes and restores its company, a new company gets the six columns, and a new user none';
+  raise notice 'OK 56: the first user''s profile names its company but never deletes or restores it, a new company gets the six columns, and a new user none';
+end $$;
+
+-- 57. A company deleted more than 30 days ago is due for the company purge (ATS-46), which no
+-- client may run. Deleting a company hides it and its data from every member at once; deleting
+-- it for good removes its data and keeps its users, whose logins the purge deletes separately.
+reset role;
+do $$ declare
+  f uuid := pg_temp.add_customer('00000000-0000-0000-0000-0000000046f1', 'f1-46@test.local');
+  f2 uuid := pg_temp.add_member('00000000-0000-0000-0000-0000000046f1', '00000000-0000-0000-0000-0000000046f2', 'f2-46@test.local');
+  g uuid := pg_temp.add_customer('00000000-0000-0000-0000-0000000046a1', 'g1-46@test.local');
+  job uuid;
+begin
+  insert into public.jobs (customer_id, title) values (f, 'Jobb F') returning id into job;
+  assert f not in (select public.companies_due_for_purge()), 'an active company is due';
+
+  update public.companies set deleted_at = now() - interval '29 days' where id = f;
+  update public.companies set deleted_at = now() - interval '31 days' where id = g;
+  assert f not in (select public.companies_due_for_purge()), 'a company deleted 29 days ago is due';
+  assert g in (select public.companies_due_for_purge()), 'a company deleted 31 days ago is not due';
+  assert f not in (select public.accounts_due_for_purge()) and f2 not in (select public.accounts_due_for_purge()),
+         'the members of a deleted company are due as accounts';
+  assert not has_function_privilege('anon', 'public.companies_due_for_purge()', 'execute'), 'anon can list companies due';
+  assert not has_function_privilege('authenticated', 'public.companies_due_for_purge()', 'execute'), 'a client can list companies due';
+
+  perform set_config('request.jwt.claims', json_build_object('sub', f2, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  assert public.current_company_id() is null, 'a member of a deleted company still has it';
+  assert not exists (select 1 from public.jobs where id = job), 'a member of a deleted company sees its job';
+  assert not exists (select 1 from public.companies where id = f), 'a member of a deleted company sees it';
+  reset role;
+
+  delete from public.companies where id = f;
+  assert not exists (select 1 from public.jobs where id = job), 'deleting a company kept its job';
+  assert exists (select 1 from public.profiles where id = f2), 'deleting a company deleted a member''s profile';
+  assert not exists (select 1 from public.company_members where user_id in (f, f2)), 'a deleted company kept members';
+  raise notice 'OK 57: a company deleted more than 30 days ago is due for the purge, no client can list it, its members see nothing once it is deleted, and its delete keeps their logins';
 end $$;
 
 rollback;
