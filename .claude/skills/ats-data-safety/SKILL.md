@@ -23,7 +23,7 @@ The mode is: `$ARGUMENTS` (empty means `diff`).
 git diff origin/main...HEAD --name-only
 ```
 
-The data paths are `supabase/`, `src/lib/api/`, `src/hooks/`, `src/lib/save-candidate.ts`, `src/lib/candidate-cv.ts`, `scripts/`, `e2e/fixtures.ts`, `.github/workflows/`, `.claude/settings.json` and `package.json` (for the pinned CLI).
+The data paths are `supabase/`, `src/lib/api/`, `src/hooks/`, `src/lib/save-candidate.ts`, `src/lib/candidate-cv.ts`, `src/contexts/` (which customer the app reads and writes for, and the cache clear on sign-out), `src/lib/stages.ts` (the query keys), `src/integrations/supabase/`, `scripts/`, `e2e/fixtures.ts`, `.github/workflows/`, `.claude/settings.json` and `package.json` (for the pinned CLI).
 
 If none is touched, answer in one line and stop:
 

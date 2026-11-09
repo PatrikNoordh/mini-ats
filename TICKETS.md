@@ -717,4 +717,5 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
 - [ ] The Supabase deny list still has gaps no prefix rule closes well: remote commands it does not name (`sso`, `domains`, `vanity-subdomains`, `network-bans`, `network-restrictions`, `ssl-enforcement`, `orgs`, `snippets`, `bootstrap`, `encryption`), and the CLI token read through a glob such as `~/.supa*`, through `find`, or from the macOS keychain, where the CLI can keep it instead of the file. A Claude Code sandbox read block on `~/.supabase/` would close the shell paths for good — `.claude/settings.json` (PR #115, ATS-57)
+- [ ] Two guards in `docs/data-safety.md` § 3 have no test that fails when they are removed: the TanStack Query cache clear when the signed-in user changes (a unit test that signs in as A, fills the cache, signs in as B and expects it empty), and the host check in `scripts/local-stack.ts` (a unit test that expects a refusal for any host but `127.0.0.1` and `localhost`) — `src/contexts/AuthContext.tsx`, `scripts/local-stack.ts` (PR #117, ATS-60)
 
