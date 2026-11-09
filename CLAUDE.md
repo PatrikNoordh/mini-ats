@@ -81,7 +81,7 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 ## How data access works
 
 - Customers: every query is scoped to their own `customer_id`, which is their company's id, and RLS enforces the same thing in the database.
-- Admins acting for a customer: the app holds an **active customer** in `ActiveCustomerContext`. All customer screens read and write with that customer's id. For a customer, the active customer is always themselves.
+- Admins acting for a customer: the app holds an **active customer** in `ActiveCustomerContext`, a company. All customer screens read and write with that company's id. For a customer user, the active customer is always their own company, from their membership, never their own user id; a customer user without an active company is signed out (ATS-45).
 - Keep Supabase calls in `src/lib/api/` (one file per table), wrapped in TanStack Query hooks in `src/hooks/`. Components never call Supabase directly.
 - **Every query key that returns customer data includes the active customer id**, for example `["jobs", customerId]`. Switching customer must never show cached data from the previous customer.
 - Auth lives in `AuthContext` (`useAuth()`). Logout clears the TanStack Query cache.
