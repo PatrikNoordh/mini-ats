@@ -1,11 +1,14 @@
-// admin-manage-account: an admin edits, deletes, restores or deletes for good another account.
-// A delete is kept for 30 days (ATS-27): the account is banned and marked deleted, its data stays.
+// admin-manage-account: an admin edits, deletes, restores or deletes for good another account, and
+// moves a user between companies (ATS-46). A delete is kept for 30 days (ATS-27): the account is
+// banned and marked deleted. Its company and the company's data are never touched.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.118.0";
 
+import { inDeletedCompany, setBanned } from "../_shared/logins.ts";
 import {
   createHandler,
   type Account,
   type Caller,
+  type Company,
   type RemovalRefusal,
   type Update,
 } from "./handler.ts";
@@ -20,10 +23,6 @@ function env(name: string): string {
 const supabaseUrl = env("SUPABASE_URL");
 const anonKey = env("SUPABASE_ANON_KEY");
 const serviceRoleKey = env("SUPABASE_SERVICE_ROLE_KEY");
-
-/** Long enough to never run out during the 30 days; restoring lifts it. */
-const BAN_WHILE_DELETED = "876000h";
-const NO_BAN = "none";
 
 const noSession = { persistSession: false, autoRefreshToken: false };
 
@@ -62,6 +61,16 @@ async function getAccount(authorization: string, id: string): Promise<Account | 
   if (error) throw error;
   if (!data || (data.role !== "admin" && data.role !== "customer")) return null;
   return { id: data.id, role: data.role, deleted: data.deleted_at !== null };
+}
+
+async function getCompany(authorization: string, id: string): Promise<Company | null> {
+  const { data, error } = await asCaller(authorization)
+    .from("companies")
+    .select("id, deleted_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? { id: data.id, deleted: data.deleted_at !== null } : null;
 }
 
 const REMOVAL_REFUSALS: readonly RemovalRefusal[] = [
@@ -121,11 +130,13 @@ async function updateAccount(
     const refusal = await softDeleteOrDemote(service, update.id, "demote");
     if (refusal) return { error: refusal };
   }
+  // company_name only comes from the accounts page on main, which still edits the old column.
+  const companyName = update.company_name ? { company_name: update.company_name } : {};
   const { error } = await service.auth.admin.updateUserById(update.id, {
     email: update.email,
     email_confirm: true,
     ...(update.password ? { password: update.password } : {}),
-    user_metadata: { full_name: update.full_name, company_name: update.company_name },
+    user_metadata: { full_name: update.full_name, ...companyName },
     // The role trigger (ATS-28) copies this to profiles.role; it is set below too, at once. A
     // demotion has already set it above, under the last-admin lock.
     app_metadata: { role: update.role },
@@ -137,12 +148,7 @@ async function updateAccount(
   }
   const profile = await service
     .from("profiles")
-    .update({
-      full_name: update.full_name,
-      company_name: update.company_name,
-      email: update.email,
-      role: update.role,
-    })
+    .update({ full_name: update.full_name, ...companyName, email: update.email, role: update.role })
     .eq("id", update.id);
   if (profile.error) throw profile.error;
   return null;
@@ -156,25 +162,45 @@ async function softDelete(id: string): Promise<RemovalRefusal | null> {
   const service = admin();
   const refusal = await softDeleteOrDemote(service, id, "soft_delete");
   if (refusal) return refusal;
-  const ban = await service.auth.admin.updateUserById(id, { ban_duration: BAN_WHILE_DELETED });
-  if (ban.error) {
-    await undo(() => setProfile(service, id, { deleted_at: null }), ban.error);
-    throw ban.error;
+  try {
+    await setBanned(service, id, true);
+  } catch (error) {
+    await undo(() => setProfile(service, id, { deleted_at: null }), error);
+    throw error;
   }
   return null;
 }
 
+/**
+ * The ban is lifted first and the mark last, so a failure leaves the account deleted and a new
+ * restore finishes the work. A member of a deleted company stays banned: restoring the company
+ * opens their login (ATS-46).
+ */
 async function restore(id: string): Promise<void> {
   const service = admin();
-  const unban = await service.auth.admin.updateUserById(id, { ban_duration: NO_BAN });
-  if (unban.error) throw unban.error;
+  if (!(await inDeletedCompany(service, id))) await setBanned(service, id, false);
   await setProfile(service, id, { deleted_at: null });
 }
 
 /**
- * Deletes the Auth user, and the cascades remove the profile and the membership. Since ATS-44 the
- * data and the CV folder belong to the company, which stays: for a company's first user the
- * company was deleted with the account, and the company purge removes it with its files (ATS-46).
+ * One membership per user (user_id is unique), so a move replaces the row. The account is active
+ * and the company too (checked by the handler), so the login opens: it was banned if the user's
+ * old company was deleted.
+ */
+async function setCompany(userId: string, companyId: string | null): Promise<void> {
+  const service = admin();
+  const { error } = companyId
+    ? await service
+        .from("company_members")
+        .upsert({ company_id: companyId, user_id: userId }, { onConflict: "user_id" })
+    : await service.from("company_members").delete().eq("user_id", userId);
+  if (error) throw error;
+  await setBanned(service, userId, false);
+}
+
+/**
+ * Deletes the Auth user, and the cascades remove the profile and the membership. The data and the
+ * CV folder belong to the company, which stays (ATS-44); only deleting the company removes them.
  */
 async function deleteNow(id: string): Promise<void> {
   const { error } = await admin().auth.admin.deleteUser(id);
@@ -185,7 +211,9 @@ Deno.serve(
   createHandler({
     getCaller,
     getAccount,
+    getCompany,
     updateAccount,
+    setCompany,
     softDelete,
     restore,
     deleteNow,
