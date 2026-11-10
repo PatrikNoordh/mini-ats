@@ -1,6 +1,6 @@
 # Next: teams
 
-A design sketch for epic 9 (ATS-43). Step 1, the migration, is built (ATS-44, `supabase/migrations/20261109120000_companies.sql`), the app reads by company (ATS-45), and admins manage companies and their users, with the 30-day delete and the purge by company (ATS-46); the login swap (ATS-58) is not built yet. The decisions below were made with the developer, and the work is split into tickets at the end.
+A design sketch for epic 9 (ATS-43). Step 1, the migration, is built (ATS-44, `supabase/migrations/20261109120000_companies.sql`), the app reads by company (ATS-45), admins manage companies and their users, with the 30-day delete and the purge by company (ATS-46), and the login swap is built (ATS-58, `scripts/swap-logins.ts`): it runs once, by the developer, after a data dump. The decisions below were made with the developer, and the work is split into tickets at the end.
 
 ## Today
 
@@ -94,6 +94,8 @@ All of them keep reading with the caller's JWT, and RLS answers by company inste
 - The rest is ATS-46: `admin-create-user` and `admin-manage-account` by company, a new `admin-manage-company`, and the purge by company.
 
 ## Step 2: the login swap (ATS-58)
+
+Built in `scripts/login-swap.ts` and `scripts/swap-logins.ts`. Two choices made while building: the foreign key rule is read through `login_swap_blockers()`, a read-only function only the service role may run (the script reaches the project through the API, not SQL), and each new login gets a generated temporary password, printed once, as the demo seed does.
 
 Once the new code is live, each existing customer's old login is replaced by a new account with a new id and the same email, as a member of the company. After the swap no user id equals a company id, so an old `customer_id = auth.uid()` check fails for everyone, and a missed policy shows up at once.
 
