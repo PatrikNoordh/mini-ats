@@ -14,14 +14,7 @@ describe("deleted accounts", () => {
     expect(purgeDate("2026-10-22T10:00:00Z").toISOString()).toBe("2026-11-21T10:00:00.000Z");
   });
 
-  it("asks for the company name, or the email for an admin or an account without one", () => {
-    const customer = {
-      role: "customer",
-      company_name: "Exempelbygg AB",
-      email: "kund@exempelbygg.test",
-    } as const;
-    expect(deleteConfirmText(customer)).toBe("Exempelbygg AB");
-    expect(deleteConfirmText({ ...customer, company_name: "" })).toBe("kund@exempelbygg.test");
-    expect(deleteConfirmText({ ...customer, role: "admin" })).toBe("kund@exempelbygg.test");
+  it("asks for the account's email, which names one login, never the company's name", () => {
+    expect(deleteConfirmText({ email: "kund@exempelbygg.test" })).toBe("kund@exempelbygg.test");
   });
 });

@@ -5,14 +5,17 @@ import { createHandler, CRON_SECRET_HEADER, type Deps } from "./handler.ts";
 const SECRET = "cron-secret-for-tests";
 
 /** The handler with fake Supabase actions that record what ran, in order. */
-function setup(due: string[], failing: string[] = []) {
+function setup(due: string[], failing: string[] = [], companiesDue: string[] = []) {
   const ran: string[] = [];
+  const step = (name: string, id: string) => {
+    ran.push(`${name} ${id}`);
+    return failing.includes(id) ? Promise.reject(new Error("down")) : Promise.resolve();
+  };
   const deps: Deps = {
+    listCompaniesDue: () => Promise.resolve(companiesDue),
+    purgeCompany: (id) => step("company", id),
     listDue: () => Promise.resolve(due),
-    deleteUser: (id) => {
-      ran.push(`user ${id}`);
-      return failing.includes(id) ? Promise.reject(new Error("auth down")) : Promise.resolve();
-    },
+    deleteUser: (id) => step("user", id),
   };
   return { handler: createHandler(SECRET, deps), ran };
 }
@@ -53,19 +56,33 @@ Deno.test("purges nothing without the cron secret, or with a wrong one", async (
 Deno.test("deletes each due account's user, and nothing else", async () => {
   const { handler, ran } = setup(["a", "b"]);
   const res = await call(handler, post());
-  assertEquals([res.status, res.body], [200, { purged: 2, failed: 0 }]);
+  assertEquals([res.status, res.body], [200, { companies: 0, purged: 2, failed: 0 }]);
   assertEquals(ran, ["user a", "user b"]);
 });
 
 Deno.test("does nothing when no account is due", async () => {
   const { handler, ran } = setup([]);
-  assertEquals((await call(handler, post())).body, { purged: 0, failed: 0 });
+  assertEquals((await call(handler, post())).body, { companies: 0, purged: 0, failed: 0 });
   assertEquals(ran, []);
 });
 
 Deno.test("keeps an account that cannot be deleted, and purges the others", async () => {
   const { handler, ran } = setup(["a", "b", "c"], ["a", "c"]);
   const res = await quietly(() => call(handler, post()));
-  assertEquals([res.status, res.body], [500, { purged: 1, failed: 2 }]);
+  assertEquals([res.status, res.body], [500, { companies: 0, purged: 1, failed: 2 }]);
   assertEquals(ran, ["user a", "user b", "user c"]);
+});
+
+Deno.test("purges each due company before the accounts", async () => {
+  const { handler, ran } = setup(["a"], [], ["c1", "c2"]);
+  const res = await call(handler, post());
+  assertEquals([res.status, res.body], [200, { companies: 2, purged: 1, failed: 0 }]);
+  assertEquals(ran, ["company c1", "company c2", "user a"]);
+});
+
+Deno.test("keeps a company that cannot be purged, and purges the rest", async () => {
+  const { handler, ran } = setup(["a"], ["c1"], ["c1", "c2"]);
+  const res = await quietly(() => call(handler, post()));
+  assertEquals([res.status, res.body], [500, { companies: 1, purged: 1, failed: 1 }]);
+  assertEquals(ran, ["company c1", "company c2", "user a"]);
 });
