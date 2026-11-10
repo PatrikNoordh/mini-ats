@@ -21,9 +21,11 @@ export function purgeDate(deletedAt: string | Date): Date {
 }
 
 /**
- * What the admin types to delete an account for good: its email, which names one login. The
- * company's data is never part of it (ATS-46).
+ * What the admin types to delete an account for good: the company name, or the email for an
+ * account without one (an admin's company is the platform itself).
  */
-export function deleteConfirmText(profile: Pick<Profile, "email">): string {
-  return profile.email;
+export function deleteConfirmText(
+  profile: Pick<Profile, "role" | "company_name" | "email">,
+): string {
+  return profile.role === "admin" || !profile.company_name ? profile.email : profile.company_name;
 }

@@ -272,7 +272,6 @@ npx supabase link --project-ref <your-project-ref>
 npx supabase db push                                    # schema, RLS, triggers
 npx supabase functions deploy admin-create-user
 npx supabase functions deploy admin-manage-account
-npx supabase functions deploy admin-manage-company
 npx supabase functions deploy purge-deleted-accounts
 npx supabase secrets set PURGE_CRON_SECRET=<a long random value, e.g. from openssl rand -hex 32>
 npx supabase functions deploy assess-cv
@@ -280,7 +279,7 @@ npx supabase functions deploy delete-candidate
 npx supabase secrets set ANTHROPIC_API_KEY=<your Anthropic API key>
 ```
 
-The daily purge runs in the `purge-deleted-accounts` Edge Function, because only the Storage API can remove CV files. It deletes each company deleted more than 30 days ago, with its CV folder, its members' logins and all its data, and then each account deleted more than 30 days ago, with its login only: an account's data belongs to its company (ATS-46). `pg_cron` calls it through `pg_net`, with three Vault secrets. Set them once in the **SQL Editor**:
+The daily purge runs in the `purge-deleted-accounts` Edge Function, because only the Storage API can remove CV files. Since ATS-44 it deletes only a deleted user's login: the CV files belong to the company, and the company purge removes them (ATS-46). `pg_cron` calls it through `pg_net`, with three Vault secrets. Set them once in the **SQL Editor**:
 
 ```sql
 select vault.create_secret('https://<your-project-ref>.supabase.co', 'project_url');

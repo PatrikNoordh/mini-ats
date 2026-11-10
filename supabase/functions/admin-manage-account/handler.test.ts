@@ -4,7 +4,6 @@ import {
   createHandler,
   type Account,
   type Caller,
-  type Company,
   type Deps,
   type RemovalRefusal,
 } from "./handler.ts";
@@ -12,13 +11,6 @@ import {
 const ADMIN_ID = "00000000-0000-4000-8000-0000000000ad";
 const CUSTOMER_ID = "00000000-0000-4000-8000-0000000000c1";
 const OTHER_ADMIN_ID = "00000000-0000-4000-8000-0000000000a2";
-const COMPANY_ID = "00000000-0000-4000-8000-00000000c0c0";
-const DELETED_COMPANY_ID = "00000000-0000-4000-8000-00000000c0de";
-
-const companies: Record<string, Company> = {
-  [COMPANY_ID]: { id: COMPANY_ID, deleted: false },
-  [DELETED_COMPANY_ID]: { id: DELETED_COMPANY_ID, deleted: true },
-};
 
 const accounts: Record<string, Account> = {
   [ADMIN_ID]: { id: ADMIN_ID, role: "admin", deleted: false },
@@ -50,16 +42,11 @@ function setup(
   const deps: Deps = {
     getCaller: () => Promise.resolve(options.caller ?? { kind: "admin", id: ADMIN_ID }),
     getAccount: (_, id) => Promise.resolve(known[id] ?? null),
-    getCompany: (_, id) => Promise.resolve(companies[id] ?? null),
     updateAccount: (u, demote) => {
       ran.push(`update ${u.id} ${u.email} ${u.password ?? "-"}${demote ? " demote" : ""}`);
       const refused = demote ? options.removal : null;
       return Promise.resolve(refused ? { error: refused } : (options.updateResult ?? null));
     },
-    setCompany: (userId, companyId) => (
-      ran.push(`company ${userId} ${companyId}`),
-      Promise.resolve()
-    ),
     softDelete: (id) => (ran.push(`delete ${id}`), Promise.resolve(options.removal ?? null)),
     restore: (id) => (ran.push(`restore ${id}`), Promise.resolve()),
     deleteNow: (id) => (ran.push(`delete_now ${id}`), Promise.resolve()),
@@ -119,9 +106,6 @@ Deno.test("names the invalid fields and changes nothing", async () => {
     [{ ...update, password: "short" }, ["password"]],
     // 37 characters, but 74 bytes: å takes two.
     [{ ...update, password: "å".repeat(37) }, ["password"]],
-    [{ ...update, company_id: "not-a-uuid" }, ["company_id"]],
-    // An admin belongs to no company.
-    [{ ...update, role: "admin", company_id: COMPANY_ID }, ["company_id"]],
   ];
   for (const [body, fields] of cases) {
     const { handler, ran } = setup();
@@ -146,61 +130,6 @@ Deno.test(
     assertEquals(set.ran, [`update ${CUSTOMER_ID} kund@exempelbygg.test Blå-Katt-47`]);
   },
 );
-
-Deno.test("moves a user to another company, removes them from theirs, or keeps it", async () => {
-  const cases: [string | null | undefined, string[]][] = [
-    [COMPANY_ID, [`company ${CUSTOMER_ID} ${COMPANY_ID}`]],
-    [null, [`company ${CUSTOMER_ID} null`]],
-    [undefined, []],
-  ];
-  for (const [companyId, membership] of cases) {
-    const { handler, ran } = setup();
-    const body = companyId === undefined ? update : { ...update, company_id: companyId };
-    assertEquals((await call(handler, post(body))).status, 200);
-    // The membership after the account, so a role change has run first.
-    assertEquals(ran, [`update ${CUSTOMER_ID} kund@exempelbygg.test -`, ...membership]);
-  }
-});
-
-Deno.test("never adds a user to a company that does not exist or is deleted", async () => {
-  for (const [companyId, status, error] of [
-    ["00000000-0000-4000-8000-00000000dead", 404, "company_not_found"],
-    [DELETED_COMPANY_ID, 409, "company_deleted"],
-  ] as const) {
-    const { handler, ran } = setup();
-    const res = await call(handler, post({ ...update, company_id: companyId }));
-    assertEquals([res.status, res.body.error, ran], [status, error, []]);
-  }
-});
-
-Deno.test("demotes an admin by adding them to a company, after the last-admin check", async () => {
-  const { handler, ran } = setup();
-  const body = { ...update, id: OTHER_ADMIN_ID, role: "customer", company_id: COMPANY_ID };
-  assertEquals((await call(handler, post(body))).status, 200);
-  assertEquals(ran, [
-    `update ${OTHER_ADMIN_ID} kund@exempelbygg.test - demote`,
-    `company ${OTHER_ADMIN_ID} ${COMPANY_ID}`,
-  ]);
-
-  const refused = setup({ removal: "last_admin" });
-  const res = await call(refused.handler, post(body));
-  assertEquals([res.status, res.body.error], [409, "last_admin"]);
-  assertEquals(refused.ran, [`update ${OTHER_ADMIN_ID} kund@exempelbygg.test - demote`]);
-});
-
-Deno.test("promoting a customer writes no membership: the database removes theirs", async () => {
-  const { handler, ran } = setup();
-  const body = { ...update, role: "admin", company_id: null };
-  assertEquals((await call(handler, post(body))).status, 200);
-  assertEquals(ran, [`update ${CUSTOMER_ID} kund@exempelbygg.test -`]);
-});
-
-Deno.test("accepts an update without company_name, as the members page sends it", async () => {
-  const { company_name: _, ...withoutName } = update;
-  const { handler, ran } = setup();
-  assertEquals((await call(handler, post(withoutName))).status, 200);
-  assertEquals(ran.length, 1);
-});
 
 Deno.test("returns email_exists for a taken email", async () => {
   const { handler } = setup({ updateResult: { error: "email_exists" } });
@@ -307,9 +236,7 @@ Deno.test("hides unexpected errors behind the unknown code", async () => {
   const failing = createHandler({
     getCaller: () => Promise.resolve({ kind: "admin", id: ADMIN_ID }),
     getAccount: () => Promise.reject(new Error("database down")),
-    getCompany: () => Promise.resolve(null),
     updateAccount: () => Promise.resolve(null),
-    setCompany: () => Promise.resolve(),
     softDelete: () => Promise.resolve(null),
     restore: () => Promise.resolve(),
     deleteNow: () => Promise.resolve(),

@@ -1,15 +1,8 @@
-// admin-create-user: an admin creates an admin account, or a customer account as a member of an
-// existing company or a new one (ATS-46). Public sign-up is disabled, so this is the only way
-// accounts are made (CLAUDE.md, security rule 3).
+// admin-create-user: an admin creates an admin or customer account.
+// Public sign-up is disabled, so this is the only way accounts are made (CLAUDE.md, security rule 3).
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 
-import {
-  createHandler,
-  type AuthAccount,
-  type Caller,
-  type Company,
-  type CreateResult,
-} from "./handler.ts";
+import { createHandler, type Caller, type CreateResult, type NewAccount } from "./handler.ts";
 
 function env(name: string): string {
   const value = Deno.env.get(name);
@@ -38,37 +31,10 @@ async function checkCaller(authorization: string): Promise<Caller> {
   return data === true ? "admin" : "not_admin";
 }
 
-/** Only for the writes this function exists for: the account, its company and its membership. */
-const admin = () => createClient(supabaseUrl, serviceRoleKey, { auth: noSession });
-
-/** Read as the caller, so RLS answers for the caller. */
-async function getCompany(authorization: string, id: string): Promise<Company | null> {
-  const caller = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: noSession,
-  });
-  const { data, error } = await caller
-    .from("companies")
-    .select("id, name, deleted_at")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
-  return data ? { id: data.id, name: data.name, deleted: data.deleted_at !== null } : null;
-}
-
-async function createCompany(name: string): Promise<string> {
-  const { data, error } = await admin().from("companies").insert({ name }).select("id").single();
-  if (error) throw error;
-  return data.id;
-}
-
-async function deleteCompany(id: string): Promise<void> {
-  const { error } = await admin().from("companies").delete().eq("id", id);
-  if (error) throw error;
-}
-
-async function createUser(account: AuthAccount): Promise<CreateResult> {
-  const { data, error } = await admin().auth.admin.createUser({
+/** The one privileged action: create the user with the service role key. */
+async function createUser(account: NewAccount): Promise<CreateResult> {
+  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: noSession });
+  const { data, error } = await admin.auth.admin.createUser({
     email: account.email,
     password: account.password,
     email_confirm: true,
@@ -84,26 +50,4 @@ async function createUser(account: AuthAccount): Promise<CreateResult> {
   return { id: data.user.id };
 }
 
-async function addMember(companyId: string, userId: string): Promise<void> {
-  const { error } = await admin()
-    .from("company_members")
-    .insert({ company_id: companyId, user_id: userId });
-  if (error) throw error;
-}
-
-async function deleteUser(id: string): Promise<void> {
-  const { error } = await admin().auth.admin.deleteUser(id);
-  if (error) throw error;
-}
-
-Deno.serve(
-  createHandler({
-    checkCaller,
-    getCompany,
-    createCompany,
-    deleteCompany,
-    createUser,
-    addMember,
-    deleteUser,
-  }),
-);
+Deno.serve(createHandler({ checkCaller, createUser }));

@@ -3,12 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DEMO_ACCOUNTS, DEMO_ADMIN, DEMO_CUSTOMERS } from "../../scripts/demo-data";
 import { STALE_CARD_DAYS } from "@/lib/constants";
 import { DEFAULT_STAGE_KEYS } from "@/lib/stages";
-import {
-  accountInputSchema,
-  candidateInputSchema,
-  jobInputSchema,
-  NEW_COMPANY,
-} from "@/lib/validation";
+import { accountInputSchema, candidateInputSchema, jobInputSchema } from "@/lib/validation";
 
 const candidates = DEMO_CUSTOMERS.flatMap((c) => c.candidates);
 const applications = candidates.flatMap((c) => c.applications);
@@ -39,8 +34,9 @@ describe("demo data", () => {
 
   it("passes the same rules as the forms", () => {
     for (const account of DEMO_ACCOUNTS) {
-      const input = { ...account, company: NEW_COMPANY, password: "long-enough" };
-      expect(accountInputSchema.safeParse(input).success).toBe(true);
+      expect(accountInputSchema.safeParse({ ...account, password: "long-enough" }).success).toBe(
+        true,
+      );
     }
     for (const job of DEMO_CUSTOMERS.flatMap((c) => c.jobs)) {
       expect(jobInputSchema.safeParse(job).success, job.title).toBe(true);

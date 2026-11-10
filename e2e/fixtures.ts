@@ -62,11 +62,6 @@ interface Fixtures {
   addMember: (customer: TestCustomer, name: string) => Promise<TestUser>;
   /** The customer's first user, or a second user added to the company for the test. */
   memberOf: (customer: TestCustomer, member: Member) => Promise<TestUser>;
-  /**
-   * Companies and accounts a test makes through the app, by name and email, so they are removed
-   * after it like the others. One that the test deleted for good is skipped.
-   */
-  madeInApp: { companies: string[]; emails: string[] };
 }
 
 function serviceClient(): SupabaseClient {
@@ -135,24 +130,6 @@ export const test = base.extend<Fixtures>({
         : add(customer, "Kollega"),
     );
   },
-  // eslint-disable-next-line no-empty-pattern -- Playwright reads the fixtures from the pattern.
-  madeInApp: async ({}, use) => {
-    const made = { companies: [] as string[], emails: [] as string[] };
-    await use(made);
-    const admin = serviceClient();
-    if (made.companies.length > 0) {
-      const { error } = await admin.from("companies").delete().in("name", made.companies);
-      if (error) throw error;
-    }
-    if (made.emails.length > 0) {
-      const { data, error } = await admin.from("profiles").select("id").in("email", made.emails);
-      if (error) throw error;
-      for (const { id } of data) {
-        const removed = await admin.auth.admin.deleteUser(String(id));
-        if (removed.error) throw removed.error;
-      }
-    }
-  },
   // Every user a test made, removed after the companies (the fixtures above depend on it).
   // eslint-disable-next-line no-empty-pattern -- Playwright reads the fixtures from the pattern.
   users: async ({}, use) => {
@@ -161,8 +138,7 @@ export const test = base.extend<Fixtures>({
     const admin = serviceClient();
     for (const id of created) {
       const { error } = await admin.auth.admin.deleteUser(id);
-      // A test that deleted a company for good has deleted its users already.
-      if (error && error.status !== 404) throw error;
+      if (error) throw error;
     }
   },
 });
@@ -266,14 +242,4 @@ export function column(page: Page, stage: keyof typeof sv.stages) {
 /** A card on the board or in a column, named by the candidate (the label adds job and days). */
 export function card(scope: Page | Locator, name: string) {
   return scope.getByRole("button", { name: new RegExp(`^${name},`) });
-}
-
-/** How many jobs the company has, counted past RLS. */
-export async function jobCount(companyId: string): Promise<number> {
-  const { count, error } = await serviceClient()
-    .from("jobs")
-    .select("id", { count: "exact", head: true })
-    .eq("customer_id", companyId);
-  if (error) throw error;
-  return count ?? 0;
 }

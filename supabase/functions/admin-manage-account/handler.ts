@@ -18,6 +18,7 @@ export const updateSchema = z.object({
   id,
   role: z.enum(["admin", "customer"]),
   full_name: requiredText,
+  company_name: requiredText,
   email: z.string().trim().toLowerCase().max(MAX_EMAIL_LENGTH).email(),
   /** Left out to keep the password. */
   password: z
@@ -25,43 +26,20 @@ export const updateSchema = z.object({
     .min(MIN_PASSWORD_LENGTH)
     .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES)
     .optional(),
-  /**
-   * The company the user is a member of (ATS-46): another one moves them, null removes them
-   * from their company, and left out keeps the membership as it is. An admin has none.
-   */
-  company_id: id.nullable().optional(),
-  /**
-   * Only from the accounts page on main (ATS-45), which still edits the old profile column.
-   * Left out, the column keeps its value. Goes when the column is dropped.
-   */
-  company_name: requiredText.optional(),
 });
 
-export const requestSchema = z
-  .discriminatedUnion("action", [
-    updateSchema,
-    z.object({ action: z.literal("delete"), id }),
-    z.object({ action: z.literal("restore"), id }),
-    z.object({ action: z.literal("delete_now"), id }),
-  ])
-  .superRefine((request, ctx) => {
-    // An admin belongs to no company: promoting a user removes their membership (ATS-44).
-    if (request.action === "update" && request.role === "admin" && request.company_id) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["company_id"] });
-    }
-  });
+export const requestSchema = z.discriminatedUnion("action", [
+  updateSchema,
+  z.object({ action: z.literal("delete"), id }),
+  z.object({ action: z.literal("restore"), id }),
+  z.object({ action: z.literal("delete_now"), id }),
+]);
 
 export type Update = z.infer<typeof updateSchema>;
 
 /** The caller, according to `is_admin()` and Auth, both run with the caller's own JWT. */
 export type Caller =
   { kind: "admin"; id: string } | { kind: "not_admin" } | { kind: "invalid_token" };
-
-/** A company as the calling admin sees it through RLS. */
-export interface Company {
-  id: string;
-  deleted: boolean;
-}
 
 /** The target account as the calling admin sees it through RLS. */
 export interface Account {
@@ -83,19 +61,12 @@ export type RemovalRefusal = "account_not_found" | "account_deleted" | "last_adm
 export interface Deps {
   getCaller: (authorization: string) => Promise<Caller>;
   getAccount: (authorization: string, id: string) => Promise<Account | null>;
-  getCompany: (authorization: string, id: string) => Promise<Company | null>;
   /** demote: the account is an admin and becomes a customer, so the last-admin check runs. */
   updateAccount: (
     update: Update,
     demote: boolean,
   ) => Promise<{ error: "email_exists" | RemovalRefusal } | null>;
-  /**
-   * Makes the user a member of the company, moving them from another one, or removes their
-   * membership for null. Their login opens again, in case their old company was deleted.
-   */
-  setCompany: (userId: string, companyId: string | null) => Promise<void>;
   softDelete: (id: string) => Promise<RemovalRefusal | null>;
-  /** Unmarks the account. Its login opens again unless its company is deleted. */
   restore: (id: string) => Promise<void>;
   deleteNow: (id: string) => Promise<void>;
 }
@@ -159,22 +130,10 @@ export function createHandler(deps: Deps) {
       const refusedBefore = refusal(caller.id, account, request, removesAdmin);
       if (refusedBefore) return json({ error: refusedBefore }, 409);
 
-      // A user joins only an active company, checked before anything is written.
-      if (request.action === "update" && request.company_id) {
-        const company = await deps.getCompany(authorization, request.company_id);
-        if (!company) return json({ error: "company_not_found" }, 404);
-        if (company.deleted) return json({ error: "company_deleted" }, 409);
-      }
-
       switch (request.action) {
         case "update": {
           const result = await deps.updateAccount(request, demote);
           if (result) return refused(result.error);
-          // After the role: the database refuses a membership for an admin, and a promotion has
-          // already removed it (ATS-44).
-          if (request.role === "customer" && request.company_id !== undefined) {
-            await deps.setCompany(request.id, request.company_id);
-          }
           break;
         }
         case "delete": {

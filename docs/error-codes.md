@@ -53,7 +53,7 @@ raise exception 'job_candidate_customer_mismatch';
 
 The data layer maps the message to an `AppError` with `fromDbError()` in `src/lib/errors.ts`. The two triggers in the first migration raise `job_candidate_customer_mismatch` and `application_not_found` (ATS-5, AC4b), the `move_application` function raises `card_not_found` (ATS-12), and `soft_delete_or_demote_account` raises `account_not_found`, `account_deleted` and `last_admin`, which `admin-manage-account` passes on (ATS-33). The role sync from `app_metadata` raises `last_admin` too, when a change made outside the app would demote the last active admin; Auth then refuses the update (ATS-35). The foreign key on `applications.job_id` refuses to delete a job with candidates; `deleteJob()` turns that error (`23503`) into `job_has_candidates` (ATS-26). The pipeline stages (ATS-38) raise `stage_not_found` from `move_application`, `reorder_stages` and, since ATS-42, the trigger that puts a new card in the first open column, `stage_hired_required` and `stage_rejected_required` when a removal or a change of `kind` would leave a customer without a hired or a rejected column, and `stage_limit_reached` on an eleventh column. `reorder_stages` raises `invalid_input` for a list that leaves a column out or names one twice. The foreign key on `applications.stage_id` refuses to remove a column with cards, and a move into a column removed at the same moment (`23503`), and a second hired column or a duplicate column name is a unique violation (`23505`). Since ATS-40 the last open column is refused too, with `stage_open_required`, `add_stage` and `reset_stages` raise `stage_not_found` for a customer the caller may not change, and `reset_stages` refuses with `23503` while a column it would remove has cards. The app turns `23503` on a column into `stage_has_cards` and `23505` into `stage_name_taken` (`stageWriteError()` in `src/lib/api/pipelineStages.ts`), and shows every one of these codes in both languages. `supabase/tests/rls_test.sql` checks each of these codes and the foreign keys.
 
-Two refusals from the companies migration (ATS-44) are raised but not in `ERROR_CODES`, because no app path reaches them, so they would show as `errors.unknown`: `admin_cannot_be_member`, when a membership is written for an admin account (only the service role writes memberships, and `admin-create-user` and `admin-manage-account` refuse a company for an admin with `invalid_input` before they write one), and `owner_change_not_allowed`, when an update changes `customer_id` on a job or a candidate. The second is raised with SQLSTATE `42501` (`insufficient_privilege`), like a column the grants leave out; the app never sends `customer_id` on an update.
+Two refusals from the companies migration (ATS-44) are raised but not yet in `ERROR_CODES`, because no app path reaches them, so they would show as `errors.unknown`: `admin_cannot_be_member`, when a membership is written for an admin account (only the service role writes memberships, through the admin Edge Functions in ATS-46, which add the code to the app), and `owner_change_not_allowed`, when an update changes `customer_id` on a job or a candidate. The second is raised with SQLSTATE `42501` (`insufficient_privilege`), like a column the grants leave out; the app never sends `customer_id` on an update.
 
 ## Storage (from epic 6)
 
@@ -61,56 +61,53 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 
 ## Codes
 
-| Code                              | Where                                                               | Meaning                                                    |
-| --------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `card_not_found`                  | `move_application` (function)                                       | The card does not exist for this customer                  |
-| `job_not_found`                   | jobs                                                                | The job does not exist for this customer                   |
-| `candidate_not_found`             | candidates, `delete-candidate`                                      | The candidate does not exist for this customer             |
-| `email_exists`                    | `admin-create-user`, `admin-manage-account`                         | An account with that email already exists                  |
-| `invalid_input`                   | `admin-create-user`, `admin-manage-account`                         | The request body failed validation (`fields` names which)  |
-| `not_authenticated`               | Edge Functions                                                      | No valid JWT: signed out or the session expired            |
-| `forbidden`                       | `admin-create-user`, `admin-manage-account`                         | The caller is signed in but not an admin                   |
-| `invalid_credentials`             | auth                                                                | Wrong email or password                                    |
-| `too_many_attempts`               | auth                                                                | Too many sign-in attempts in a short time                  |
-| `wrong_current_password`          | auth (change password)                                              | The current password typed to change it is not correct     |
-| `same_password`                   | auth (change password)                                              | Auth refused a new password equal to the current one       |
-| `weak_password`                   | auth (change password)                                              | Auth refused the new password as too weak                  |
-| `profile_not_found`               | auth                                                                | The account has no `profiles` row                          |
-| `no_company`                      | auth                                                                | A customer user without an active company (ATS-45)         |
-| `stage_not_found`                 | pipeline stages (functions, trigger)                                | The column does not exist for this customer                |
-| `stage_hired_required`            | pipeline stages (trigger)                                           | The change would leave the customer without a hired column |
-| `stage_rejected_required`         | pipeline stages (trigger)                                           | The change would leave no rejected column                  |
-| `stage_limit_reached`             | pipeline stages (trigger)                                           | The customer already has 10 columns                        |
-| `stage_open_required`             | pipeline stages (trigger)                                           | The change would leave no column for new cards             |
-| `stage_has_cards`                 | pipeline stages (foreign key, `23503`)                              | The column, or one a reset would remove, has cards         |
-| `stage_name_taken`                | pipeline stages (unique name, `23505`)                              | Another column already has that name                       |
-| `job_candidate_customer_mismatch` | applications (trigger)                                              | The job and the candidate belong to different customers    |
-| `application_not_found`           | cv_assessments (trigger), `assess-cv`                               | The application does not exist for the caller              |
-| `links_failed`                    | candidates                                                          | The candidate was saved, but linking it to jobs failed     |
-| `unlinks_failed`                  | candidates                                                          | The candidate was saved, but unlinking it from jobs failed |
-| `already_linked`                  | applications                                                        | The candidate is already linked to that job                |
-| `job_has_candidates`              | jobs                                                                | The job still has candidates, so it cannot be deleted      |
-| `text_too_long`                   | jobs, candidates (checks)                                           | A text is over its length limit in the database            |
-| `account_not_found`               | `admin-manage-account`                                              | The account does not exist                                 |
-| `account_deleted`                 | `admin-manage-account`, auth                                        | The account is deleted (also a deleted account signing in) |
-| `account_not_deleted`             | `admin-manage-account`                                              | Restore or delete for good on an account not deleted       |
-| `company_not_found`               | `admin-manage-company`, `admin-create-user`, `admin-manage-account` | The company does not exist (ATS-46)                        |
-| `company_deleted`                 | `admin-manage-company`, `admin-create-user`, `admin-manage-account` | Rename or delete a deleted company, or put a user in one   |
-| `company_not_deleted`             | `admin-manage-company`                                              | Restore or delete for good on a company not deleted        |
-| `cannot_change_self`              | `admin-manage-account`                                              | An admin tried to delete or demote its own account         |
-| `last_admin`                      | `admin-manage-account`                                              | The change would leave no active admin                     |
-| `cv_not_pdf`                      | CV upload (`cvs` bucket)                                            | The chosen file is not a PDF                               |
-| `cv_too_large`                    | CV upload (`cvs` bucket)                                            | The file is over 5 MB                                      |
-| `cv_upload_failed`                | candidates                                                          | The candidate was saved, but uploading its CV failed       |
-| `cv_not_found`                    | CV (`cvs` bucket), `assess-cv`                                      | The CV file is missing, so it cannot be opened or assessed |
-| `cv_missing`                      | `assess-cv`                                                         | The candidate has no CV to assess (409)                    |
-| `cv_changed`                      | `assess-cv`                                                         | The CV was replaced while it was assessed; not saved (409) |
-| `cv_unreadable`                   | `assess-cv`                                                         | The CV file is not a readable PDF (422)                    |
-| `cv_no_text`                      | `assess-cv`                                                         | The PDF has too little text, for example a scan (422)      |
-| `cv_too_long`                     | `assess-cv`                                                         | The CV text is over the limit; it is never cut (422)       |
-| `assessment_too_soon`             | `assess-cv`                                                         | The application was assessed less than a minute ago (429)  |
-| `assessment_failed`               | `assess-cv`                                                         | The model declined or gave no valid answer (502)           |
-| `assessment_unavailable`          | `assess-cv`                                                         | The model API is down, overloaded or rate limited (503)    |
-| `offline`                         | any request (browser)                                               | No answer, and the browser has no internet connection      |
-| `network_error`                   | any request (browser)                                               | No answer from the server, although the browser is online  |
-| `unknown`                         | anywhere                                                            | Fallback for errors without a known code                   |
+| Code                              | Where                                       | Meaning                                                    |
+| --------------------------------- | ------------------------------------------- | ---------------------------------------------------------- |
+| `card_not_found`                  | `move_application` (function)               | The card does not exist for this customer                  |
+| `job_not_found`                   | jobs                                        | The job does not exist for this customer                   |
+| `candidate_not_found`             | candidates, `delete-candidate`              | The candidate does not exist for this customer             |
+| `email_exists`                    | `admin-create-user`, `admin-manage-account` | An account with that email already exists                  |
+| `invalid_input`                   | `admin-create-user`, `admin-manage-account` | The request body failed validation (`fields` names which)  |
+| `not_authenticated`               | Edge Functions                              | No valid JWT: signed out or the session expired            |
+| `forbidden`                       | `admin-create-user`, `admin-manage-account` | The caller is signed in but not an admin                   |
+| `invalid_credentials`             | auth                                        | Wrong email or password                                    |
+| `too_many_attempts`               | auth                                        | Too many sign-in attempts in a short time                  |
+| `wrong_current_password`          | auth (change password)                      | The current password typed to change it is not correct     |
+| `same_password`                   | auth (change password)                      | Auth refused a new password equal to the current one       |
+| `weak_password`                   | auth (change password)                      | Auth refused the new password as too weak                  |
+| `profile_not_found`               | auth                                        | The account has no `profiles` row                          |
+| `no_company`                      | auth                                        | A customer user without an active company (ATS-45)         |
+| `stage_not_found`                 | pipeline stages (functions, trigger)        | The column does not exist for this customer                |
+| `stage_hired_required`            | pipeline stages (trigger)                   | The change would leave the customer without a hired column |
+| `stage_rejected_required`         | pipeline stages (trigger)                   | The change would leave no rejected column                  |
+| `stage_limit_reached`             | pipeline stages (trigger)                   | The customer already has 10 columns                        |
+| `stage_open_required`             | pipeline stages (trigger)                   | The change would leave no column for new cards             |
+| `stage_has_cards`                 | pipeline stages (foreign key, `23503`)      | The column, or one a reset would remove, has cards         |
+| `stage_name_taken`                | pipeline stages (unique name, `23505`)      | Another column already has that name                       |
+| `job_candidate_customer_mismatch` | applications (trigger)                      | The job and the candidate belong to different customers    |
+| `application_not_found`           | cv_assessments (trigger), `assess-cv`       | The application does not exist for the caller              |
+| `links_failed`                    | candidates                                  | The candidate was saved, but linking it to jobs failed     |
+| `unlinks_failed`                  | candidates                                  | The candidate was saved, but unlinking it from jobs failed |
+| `already_linked`                  | applications                                | The candidate is already linked to that job                |
+| `job_has_candidates`              | jobs                                        | The job still has candidates, so it cannot be deleted      |
+| `text_too_long`                   | jobs, candidates (checks)                   | A text is over its length limit in the database            |
+| `account_not_found`               | `admin-manage-account`                      | The account does not exist                                 |
+| `account_deleted`                 | `admin-manage-account`, auth                | The account is deleted (also a deleted account signing in) |
+| `account_not_deleted`             | `admin-manage-account`                      | Restore or delete for good on an account not deleted       |
+| `cannot_change_self`              | `admin-manage-account`                      | An admin tried to delete or demote its own account         |
+| `last_admin`                      | `admin-manage-account`                      | The change would leave no active admin                     |
+| `cv_not_pdf`                      | CV upload (`cvs` bucket)                    | The chosen file is not a PDF                               |
+| `cv_too_large`                    | CV upload (`cvs` bucket)                    | The file is over 5 MB                                      |
+| `cv_upload_failed`                | candidates                                  | The candidate was saved, but uploading its CV failed       |
+| `cv_not_found`                    | CV (`cvs` bucket), `assess-cv`              | The CV file is missing, so it cannot be opened or assessed |
+| `cv_missing`                      | `assess-cv`                                 | The candidate has no CV to assess (409)                    |
+| `cv_changed`                      | `assess-cv`                                 | The CV was replaced while it was assessed; not saved (409) |
+| `cv_unreadable`                   | `assess-cv`                                 | The CV file is not a readable PDF (422)                    |
+| `cv_no_text`                      | `assess-cv`                                 | The PDF has too little text, for example a scan (422)      |
+| `cv_too_long`                     | `assess-cv`                                 | The CV text is over the limit; it is never cut (422)       |
+| `assessment_too_soon`             | `assess-cv`                                 | The application was assessed less than a minute ago (429)  |
+| `assessment_failed`               | `assess-cv`                                 | The model declined or gave no valid answer (502)           |
+| `assessment_unavailable`          | `assess-cv`                                 | The model API is down, overloaded or rate limited (503)    |
+| `offline`                         | any request (browser)                       | No answer, and the browser has no internet connection      |
+| `network_error`                   | any request (browser)                       | No answer from the server, although the browser is online  |
+| `unknown`                         | anywhere                                    | Fallback for errors without a known code                   |

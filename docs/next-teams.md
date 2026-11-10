@@ -1,6 +1,6 @@
 # Next: teams
 
-A design sketch for epic 9 (ATS-43). Step 1, the migration, is built (ATS-44, `supabase/migrations/20261109120000_companies.sql`), the app reads by company (ATS-45), and admins manage companies and their users, with the 30-day delete and the purge by company (ATS-46); the login swap (ATS-58) is not built yet. The decisions below were made with the developer, and the work is split into tickets at the end.
+A design sketch for epic 9 (ATS-43). Step 1, the migration, is built (ATS-44, `supabase/migrations/20261109120000_companies.sql`), and the app reads by company (ATS-45); the rest is not yet. The decisions below were made with the developer, and the work is split into tickets at the end.
 
 ## Today
 

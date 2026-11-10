@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Company } from "@/types";
-import { invokeFunction } from "./functions";
 
 const COMPANY_COLUMNS = "id, name, created_at, deleted_at";
 
@@ -44,35 +43,4 @@ export async function getCompany(id: string): Promise<Company | null> {
     .maybeSingle();
   if (error) throw error;
   return data ? parseCompanyRow(data) : null;
-}
-
-const createdSchema = z.object({ id: z.string() });
-
-/**
- * Company changes go through the admin-manage-company Edge Function, which checks that the caller
- * is an admin (ATS-46). Clients only read companies (security rule 3).
- */
-export async function createCompany(name: string): Promise<string> {
-  return createdSchema.parse(
-    await invokeFunction("admin-manage-company", { action: "create", name }),
-  ).id;
-}
-
-export async function renameCompany(id: string, name: string): Promise<void> {
-  await invokeFunction("admin-manage-company", { action: "rename", id, name });
-}
-
-/** Hides the company and its data from its members and bans their logins, for 30 days. */
-export async function deleteCompany(id: string): Promise<void> {
-  await invokeFunction("admin-manage-company", { action: "delete", id });
-}
-
-/** Brings the company back, and its members who are not deleted themselves. */
-export async function restoreCompany(id: string): Promise<void> {
-  await invokeFunction("admin-manage-company", { action: "restore", id });
-}
-
-/** Deletes a deleted company for good: its CVs, its members' accounts and all its data. */
-export async function deleteCompanyNow(id: string): Promise<void> {
-  await invokeFunction("admin-manage-company", { action: "delete_now", id });
 }

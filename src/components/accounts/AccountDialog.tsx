@@ -20,7 +20,6 @@ import {
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { Field } from "@/components/Field";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCompanies } from "@/hooks/useCompanies";
 import { useErrorToast } from "@/hooks/useErrorToast";
 import {
   useCreateProfile,
@@ -38,42 +37,31 @@ import {
 import { errorCode } from "@/lib/errors";
 import { useFormat } from "@/lib/format";
 import {
-  accountFormFields,
   accountInputSchema,
   accountUpdateSchema,
   fieldErrors,
-  NEW_COMPANY,
-  NO_COMPANY,
   roleSchema,
   type AccountInput,
   type FormErrors,
 } from "@/lib/validation";
 import type { Profile, Role } from "@/types";
 
-const empty = { full_name: "", email: "", password: "", company: "", company_name: "" };
+const empty = { full_name: "", company_name: "", email: "", password: "" };
 
-/**
- * Creates an account, or edits and deletes `account` when it is given. A customer belongs to a
- * company: an existing one, a new one when the account is created, or none after an edit
- * (ATS-46). The company's name is changed on the company, not here.
- */
+/** Creates an account, or edits and deletes `account` when it is given. */
 export function AccountDialog({
   open,
   onOpenChange,
   account = null,
-  companyId = null,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   account?: Profile | null;
-  /** The company a new account joins at first, from the company's own "Add user". */
-  companyId?: string | null;
 }) {
   const { t } = useTranslation();
   const format = useFormat();
   const { profile: me } = useAuth();
   const profiles = useProfiles();
-  const companies = useCompanies();
   const create = useCreateProfile();
   const update = useUpdateProfile();
   const remove = useDeleteProfile();
@@ -93,19 +81,16 @@ export function AccountDialog({
     setForm(
       account
         ? {
-            ...empty,
             full_name: account.full_name,
+            company_name: account.company_name,
             email: account.email,
-            company: account.company_id ?? (account.role === "customer" ? NO_COMPANY : ""),
+            password: "",
           }
-        : { ...empty, company: companyId ?? "" },
+        : empty,
     );
-  }, [open, account, companyId]);
+  }, [open, account]);
   const set = (k: keyof typeof empty) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
-  // The active companies to choose from, and the account's own even if it is deleted, so the
-  // choice shows what it is now.
-  const choices = (companies.data ?? []).filter((c) => isActive(c) || c.id === account?.company_id);
 
   /** A taken email says so under the field, and points to Borttagna konton when that is where it is. */
   const showEmailTaken = () => {
@@ -121,33 +106,15 @@ export function AccountDialog({
     e.preventDefault();
     const schema = account ? accountUpdateSchema : accountInputSchema;
     const parsed = schema.safeParse({ ...form, role });
-    setErrors(parsed.success ? {} : fieldErrors(accountFormFields, parsed.error));
+    setErrors(parsed.success ? {} : fieldErrors(schema, parsed.error));
     if (!parsed.success) return;
-    const { password, company, company_name, ...details } = parsed.data;
-    const isCustomer = details.role === "customer";
     try {
       if (account) {
-        // The membership is sent only when it changes. Promoting to admin removes it in the
-        // database, so it is never sent for an admin.
-        const initial = account.company_id ?? NO_COMPANY;
-        const move =
-          isCustomer && company !== initial
-            ? { company_id: company === NO_COMPANY ? null : company }
-            : {};
-        await update.mutateAsync({
-          id: account.id,
-          ...details,
-          ...move,
-          ...(password ? { password } : {}),
-        });
+        const { password, ...details } = parsed.data;
+        await update.mutateAsync({ id: account.id, ...details, ...(password ? { password } : {}) });
         toast.success(t("accountDialog.updated"));
       } else {
-        const placement = !isCustomer
-          ? {}
-          : company === NEW_COMPANY
-            ? { company_name }
-            : { company_id: company };
-        await create.mutateAsync({ ...details, password, ...placement });
+        await create.mutateAsync(parsed.data);
         toast.success(t("accountDialog.created"));
       }
       onOpenChange(false);
@@ -215,48 +182,16 @@ export function AccountDialog({
               />
             )}
           </Field>
-          {role === "customer" && (
-            <Field id="a-co" label={t("accountDialog.company")} error={errors.company}>
-              {(control) => (
-                <Select
-                  value={form.company}
-                  onValueChange={(value) => setForm((f) => ({ ...f, company: value }))}
-                >
-                  <SelectTrigger {...control}>
-                    <SelectValue placeholder={t("accountDialog.chooseCompany")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {choices.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {isActive(c) ? c.name : t("accountDialog.deletedCompany", { name: c.name })}
-                      </SelectItem>
-                    ))}
-                    {account ? (
-                      <SelectItem value={NO_COMPANY}>{t("accountDialog.noCompany")}</SelectItem>
-                    ) : (
-                      <SelectItem value={NEW_COMPANY}>{t("accountDialog.newCompany")}</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              )}
-            </Field>
-          )}
-          {role === "customer" && !account && form.company === NEW_COMPANY && (
-            <Field
-              id="a-new-co"
-              label={t("accountDialog.newCompanyName")}
-              error={errors.company_name}
-            >
-              {(control) => (
-                <Input
-                  {...control}
-                  maxLength={MAX_NAME_LENGTH}
-                  value={form.company_name}
-                  onChange={set("company_name")}
-                />
-              )}
-            </Field>
-          )}
+          <Field id="a-co" label={t("accountDialog.company")} error={errors.company_name}>
+            {(control) => (
+              <Input
+                {...control}
+                maxLength={MAX_NAME_LENGTH}
+                value={form.company_name}
+                onChange={set("company_name")}
+              />
+            )}
+          </Field>
           <Field id="a-email" label={t("accountDialog.email")} error={errors.email}>
             {(control) => (
               <Input

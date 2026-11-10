@@ -120,57 +120,24 @@ const passwordSchema = z
   .min(MIN_PASSWORD_LENGTH, "password_too_short")
   .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES, "password_too_long");
 
-/** In the account form's company choice: a new company, or (when editing) no company (ATS-46). */
-export const NEW_COMPANY = "new";
-export const NO_COMPANY = "none";
-
-/**
- * The fields of the account form. `company` is an existing company's id, NEW_COMPANY or
- * NO_COMPANY; `company_name` is the new company's name. Only a customer has a company.
- */
-export const accountFormFields = z.object({
-  role: roleSchema,
-  full_name: requiredName("name_required"),
-  email: z.string().trim().max(MAX_EMAIL_LENGTH, "too_long").email("email_invalid"),
-  password: passwordSchema,
-  company: z.string(),
-  company_name: z.string().trim().max(MAX_NAME_LENGTH, "too_long"),
-});
-
-type AccountFormValues = z.infer<typeof accountFormFields>;
-
-/** A customer needs a company: a new one only when the account is created, none only on an edit. */
-function companyRule(editing: boolean) {
-  return (
-    account: Pick<AccountFormValues, "role" | "company" | "company_name">,
-    ctx: z.RefinementCtx,
-  ) => {
-    if (account.role !== "customer") return;
-    const issue = (path: "company" | "company_name", message: ValidationKey) =>
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
-    if (!account.company || account.company === (editing ? NEW_COMPANY : NO_COMPANY)) {
-      issue("company", "company_choose");
-    } else if (account.company === NEW_COMPANY && !account.company_name) {
-      issue("company_name", "company_required");
-    }
-  };
-}
-
 /**
  * The new-account form. The same rules as `newAccountSchema` in admin-create-user, so every
  * error the function would return is shown under its field first.
  */
-export const accountInputSchema = accountFormFields.superRefine(companyRule(false));
+export const accountInputSchema = z.object({
+  role: roleSchema,
+  full_name: requiredName("name_required"),
+  company_name: requiredName("company_required"),
+  email: z.string().trim().max(MAX_EMAIL_LENGTH, "too_long").email("email_invalid"),
+  password: passwordSchema,
+});
 
-export type AccountInput = z.infer<typeof accountFormFields>;
+export type AccountInput = z.infer<typeof accountInputSchema>;
 
 /** Editing an account: the same rules as admin-manage-account, and an empty password keeps it. */
-export const accountUpdateSchema = accountFormFields
-  .extend({ password: z.union([z.literal(""), passwordSchema]) })
-  .superRefine(companyRule(true));
-
-/** The company form: create or rename (ATS-46), the same rules as admin-manage-company. */
-export const companyInputSchema = z.object({ name: requiredName("company_required") });
+export const accountUpdateSchema = accountInputSchema.extend({
+  password: z.union([z.literal(""), passwordSchema]),
+});
 
 /**
  * A CV file the cvs bucket accepts: a PDF with content, of at most MAX_CV_BYTES (ATS-17). The

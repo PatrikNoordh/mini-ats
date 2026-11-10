@@ -391,7 +391,6 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      companies_due_for_purge: { Args: never; Returns: string[] };
       create_default_stages: { Args: { customer: string }; Returns: undefined };
       current_company_id: { Args: never; Returns: string };
       default_stage_specs: {
