@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "seed:e2e": "node scripts/seed-e2e.ts",
-    "seed:demo": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.seed.local scripts/seed-demo.ts"
+    "seed:demo": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.seed.local scripts/seed-demo.ts",
+    "swap:logins": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.seed.local scripts/swap-logins.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"

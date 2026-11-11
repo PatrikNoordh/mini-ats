@@ -320,6 +320,22 @@ Or add a user under **Authentication → Users** in the Dashboard and promote it
 update public.profiles set role = 'admin' where email = '<email>';
 ```
 
+### Once, after ATS-45 is live: the login swap
+
+Each company migrated in ATS-44 kept its first user's id. `scripts/swap-logins.ts` replaces those logins with new accounts with the same email, so no user id equals a company id (ATS-58). It checks first that deleting a login can never reach company data, swaps each company on its own, and can be run again to finish a swap that stopped. Each new login gets a temporary password, printed once, to hand over privately.
+
+```bash
+# 1. A data dump of the project, outside the repo
+npx supabase db dump --linked -f ../mini-ats-backup/schema.sql
+npx supabase db dump --linked --data-only -f ../mini-ats-backup/data.sql
+# 2. The dry run: lists the logins it would replace
+npm run swap:logins
+# 3. The swap
+npm run swap:logins -- --yes --dump ../mini-ats-backup/data.sql
+```
+
+The demo seed swaps the demo customers' logins itself, with their passwords from `DEMO_<KEY>_PASSWORD`.
+
 ### 6. Run it
 
 ```bash
@@ -344,6 +360,7 @@ The repository is connected to Vercel: every push to `main` deploys the live app
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run format` | Prettier |
 | `npm run seed:demo -- --yes` | Create or rebuild the demo accounts and data |
+| `npm run swap:logins` | Dry run of the login swap: lists the logins whose id is their company's (ATS-58). `-- --yes --dump <file>` swaps them, after a data dump saved outside the repo |
 | `npm run test:e2e` | Playwright against the local Supabase stack: seeds it, builds the app against it and runs the tests. Needs Docker and `npx supabase start` first |
 | `npm run seed:e2e` | Seed the test accounts and data into the local stack, to look at them in the app |
 

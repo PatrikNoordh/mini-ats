@@ -69,7 +69,7 @@ interface Fixtures {
   madeInApp: { companies: string[]; emails: string[] };
 }
 
-function serviceClient(): SupabaseClient {
+export function serviceClient(): SupabaseClient {
   const stack = localStack();
   return createClient(stack.url, stack.serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -141,6 +141,19 @@ export const test = base.extend<Fixtures>({
     await use(made);
     const admin = serviceClient();
     if (made.companies.length > 0) {
+      const found = await admin.from("companies").select("id").in("name", made.companies);
+      if (found.error) throw found.error;
+      // A company's CVs are in its folder, which no row deletes.
+      for (const { id } of found.data) {
+        const files = await admin.storage.from("cvs").list(String(id));
+        if (files.error) throw files.error;
+        if (files.data.length > 0) {
+          const removed = await admin.storage
+            .from("cvs")
+            .remove(files.data.map((file) => `${String(id)}/${file.name}`));
+          if (removed.error) throw removed.error;
+        }
+      }
       const { error } = await admin.from("companies").delete().in("name", made.companies);
       if (error) throw error;
     }

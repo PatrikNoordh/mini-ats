@@ -404,6 +404,13 @@ export type Database = {
         }[];
       };
       is_admin: { Args: never; Returns: boolean };
+      login_swap_blockers: {
+        Args: never;
+        Returns: {
+          constraint_name: string;
+          table_name: string;
+        }[];
+      };
       move_application: {
         Args: {
           application_id: string;

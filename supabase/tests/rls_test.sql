@@ -1739,4 +1739,81 @@ begin
   raise notice 'OK 57: a company deleted more than 30 days ago is due for the purge, no client can list it, its members see nothing once it is deleted, and its delete keeps their logins';
 end $$;
 
+
+-- 58. The login swap's safety rule, as the swap script reads it (ATS-58): no customer table, and
+-- not companies, references a user. A foreign key that would let deleting a login reach company
+-- data is listed, and only the service role may ask.
+reset role;
+do $$ begin
+  assert not exists (select 1 from public.login_swap_blockers()), 'the swap is blocked on the real schema';
+  alter table public.jobs add column swap_test_owner uuid
+    constraint jobs_swap_test_owner_fkey references public.profiles (id);
+  assert exists (select 1 from public.login_swap_blockers()
+                 where table_name = 'jobs' and constraint_name = 'jobs_swap_test_owner_fkey'),
+         'a job referencing a profile does not block the swap';
+  alter table public.jobs drop column swap_test_owner;
+  alter table public.companies add column swap_test_user uuid
+    constraint companies_swap_test_user_fkey references auth.users (id);
+  assert exists (select 1 from public.login_swap_blockers() where table_name = 'companies'),
+         'a company referencing an Auth user does not block the swap';
+  alter table public.companies drop column swap_test_user;
+  assert not exists (select 1 from public.login_swap_blockers()), 'the swap stayed blocked';
+  assert not has_function_privilege('anon', 'public.login_swap_blockers()', 'execute'), 'anon can run the swap check';
+  assert not has_function_privilege('authenticated', 'public.login_swap_blockers()', 'execute'), 'a client can run the swap check';
+  raise notice 'OK 58: the login swap''s check lists every foreign key from a customer table or companies to a user, and only the service role may run it';
+end $$;
+
+-- 59. After the login swap (ATS-58): company S's first login, whose id is the company's, is
+-- replaced by a new account with a new id and then deleted. The new login and a second member
+-- share every row, CV and column; company T's members see none of them, and S's none of T's. No
+-- user id equals a company id any more, so a rule still comparing with auth.uid() fails here.
+reset role;
+do $$ declare
+  s uuid := '00000000-0000-0000-0000-0000000058a1'; s2 uuid := '00000000-0000-0000-0000-0000000058a2';
+  s_new uuid := '00000000-0000-0000-0000-0000000058a3';
+  t uuid := '00000000-0000-0000-0000-0000000058b1'; t_new uuid := '00000000-0000-0000-0000-0000000058b3';
+  job uuid; cand uuid; who uuid;
+begin
+  perform pg_temp.add_customer(s, 'first-58s@test.local');
+  perform pg_temp.add_member(s, s2, 'second-58s@test.local');
+  perform pg_temp.add_customer(t, 'first-58t@test.local');
+  insert into public.jobs (customer_id, title) values (s, 'Job S') returning id into job;
+  insert into public.candidates (customer_id, full_name, cv_path) values (s, 'Cand S', s || '/s.pdf') returning id into cand;
+  insert into public.applications (job_id, candidate_id) values (job, cand);
+  -- The old login uploaded the CV, so it owns the object.
+  insert into storage.objects (bucket_id, name, owner) values ('cvs', s || '/s.pdf', s);
+  insert into public.jobs (customer_id, title) values (t, 'Job T');
+
+  -- The swap, as scripts/login-swap.ts runs it: free the email, create the new login, add it to
+  -- the company, then delete the old login.
+  update auth.users set email = 'swapped-' || s || '@login-swap.invalid' where id = s;
+  update auth.users set email = 'swapped-' || t || '@login-swap.invalid' where id = t;
+  perform pg_temp.add_member(s, s_new, 'first-58s@test.local');
+  perform pg_temp.add_member(t, t_new, 'first-58t@test.local');
+  delete from auth.users where id in (s, t);
+  assert not exists (select 1 from auth.users u join public.companies c on c.id = u.id where c.id in (s, t)),
+         'a user id still equals a company id';
+  assert exists (select 1 from public.jobs where id = job) and exists (select 1 from public.candidates where id = cand and cv_path = s || '/s.pdf'),
+         'the swap lost company data';
+  assert exists (select 1 from storage.objects where name = s || '/s.pdf'), 'the swap lost the old login''s CV';
+
+  set local role authenticated;
+  foreach who in array array[s_new, s2] loop
+    perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', who), true);
+    assert public.current_company_id() = s, 'a member of S after the swap is not in S';
+    assert (select array_agg(customer_id) from public.jobs) = array[s], 'a member of S does not see only S''s job';
+    assert (select count(*) from public.candidates where cv_path is not null) = 1, 'a member of S does not see its candidate';
+    assert (select count(*) from public.applications) = 1, 'a member of S does not see its card';
+    assert (select count(*) from public.pipeline_stages) = 6, 'a member of S does not see its columns';
+    assert (select count(*) from storage.objects where bucket_id = 'cvs' and name like s || '/%') = 1, 'a member of S does not see its CV';
+  end loop;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', t_new), true);
+  assert (select array_agg(customer_id) from public.jobs) = array[t], 'T sees S''s jobs, or not its own';
+  assert not exists (select 1 from public.candidates where customer_id = s), 'T sees S''s candidates';
+  assert not exists (select 1 from storage.objects where bucket_id = 'cvs' and name like s || '/%'), 'T sees S''s CVs';
+  assert not exists (select 1 from public.pipeline_stages where customer_id = s), 'T sees S''s columns';
+  reset role;
+  raise notice 'OK 59: after the login swap the new login and a second member share their company''s rows, CVs and columns, another company sees none of them, and no user id equals a company id';
+end $$;
+
 rollback;
