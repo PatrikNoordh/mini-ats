@@ -148,12 +148,12 @@ gh pr create --repo "$REPO" --base main --title "<type> [ATS-<N>] <Title Case Su
 ## Step 7 — After the PR is open
 
 - If the PR adds a migration, it reaches the project before the merge as described in `CLAUDE.md` § Workflow. Claude never runs a command against the linked project, not even a read-only one: it prints each command for the developer to run in their own terminal and paste back.
-  1. The developer runs `npx supabase db push --dry-run`. It must list only this branch's migrations; anything else, stop
-  2. With the developer's yes, the developer runs `npx supabase db push`
+  1. The developer runs `npx supabase db push --remote --dry-run`. It must list only this branch's migrations; anything else, stop. Without `--remote`, CLI v3 targets the local stack (ATS-59)
+  2. With the developer's yes, the developer runs `npx supabase db push --remote` and answers yes at its prompt (v3 defaults to No)
   3. The developer regenerates the types, and Claude compares them and commits and pushes a diff to the branch:
      ```bash
      # the developer runs:
-     npx supabase gen types typescript --linked > src/integrations/supabase/types.ts && npx prettier --write src/integrations/supabase/types.ts
+     npx supabase gen types typescript --remote > src/integrations/supabase/types.ts && npx prettier --write src/integrations/supabase/types.ts
      # Claude runs:
      git diff src/integrations/supabase/types.ts
      ```
