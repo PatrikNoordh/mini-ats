@@ -7,6 +7,7 @@ import {
   type Company,
   type Deps,
   type RemovalRefusal,
+  updateSchema,
 } from "./handler.ts";
 
 const ADMIN_ID = "00000000-0000-4000-8000-0000000000ad";
@@ -31,7 +32,6 @@ const update = {
   id: CUSTOMER_ID,
   role: "customer",
   full_name: "Erik Exempel",
-  company_name: "Exempelbygg AB",
   email: " Kund@Exempelbygg.test ",
 };
 
@@ -43,6 +43,8 @@ function setup(
     /** What soft_delete_or_demote_account answers, for a delete or a demotion. */
     removal?: RemovalRefusal | null;
     updateResult?: { error: "email_exists" } | null;
+    /** What the database answers to a membership, for a company deleted since it was read. */
+    moveRefusal?: "company_deleted";
   } = {},
 ) {
   const ran: string[] = [];
@@ -58,7 +60,7 @@ function setup(
     },
     setCompany: (userId, companyId) => (
       ran.push(`company ${userId} ${companyId}`),
-      Promise.resolve()
+      Promise.resolve(options.moveRefusal ?? null)
     ),
     softDelete: (id) => (ran.push(`delete ${id}`), Promise.resolve(options.removal ?? null)),
     restore: (id) => (ran.push(`restore ${id}`), Promise.resolve()),
@@ -173,6 +175,16 @@ Deno.test("never adds a user to a company that does not exist or is deleted", as
   }
 });
 
+Deno.test("returns company_deleted when the company was deleted since it was read", async () => {
+  const { handler, ran } = setup({ moveRefusal: "company_deleted" });
+  const res = await call(handler, post({ ...update, company_id: COMPANY_ID }));
+  assertEquals([res.status, res.body.error], [409, "company_deleted"]);
+  assertEquals(ran, [
+    `update ${CUSTOMER_ID} kund@exempelbygg.test -`,
+    `company ${CUSTOMER_ID} ${COMPANY_ID}`,
+  ]);
+});
+
 Deno.test("demotes an admin by adding them to a company, after the last-admin check", async () => {
   const { handler, ran } = setup();
   const body = { ...update, id: OTHER_ADMIN_ID, role: "customer", company_id: COMPANY_ID };
@@ -195,11 +207,12 @@ Deno.test("promoting a customer writes no membership: the database removes their
   assertEquals(ran, [`update ${CUSTOMER_ID} kund@exempelbygg.test -`]);
 });
 
-Deno.test("accepts an update without company_name, as the members page sends it", async () => {
-  const { company_name: _, ...withoutName } = update;
+Deno.test("ignores a company_name from an older page: the column is gone (ATS-61)", async () => {
+  const body = { ...update, company_name: "Old AB" };
+  assertEquals("company_name" in updateSchema.parse(body), false);
   const { handler, ran } = setup();
-  assertEquals((await call(handler, post(withoutName))).status, 200);
-  assertEquals(ran.length, 1);
+  assertEquals((await call(handler, post(body))).status, 200);
+  assertEquals(ran, [`update ${CUSTOMER_ID} kund@exempelbygg.test -`]);
 });
 
 Deno.test("returns email_exists for a taken email", async () => {
@@ -309,7 +322,7 @@ Deno.test("hides unexpected errors behind the unknown code", async () => {
     getAccount: () => Promise.reject(new Error("database down")),
     getCompany: () => Promise.resolve(null),
     updateAccount: () => Promise.resolve(null),
-    setCompany: () => Promise.resolve(),
+    setCompany: () => Promise.resolve(null),
     softDelete: () => Promise.resolve(null),
     restore: () => Promise.resolve(),
     deleteNow: () => Promise.resolve(),

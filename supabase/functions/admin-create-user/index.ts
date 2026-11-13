@@ -49,11 +49,11 @@ async function getCompany(authorization: string, id: string): Promise<Company | 
   });
   const { data, error } = await caller
     .from("companies")
-    .select("id, name, deleted_at")
+    .select("id, deleted_at")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
-  return data ? { id: data.id, name: data.name, deleted: data.deleted_at !== null } : null;
+  return data ? { id: data.id, deleted: data.deleted_at !== null } : null;
 }
 
 async function createCompany(name: string): Promise<string> {
@@ -72,9 +72,9 @@ async function createUser(account: AuthAccount): Promise<CreateResult> {
     email: account.email,
     password: account.password,
     email_confirm: true,
-    // The profile triggers copy these: name and company from user_metadata at insert, and the
-    // role from app_metadata (server only), which Auth sets in an update right after (ATS-28).
-    user_metadata: { full_name: account.full_name, company_name: account.company_name },
+    // The profile triggers copy these: the name from user_metadata at insert, and the role from
+    // app_metadata (server only), which Auth sets in an update right after (ATS-28).
+    user_metadata: { full_name: account.full_name },
     app_metadata: { role: account.role },
   });
   if (error) {
@@ -84,11 +84,13 @@ async function createUser(account: AuthAccount): Promise<CreateResult> {
   return { id: data.user.id };
 }
 
-async function addMember(companyId: string, userId: string): Promise<void> {
+async function addMember(companyId: string, userId: string): Promise<"company_deleted" | null> {
   const { error } = await admin()
     .from("company_members")
     .insert({ company_id: companyId, user_id: userId });
-  if (error) throw error;
+  if (!error) return null;
+  if (error.message === "company_deleted") return "company_deleted";
+  throw error;
 }
 
 async function deleteUser(id: string): Promise<void> {

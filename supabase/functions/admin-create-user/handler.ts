@@ -24,10 +24,7 @@ export const newAccountSchema = z
       .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES),
     /** A customer joins this existing company (ATS-46). */
     company_id: z.string().uuid().optional(),
-    /**
-     * Or a new company with this name. The accounts page on main (ATS-45) sends it for every
-     * account, so for an admin it is ignored, and for a customer it creates their company.
-     */
+    /** Or a new company with this name. Ignored for an admin, who belongs to no company. */
     company_name: requiredText.optional(),
   })
   .superRefine((account, ctx) => {
@@ -44,13 +41,12 @@ export const newAccountSchema = z
 
 export type NewAccount = z.infer<typeof newAccountSchema>;
 
-/** The account Auth creates. company_name fills the old profiles column until it is dropped. */
+/** The account Auth creates. */
 export interface AuthAccount {
   role: NewAccount["role"];
   full_name: string;
   email: string;
   password: string;
-  company_name: string | null;
 }
 
 /** Who is calling, according to `is_admin()` run with the caller's own JWT. */
@@ -61,7 +57,6 @@ export type CreateResult = { id: string } | { error: "email_exists" };
 /** A company as the calling admin sees it through RLS. */
 export interface Company {
   id: string;
-  name: string;
   deleted: boolean;
 }
 
@@ -76,7 +71,8 @@ export interface Deps {
   createCompany: (name: string) => Promise<string>;
   deleteCompany: (id: string) => Promise<void>;
   createUser: (account: AuthAccount) => Promise<CreateResult>;
-  addMember: (companyId: string, userId: string) => Promise<void>;
+  /** The database refuses a company deleted since it was read, with company_deleted (ATS-61). */
+  addMember: (companyId: string, userId: string) => Promise<"company_deleted" | null>;
   deleteUser: (id: string) => Promise<void>;
 }
 
@@ -114,13 +110,7 @@ export function createHandler(deps: Deps) {
       const { role, full_name, email, password } = account;
 
       if (role === "admin") {
-        const result = await deps.createUser({
-          role,
-          full_name,
-          email,
-          password,
-          company_name: null,
-        });
+        const result = await deps.createUser({ role, full_name, email, password });
         if ("error" in result) return json({ error: result.error }, 409);
         return json({ id: result.id, company_id: null }, 201);
       }
@@ -128,17 +118,14 @@ export function createHandler(deps: Deps) {
       // A customer: their company first, an existing one or a new one, so a failure leaves no
       // account without a company. A new company is removed again if the account is not made.
       let companyId: string;
-      let companyName: string;
       let newCompany = false;
       if (account.company_id) {
         const company = await deps.getCompany(authorization, account.company_id);
         if (!company) return json({ error: "company_not_found" }, 404);
         if (company.deleted) return json({ error: "company_deleted" }, 409);
         companyId = company.id;
-        companyName = company.name;
       } else {
-        companyName = account.company_name ?? "";
-        companyId = await deps.createCompany(companyName);
+        companyId = await deps.createCompany(account.company_name ?? "");
         newCompany = true;
       }
       const dropNewCompany = (cause: unknown) =>
@@ -146,13 +133,7 @@ export function createHandler(deps: Deps) {
 
       let result: CreateResult;
       try {
-        result = await deps.createUser({
-          role,
-          full_name,
-          email,
-          password,
-          company_name: companyName,
-        });
+        result = await deps.createUser({ role, full_name, email, password });
       } catch (error) {
         await dropNewCompany(error);
         throw error;
@@ -163,14 +144,20 @@ export function createHandler(deps: Deps) {
       }
 
       // The membership is written with the service role after the account exists. Without it the
-      // account could see nothing, so it is deleted again, and a new company with it.
+      // account could see nothing, so it is deleted again, and a new company with it. A company
+      // deleted meanwhile refuses it; one deleted after it bans the new login with its members.
       const userId = result.id;
+      let refusal: "company_deleted" | null;
       try {
-        await deps.addMember(companyId, userId);
+        refusal = await deps.addMember(companyId, userId);
       } catch (error) {
         await undo(() => deps.deleteUser(userId), error);
         await dropNewCompany(error);
         throw error;
+      }
+      if (refusal) {
+        await undo(() => deps.deleteUser(userId), refusal);
+        return json({ error: refusal }, 409);
       }
       return json({ id: userId, company_id: companyId }, 201);
     } catch (error) {
