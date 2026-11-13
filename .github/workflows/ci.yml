@@ -94,7 +94,7 @@ jobs:
           cache: npm
       - uses: supabase/setup-cli@v1
         with:
-          version: 2.122.0
+          version: 3.1.0
       - run: npm ci
       - name: Local Supabase stack (applies the migrations)
         # Only what the app uses: database, Auth, API, Storage and the Edge Functions.

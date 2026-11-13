@@ -1,3 +1,6 @@
+import { createClient } from "@supabase/supabase-js";
+
+import { localStack } from "../scripts/local-stack.ts";
 import {
   candidate,
   card,
@@ -42,4 +45,20 @@ test("a user without a company is refused at sign-in and stays signed out", asyn
   await expect(page.getByRole("alert")).toHaveText(sv.errors.no_company);
   await page.reload();
   await expect(page).toHaveURL(/\/login/);
+});
+
+test("public sign-up is closed, as in the project (security rule 3)", async ({
+  madeInApp,
+  tag,
+}) => {
+  const email = `self-signup-${tag}@e2e.test`;
+  // If the stack ever let it through, the account is removed after the test.
+  madeInApp.emails.push(email);
+  const stack = localStack();
+  const anon = createClient(stack.url, stack.anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await anon.auth.signUp({ email, password: "long-enough-password" });
+  expect(error?.code).toBe("signup_disabled");
+  expect(data.user).toBeNull();
 });

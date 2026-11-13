@@ -3,8 +3,8 @@
 // Run it once, from your own terminal, after the app that reads by company is live:
 //
 //   1. A data dump of the project, saved outside the repo:
-//        npx supabase db dump --linked -f ../mini-ats-backup/schema.sql
-//        npx supabase db dump --linked --data-only -f ../mini-ats-backup/data.sql
+//        npx supabase db dump --remote -f ../mini-ats-backup/schema.sql
+//        npx supabase db dump --remote --data-only -f ../mini-ats-backup/data.sql
 //   2. The dry run, which lists the logins it would replace and changes nothing:
 //        npm run swap:logins
 //   3. The swap:

@@ -169,7 +169,7 @@ If Docker is not available, say so in the summary. CI runs the same job on the P
 If the branch adds a migration, it must follow the migration rules in `CLAUDE.md` § Workflow. It must be backwards compatible with the code on `main`, because it reaches the project before the merge. Print the dry run for the developer to run in their own terminal and paste back. Never run a command against the linked project yourself, not even a read-only one:
 
 ```bash
-npx supabase db push --dry-run
+npx supabase db push --remote --dry-run
 ```
 
 It must list only the migrations this branch adds. If it lists anything else, stop and tell the developer. `db push` is run by the developer too, only after their yes. When unattended, write in the summary that the migration still has to be applied before the merge.

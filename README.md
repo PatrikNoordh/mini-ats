@@ -262,14 +262,14 @@ cd mini-ats
 npm install
 ```
 
-`npm install` also installs the Supabase CLI as a dev dependency, pinned to exactly `2.122.0`, so `npx supabase` always runs that version and never jumps to a new major version. CI pins the same version (`supabase/setup-cli` in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)): bump `package.json` and CI together, in the same pull request.
+`npm install` also installs the Supabase CLI as a dev dependency, pinned to exactly `3.1.0`, so `npx supabase` always runs that version and never jumps to a new major version. CI pins the same version (`supabase/setup-cli` in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)): bump `package.json` and CI together, in the same pull request.
 
 ### 3. Set up Supabase
 
 ```bash
 npx supabase login
 npx supabase link --project-ref <your-project-ref>
-npx supabase db push                                    # schema, RLS, triggers
+npx supabase db push --remote                           # schema, RLS, triggers
 npx supabase functions deploy admin-create-user
 npx supabase functions deploy admin-manage-account
 npx supabase functions deploy admin-manage-company
@@ -279,6 +279,8 @@ npx supabase functions deploy assess-cv
 npx supabase functions deploy delete-candidate
 npx supabase secrets set ANTHROPIC_API_KEY=<your Anthropic API key>
 ```
+
+The CLI is v3: `db push`, `db dump`, `migration list` and `gen types` target the local stack unless you pass `--remote`, and every command that changes the project asks first, with No as the default, so answer `y`.
 
 The daily purge runs in the `purge-deleted-accounts` Edge Function, because only the Storage API can remove CV files. It deletes each company deleted more than 30 days ago, with its CV folder, its members' logins and all its data, and then each account deleted more than 30 days ago, with its login only: an account's data belongs to its company (ATS-46). `pg_cron` calls it through `pg_net`, with three Vault secrets. Set them once in the **SQL Editor**:
 
@@ -326,8 +328,8 @@ Each company migrated in ATS-44 kept its first user's id. `scripts/swap-logins.t
 
 ```bash
 # 1. A data dump of the project, outside the repo
-npx supabase db dump --linked -f ../mini-ats-backup/schema.sql
-npx supabase db dump --linked --data-only -f ../mini-ats-backup/data.sql
+npx supabase db dump --remote -f ../mini-ats-backup/schema.sql
+npx supabase db dump --remote --data-only -f ../mini-ats-backup/data.sql
 # 2. The dry run: lists the logins it would replace
 npm run swap:logins
 # 3. The swap
