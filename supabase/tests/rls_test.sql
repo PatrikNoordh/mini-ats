@@ -15,17 +15,23 @@ language sql security definer set search_path = public as $$
   select id from public.pipeline_stages where customer_id = customer and default_key = key;
 $$;
 
--- A customer as the companies migration leaves one (ATS-44): an account, a company under the same
--- id, and the account as its first member. add_member() adds a second user to a company. A second
--- member's id is not the company's, so only a check signed in as one shows a rule that still
--- compares customer_id with auth.uid(). Both run as the table owner, past RLS.
+-- A customer: a company and its first member. No account shares an id with a company (ATS-61),
+-- so the first member's id is first_user(<company id>): the company's id with 1000 as its fourth
+-- group, which keeps the checks readable. add_customer() returns the company's id. add_member()
+-- adds another user to a company. No user id equals a company id, so a rule that still compares
+-- customer_id with auth.uid() fails every customer check. Both run as the table owner, past RLS.
+create function pg_temp.first_user(company uuid) returns uuid
+language sql immutable as $$
+  select overlay(company::text placing '1' from 20 for 1)::uuid;
+$$;
+
 create function pg_temp.add_customer(new_id uuid, new_email text) returns uuid
 language plpgsql as $$
 begin
-  insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data)
-  values (new_id, new_email, '{"role":"customer"}', jsonb_build_object('company_name', 'Company ' || new_email));
   insert into public.companies (id, name) values (new_id, 'Company ' || new_email);
-  insert into public.company_members (company_id, user_id) values (new_id, new_id);
+  insert into auth.users (id, email, raw_app_meta_data)
+  values (pg_temp.first_user(new_id), new_email, '{"role":"customer"}');
+  insert into public.company_members (company_id, user_id) values (new_id, pg_temp.first_user(new_id));
   return new_id;
 end;
 $$;
@@ -42,17 +48,17 @@ $$;
 -- Test users (fixed ids so the checks are readable)
 insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000ad', 'admin@test.local', '{"role":"admin"}', '{"full_name":"Admin"}'),
-  ('00000000-0000-0000-0000-0000000000a1', 'a@test.local',     '{"role":"customer"}', '{"full_name":"A","company_name":"Company A"}'),
-  ('00000000-0000-0000-0000-0000000000b1', 'b@test.local',     '{}', '{"full_name":"B","company_name":"Company B"}');
+  ('00000000-0000-0000-1000-0000000000a1', 'a@test.local',     '{"role":"customer"}', '{"full_name":"A"}'),
+  ('00000000-0000-0000-1000-0000000000b1', 'b@test.local',     '{}', '{"full_name":"B"}');
 
--- Companies A and B under their first users' ids, and a second member each: a2 and b2. The
--- customer checks sign in as the second member.
+-- Companies A (…0a1) and B (…0b1), their first users above, and a second member each: a2 and b2.
+-- The customer checks sign in as the second member.
 insert into public.companies (id, name) values
   ('00000000-0000-0000-0000-0000000000a1', 'Company A'),
   ('00000000-0000-0000-0000-0000000000b1', 'Company B');
 insert into public.company_members (company_id, user_id) values
-  ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1'),
-  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1');
+  ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-1000-0000000000a1'),
+  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-1000-0000000000b1');
 select pg_temp.add_member('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a2', 'a2@test.local');
 select pg_temp.add_member('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b2', 'b2@test.local');
 
@@ -70,8 +76,8 @@ insert into public.applications (id, job_id, candidate_id) values
 -- 1. Profiles are created by the trigger with the right role and email
 do $$ begin
   assert (select role from public.profiles where id = '00000000-0000-0000-0000-0000000000ad') = 'admin', 'admin role';
-  assert (select role from public.profiles where id = '00000000-0000-0000-0000-0000000000b1') = 'customer', 'default role';
-  assert (select email from public.profiles where id = '00000000-0000-0000-0000-0000000000a1') = 'a@test.local', 'email copied';
+  assert (select role from public.profiles where id = '00000000-0000-0000-1000-0000000000b1') = 'customer', 'default role';
+  assert (select email from public.profiles where id = '00000000-0000-0000-1000-0000000000a1') = 'a@test.local', 'email copied';
   assert (select customer_id from public.applications where id = '30000000-0000-0000-0000-0000000000a1')
          = '00000000-0000-0000-0000-0000000000a1', 'application customer_id set by trigger';
   raise notice 'OK 1: profiles and application customer_id';
@@ -212,8 +218,8 @@ do $$ begin
           ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1')) = 2,
          'A''s candidate survived B''s delete attempt';
   assert (select count(*) from public.profiles where id in
-          ('00000000-0000-0000-0000-0000000000ad', '00000000-0000-0000-0000-0000000000a1',
-           '00000000-0000-0000-0000-0000000000b1')) = 3,
+          ('00000000-0000-0000-0000-0000000000ad', '00000000-0000-0000-1000-0000000000a1',
+           '00000000-0000-0000-1000-0000000000b1')) = 3,
          'admin sees all profiles';
   insert into public.jobs (customer_id, title) values ('00000000-0000-0000-0000-0000000000a1', 'Created by admin for A');
   raise notice 'OK 8: admin sees everything and can act for a customer';
@@ -401,8 +407,9 @@ begin
   select count(*) into candidates_before from public.candidates where customer_id = a;
   select count(*) into cards_before from public.applications where customer_id = a;
 
-  delete from auth.users where id = a;
-  assert not exists (select 1 from public.company_members where user_id = a), 'the first user''s membership stayed';
+  delete from auth.users where id = pg_temp.first_user(a);
+  assert not exists (select 1 from public.company_members where user_id = pg_temp.first_user(a)),
+         'the first user''s membership stayed';
   assert (select count(*) from public.jobs where customer_id = a) = jobs_before, 'deleting the first user removed jobs';
   assert (select count(*) from public.candidates where customer_id = a) = candidates_before,
          'deleting the first user removed candidates';
@@ -545,6 +552,7 @@ end $$;
 reset role;
 do $$ declare
   customer uuid := '00000000-0000-0000-0000-0000000000d1';
+  first uuid := pg_temp.first_user(customer);
   member uuid := '00000000-0000-0000-0000-0000000000d3';
   admin2 uuid := '00000000-0000-0000-0000-0000000000d2';
   job uuid; blocked boolean := false;
@@ -579,7 +587,7 @@ begin
   exception when insufficient_privilege then blocked := true;
   end;
   if not blocked then raise exception 'FAIL 26: a deleted member could still create a job'; end if;
-  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', customer), true);
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', first), true);
   assert (select count(*) from public.jobs) = 1, 'the company''s other member lost its jobs';
   reset role;
   assert exists (select 1 from public.jobs where id = job), 'the data is kept';
@@ -600,10 +608,10 @@ begin
   -- purge-deleted-accounts function, ATS-17), a company's first user too since the purge removes
   -- only the login (ATS-46). Deleting a member's user leaves the company's data.
   update public.profiles set deleted_at = now() - interval '29 days' where id = member;
-  update public.profiles set deleted_at = now() - interval '31 days' where id in (admin2, customer);
+  update public.profiles set deleted_at = now() - interval '31 days' where id in (admin2, first);
   assert admin2 in (select public.accounts_due_for_purge()), 'deleted 31 days ago: due';
   assert member not in (select public.accounts_due_for_purge()), 'deleted 29 days ago: not due';
-  assert customer in (select public.accounts_due_for_purge()), 'a company''s first user deleted 31 days ago: not due';
+  assert first in (select public.accounts_due_for_purge()), 'a company''s first user deleted 31 days ago: not due';
   update public.profiles set deleted_at = now() - interval '31 days' where id = member;
   assert member in (select public.accounts_due_for_purge()), 'a member deleted 31 days ago: due';
   assert '00000000-0000-0000-0000-0000000000ad' not in (select public.accounts_due_for_purge()), 'active admin not due';
@@ -636,7 +644,7 @@ begin
 
   -- Another customer cannot remove the owner's link: 0 rows.
   set local role authenticated;
-  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', other), true);
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', pg_temp.first_user(other)), true);
   delete from public.applications where id = app1;
   get diagnostics n = row_count;
   assert n = 0, 'another customer removed the link';
@@ -664,9 +672,9 @@ begin
   insert into public.jobs (customer_id, title) values (gone, 'Gone job') returning id into job1;
   insert into public.candidates (customer_id, full_name) values (gone, 'Gone cand') returning id into cand;
   insert into public.applications (job_id, candidate_id) values (job1, cand) returning id into app1;
-  update public.profiles set deleted_at = now() where id = gone;
+  update public.profiles set deleted_at = now() where id = pg_temp.first_user(gone);
   set local role authenticated;
-  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', gone), true);
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', pg_temp.first_user(gone)), true);
   delete from public.applications where id = app1;
   get diagnostics n = row_count;
   reset role;
@@ -773,7 +781,7 @@ begin
   perform pg_temp.add_customer(cv_gone, 'gone-17@test.local');
   insert into storage.objects (bucket_id, name) values
     ('cvs', cv_owner || '/cv-owner.pdf'), ('cvs', cv_other || '/cv-other.pdf'), ('cvs', cv_gone || '/cv-gone.pdf');
-  update public.profiles set deleted_at = now() where id = cv_gone;
+  update public.profiles set deleted_at = now() where id = pg_temp.first_user(cv_gone);
 
   set local role authenticated;
   perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', cv_member), true);
@@ -806,7 +814,7 @@ begin
   end;
   if not blocked then raise exception 'FAIL 31: a member uploaded into a folder named after its own user id'; end if;
 
-  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', cv_gone), true);
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', pg_temp.first_user(cv_gone)), true);
   update storage.objects set name = name where bucket_id = 'cvs' and name = cv_gone || '/cv-gone.pdf';
   get diagnostics n = row_count;
   assert n = 0, 'a deleted account replaced its CV';
@@ -1256,7 +1264,7 @@ begin
   insert into public.cv_assessments (application_id, score) values (app, 4), (app, 7);
 
   set local role authenticated;
-  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', b), true);
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', pg_temp.first_user(b)), true);
   delete from public.cv_assessments where application_id = app;
   reset role;
   assert (select count(*) from public.cv_assessments where application_id = app) = 2, 'B removed A''s assessments';
@@ -1497,9 +1505,8 @@ do $$ declare tbl text; bad text; begin
   raise notice 'OK 51: every customer_id references companies on delete cascade, and no customer table or companies references a user';
 end $$;
 
--- Companies E and F. E's first user (id = company id, the shape main reads with) and its second
--- member share every row; F sees none of them, nor E's CVs, columns, company or members. Members of
--- a deleted company see nothing.
+-- Companies E and F. E's first user and its second member share every row; F sees none of them,
+-- nor E's CVs, columns, company or members. Members of a deleted company see nothing.
 reset role;
 do $$ declare
   e uuid := '00000000-0000-0000-0000-0000000044e1'; e2 uuid := '00000000-0000-0000-0000-0000000044e2';
@@ -1517,7 +1524,7 @@ begin
   insert into public.candidates (customer_id, full_name, cv_path) values (e, 'Cand E', e || '/e.pdf') returning id into cand;
   insert into public.applications (job_id, candidate_id) values (job, cand);
 
-  foreach who in array array[e, e2] loop
+  foreach who in array array[pg_temp.first_user(e), e2] loop
     perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', who), true);
     assert (select count(*) from public.jobs) = 1, 'a member of E does not see its job';
     assert (select count(*) from public.candidates) = 1, 'a member of E does not see its candidate';
@@ -1529,7 +1536,7 @@ begin
     assert public.current_company_id() = e, 'current_company_id() is not E';
   end loop;
 
-  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', f), true);
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', pg_temp.first_user(f)), true);
   assert not exists (select 1 from public.jobs where customer_id = e), 'F sees E''s jobs';
   assert not exists (select 1 from public.candidates where customer_id = e), 'F sees E''s candidates';
   assert not exists (select 1 from public.applications where customer_id = e), 'F sees E''s cards';
@@ -1541,7 +1548,7 @@ begin
   reset role;
   update public.companies set deleted_at = now() where id = e;
   set local role authenticated;
-  foreach who in array array[e, e2] loop
+  foreach who in array array[pg_temp.first_user(e), e2] loop
     perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', who), true);
     assert public.current_company_id() is null, 'a member of a deleted company has a company';
     assert (select count(*) from public.jobs) = 0, 'a member of a deleted company sees its jobs';
@@ -1563,17 +1570,17 @@ end $$;
 reset role;
 do $$ declare
   e uuid := '00000000-0000-0000-0000-0000000044e1'; e2 uuid := '00000000-0000-0000-0000-0000000044e2';
-  f uuid := '00000000-0000-0000-0000-0000000044f1';
+  f uuid := '00000000-0000-0000-0000-0000000044f1'; f1 uuid := pg_temp.first_user(f);
   who uuid;
 begin
-  foreach who in array array[f, '00000000-0000-0000-0000-0000000000ad'::uuid] loop
+  foreach who in array array[f1, '00000000-0000-0000-0000-0000000000ad'::uuid] loop
     set local role authenticated;
     perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', who), true);
-    assert pg_temp.error_of(format('insert into public.company_members (company_id, user_id) values (%L, %L)', e, f))
+    assert pg_temp.error_of(format('insert into public.company_members (company_id, user_id) values (%L, %L)', e, f1))
            = '42501', 'a client joined a company';
-    assert pg_temp.error_of(format('delete from public.company_members where user_id = %L', f)) = '42501',
+    assert pg_temp.error_of(format('delete from public.company_members where user_id = %L', f1)) = '42501',
            'a client left a company';
-    assert pg_temp.error_of(format('update public.company_members set company_id = %L where user_id = %L', e, f))
+    assert pg_temp.error_of(format('update public.company_members set company_id = %L where user_id = %L', e, f1))
            = '42501', 'a client switched company';
     assert pg_temp.error_of(format('insert into public.companies (name) values (%L)', 'Planted')) = '42501',
            'a client created a company';
@@ -1583,14 +1590,14 @@ begin
            'a client deleted a company';
     reset role;
   end loop;
-  assert (select company_id from public.company_members where user_id = f) = f, 'F''s membership changed';
+  assert (select company_id from public.company_members where user_id = f1) = f, 'F''s membership changed';
   assert (select name from public.companies where id = e) = 'Company company-e-44@test.local', 'E was renamed';
 
   set local role service_role;
   assert pg_temp.error_of(format('insert into public.company_members (company_id, user_id) values (%L, %L)',
                                  e, '00000000-0000-0000-0000-0000000000ad'))
          = 'admin_cannot_be_member', 'an admin became a member';
-  assert pg_temp.error_of(format('insert into public.company_members (company_id, user_id) values (%L, %L)', e, f))
+  assert pg_temp.error_of(format('insert into public.company_members (company_id, user_id) values (%L, %L)', e, f1))
          = '23505', 'a user joined a second company';
   reset role;
 
@@ -1630,60 +1637,92 @@ begin
   raise notice 'OK 54: the card triggers run in their named order, and customer_id''s placeholder is the nil UUID';
 end $$;
 
--- A row's owner never changes once written (AC12): not by a customer, an admin or the service role.
+-- A row's owner never changes once written (ATS-44 AC12, ATS-61 AC1): not by a customer, an admin
+-- or the service role, on a job, a candidate, a card or an assessment. A card or an assessment
+-- moved to a row of another company, which would give it that company's customer_id through
+-- the triggers, is refused too. Clients have no update grant on assessments at all.
 reset role;
 do $$ declare
   e uuid := '00000000-0000-0000-0000-0000000044e1'; e2 uuid := '00000000-0000-0000-0000-0000000044e2';
   f uuid := '00000000-0000-0000-0000-0000000044f1';
-  job uuid; cand uuid; tbl text; row_id uuid; who text; message text;
+  job uuid; cand uuid; card uuid; assessment uuid; f_job uuid; f_cand uuid; f_card uuid;
+  tbl text; row_id uuid; who text; statement text; code text;
 begin
   select id into job from public.jobs where customer_id = e limit 1;
   select id into cand from public.candidates where customer_id = e limit 1;
+  select id into card from public.applications where customer_id = e limit 1;
+  insert into public.cv_assessments (application_id, score) values (card, 6) returning id into assessment;
+  insert into public.jobs (customer_id, title) values (f, 'Job F 55') returning id into f_job;
+  insert into public.candidates (customer_id, full_name) values (f, 'Cand F 55') returning id into f_cand;
+  insert into public.applications (job_id, candidate_id) values (f_job, f_cand) returning id into f_card;
+
   foreach who in array array[e2::text, '00000000-0000-0000-0000-0000000000ad', 'service_role'] loop
-    foreach tbl in array array['jobs', 'candidates'] loop
-      row_id := case tbl when 'jobs' then job else cand end;
-      if who = 'service_role' then
-        set local role service_role;
-      else
-        set local role authenticated;
-        perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', who), true);
-      end if;
-      message := null;
-      begin
-        execute format('update public.%I set customer_id = %L where id = %L', tbl, f, row_id);
-      exception when insufficient_privilege then message := sqlerrm;
-      end;
-      reset role;
-      if message is distinct from 'owner_change_not_allowed' then
-        raise exception 'FAIL 55: % moved a row of % to another company (got %)', who, tbl, coalesce(message, 'no error');
-      end if;
+    foreach tbl in array array['jobs', 'candidates', 'applications', 'cv_assessments'] loop
+      row_id := case tbl when 'jobs' then job when 'candidates' then cand when 'applications' then card else assessment end;
+      foreach statement in array array[
+        format('update public.%I set customer_id = %L where id = %L', tbl, f, row_id),
+        case tbl
+          when 'applications' then format('update public.applications set job_id = %L, candidate_id = %L where id = %L', f_job, f_cand, card)
+          when 'cv_assessments' then format('update public.cv_assessments set application_id = %L where id = %L', f_card, assessment)
+        end
+      ] loop
+        continue when statement is null;
+        if who = 'service_role' then
+          set local role service_role;
+        else
+          set local role authenticated;
+          perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', who), true);
+        end if;
+        -- The lock raises 42501 with its own message; a client's update of an assessment stops at
+        -- the grants first, with 42501 and Postgres's message.
+        begin
+          execute statement;
+          code := null;
+        exception when others then
+          code := case when sqlerrm = 'owner_change_not_allowed' then sqlerrm else sqlstate end;
+        end;
+        reset role;
+        if code is distinct from 'owner_change_not_allowed'
+           and not (tbl = 'cv_assessments' and who <> 'service_role' and code = '42501') then
+          raise exception 'FAIL 55: % moved a row of % to another company (got %)', who, tbl, coalesce(code, 'no error');
+        end if;
+      end loop;
     end loop;
   end loop;
   assert (select customer_id from public.jobs where id = job) = e, 'the job changed owner';
   assert (select customer_id from public.candidates where id = cand) = e, 'the candidate changed owner';
+  assert (select (customer_id, job_id) from public.applications where id = card) = (e, job), 'the card changed owner';
+  assert (select (customer_id, application_id) from public.cv_assessments where id = assessment) = (e, card),
+         'the assessment changed owner';
+  assert (select array_agg(tgname::text order by tgname) from pg_trigger
+          where tgrelid in ('public.applications'::regclass, 'public.cv_assessments'::regclass)
+            and tgname like '%keep_customer')
+         = array['applications_3_keep_customer', 'cv_assessments_2_keep_customer'],
+         'the owner locks on cards and assessments are not the two named ones';
+
+  -- The same company, or the same customer_id written back, is still an update like any other.
   update public.jobs set customer_id = e, title = 'Job E kept' where id = job;
-  raise notice 'OK 55: no customer, admin or service role changes the owner of a job or a candidate';
+  set local role service_role;
+  update public.applications set customer_id = e where id = card;
+  update public.cv_assessments set score = 7 where id = assessment;
+  reset role;
+  delete from public.cv_assessments where id = assessment;
+  delete from public.applications where id = f_card;
+  raise notice 'OK 55: no customer, admin or service role changes the owner of a job, a candidate, a card or an assessment';
 end $$;
 
--- Until company_name is dropped, the first user's profile names the company. Deleting or restoring
--- a user never deletes or restores a company (ATS-46). A new company gets the six default
--- columns, a new user none.
+-- Deleting or restoring a user never deletes or restores a company (ATS-46). A new company gets
+-- the six default columns, a new user none.
 reset role;
 do $$ declare
-  e uuid := '00000000-0000-0000-0000-0000000044e1'; e2 uuid := '00000000-0000-0000-0000-0000000044e2';
+  e uuid := '00000000-0000-0000-0000-0000000044e1'; e1 uuid := pg_temp.first_user(e);
+  e2 uuid := '00000000-0000-0000-0000-0000000044e2';
   added uuid; lone uuid := gen_random_uuid();
 begin
-  update public.profiles set company_name = '  Bolaget E  ' where id = e;
-  assert (select name from public.companies where id = e) = 'Bolaget E', 'the company did not follow its first user''s name';
-  update public.profiles set company_name = '' where id = e;
-  assert (select name from public.companies where id = e) = 'Bolaget E', 'a blank company_name cleared the company''s name';
-  update public.profiles set company_name = 'Ignored' where id = e2;
-  assert (select name from public.companies where id = e) = 'Bolaget E', 'a second member renamed the company';
-
-  update public.profiles set deleted_at = now() where id = e;
+  update public.profiles set deleted_at = now() where id = e1;
   assert (select deleted_at is null from public.companies where id = e), 'deleting the first user deleted the company';
   update public.companies set deleted_at = now() where id = e;
-  update public.profiles set deleted_at = null where id = e;
+  update public.profiles set deleted_at = null where id = e1;
   assert (select deleted_at is not null from public.companies where id = e), 'restoring the first user restored the company';
   update public.companies set deleted_at = null where id = e;
   update public.profiles set deleted_at = now() where id = e2;
@@ -1700,7 +1739,7 @@ begin
   assert pg_temp.error_of(format('insert into public.companies (name) values (%L)', repeat('x', 201))) = '23514',
          'a company name over 200 characters was accepted';
   assert pg_temp.error_of('insert into public.companies (name) values (''  '')') = '23514', 'a blank company name was accepted';
-  raise notice 'OK 56: the first user''s profile names its company but never deletes or restores it, a new company gets the six columns, and a new user none';
+  raise notice 'OK 56: deleting or restoring a user never deletes or restores its company, a new company gets the six columns, and a new user none';
 end $$;
 
 -- 57. A company deleted more than 30 days ago is due for the company purge (ATS-46), which no
@@ -1720,7 +1759,7 @@ begin
   update public.companies set deleted_at = now() - interval '31 days' where id = g;
   assert f not in (select public.companies_due_for_purge()), 'a company deleted 29 days ago is due';
   assert g in (select public.companies_due_for_purge()), 'a company deleted 31 days ago is not due';
-  assert f not in (select public.accounts_due_for_purge()) and f2 not in (select public.accounts_due_for_purge()),
+  assert pg_temp.first_user(f) not in (select public.accounts_due_for_purge()) and f2 not in (select public.accounts_due_for_purge()),
          'the members of a deleted company are due as accounts';
   assert not has_function_privilege('anon', 'public.companies_due_for_purge()', 'execute'), 'anon can list companies due';
   assert not has_function_privilege('authenticated', 'public.companies_due_for_purge()', 'execute'), 'a client can list companies due';
@@ -1735,43 +1774,44 @@ begin
   delete from public.companies where id = f;
   assert not exists (select 1 from public.jobs where id = job), 'deleting a company kept its job';
   assert exists (select 1 from public.profiles where id = f2), 'deleting a company deleted a member''s profile';
-  assert not exists (select 1 from public.company_members where user_id in (f, f2)), 'a deleted company kept members';
+  assert not exists (select 1 from public.company_members where user_id in (pg_temp.first_user(f), f2)), 'a deleted company kept members';
   raise notice 'OK 57: a company deleted more than 30 days ago is due for the purge, no client can list it, its members see nothing once it is deleted, and its delete keeps their logins';
 end $$;
 
 
--- 58. The login swap's safety rule, as the swap script reads it (ATS-58): no customer table, and
--- not companies, references a user. A foreign key that would let deleting a login reach company
--- data is listed, and only the service role may ask.
+-- 58. No customer table, and not companies, references a user, so deleting a login never reaches
+-- company data. login_swap_blockers() lists every foreign key that would let it. It was the login
+-- swap's safety check (ATS-58); the swap is retired (ATS-61), and the function stays as this guard.
+-- Only the service role may run it.
 reset role;
 do $$ begin
-  assert not exists (select 1 from public.login_swap_blockers()), 'the swap is blocked on the real schema';
-  alter table public.jobs add column swap_test_owner uuid
-    constraint jobs_swap_test_owner_fkey references public.profiles (id);
+  assert not exists (select 1 from public.login_swap_blockers()), 'a customer table references a user';
+  alter table public.jobs add column guard_test_owner uuid
+    constraint jobs_guard_test_owner_fkey references public.profiles (id);
   assert exists (select 1 from public.login_swap_blockers()
-                 where table_name = 'jobs' and constraint_name = 'jobs_swap_test_owner_fkey'),
-         'a job referencing a profile does not block the swap';
-  alter table public.jobs drop column swap_test_owner;
-  alter table public.companies add column swap_test_user uuid
-    constraint companies_swap_test_user_fkey references auth.users (id);
+                 where table_name = 'jobs' and constraint_name = 'jobs_guard_test_owner_fkey'),
+         'a job referencing a profile is not listed';
+  alter table public.jobs drop column guard_test_owner;
+  alter table public.companies add column guard_test_user uuid
+    constraint companies_guard_test_user_fkey references auth.users (id);
   assert exists (select 1 from public.login_swap_blockers() where table_name = 'companies'),
-         'a company referencing an Auth user does not block the swap';
-  alter table public.companies drop column swap_test_user;
-  assert not exists (select 1 from public.login_swap_blockers()), 'the swap stayed blocked';
-  assert not has_function_privilege('anon', 'public.login_swap_blockers()', 'execute'), 'anon can run the swap check';
-  assert not has_function_privilege('authenticated', 'public.login_swap_blockers()', 'execute'), 'a client can run the swap check';
-  raise notice 'OK 58: the login swap''s check lists every foreign key from a customer table or companies to a user, and only the service role may run it';
+         'a company referencing an Auth user is not listed';
+  alter table public.companies drop column guard_test_user;
+  assert not exists (select 1 from public.login_swap_blockers()), 'a dropped reference is still listed';
+  assert not has_function_privilege('anon', 'public.login_swap_blockers()', 'execute'), 'anon can run the check';
+  assert not has_function_privilege('authenticated', 'public.login_swap_blockers()', 'execute'), 'a client can run the check';
+  raise notice 'OK 58: every foreign key from a customer table or companies to a user is listed, and only the service role may list them';
 end $$;
 
--- 59. After the login swap (ATS-58): company S's first login, whose id is the company's, is
--- replaced by a new account with a new id and then deleted. The new login and a second member
--- share every row, CV and column; company T's members see none of them, and S's none of T's. No
--- user id equals a company id any more, so a rule still comparing with auth.uid() fails here.
+-- 59. A login is deleted, never its company (ATS-58, reworded when the swap was retired in ATS-61).
+-- Company S's first login uploaded the CV and is then deleted, as "delete for good" and the purge
+-- do. A new login and the second member keep sharing every row, CV and column; company T's member
+-- sees none of them.
 reset role;
 do $$ declare
-  s uuid := '00000000-0000-0000-0000-0000000058a1'; s2 uuid := '00000000-0000-0000-0000-0000000058a2';
-  s_new uuid := '00000000-0000-0000-0000-0000000058a3';
-  t uuid := '00000000-0000-0000-0000-0000000058b1'; t_new uuid := '00000000-0000-0000-0000-0000000058b3';
+  s uuid := '00000000-0000-0000-0000-0000000058a1'; s1 uuid := pg_temp.first_user(s);
+  s2 uuid := '00000000-0000-0000-0000-0000000058a2'; s_new uuid := '00000000-0000-0000-0000-0000000058a3';
+  t uuid := '00000000-0000-0000-0000-0000000058b1';
   job uuid; cand uuid; who uuid;
 begin
   perform pg_temp.add_customer(s, 'first-58s@test.local');
@@ -1780,40 +1820,62 @@ begin
   insert into public.jobs (customer_id, title) values (s, 'Job S') returning id into job;
   insert into public.candidates (customer_id, full_name, cv_path) values (s, 'Cand S', s || '/s.pdf') returning id into cand;
   insert into public.applications (job_id, candidate_id) values (job, cand);
-  -- The old login uploaded the CV, so it owns the object.
-  insert into storage.objects (bucket_id, name, owner) values ('cvs', s || '/s.pdf', s);
+  insert into storage.objects (bucket_id, name, owner) values ('cvs', s || '/s.pdf', s1);
   insert into public.jobs (customer_id, title) values (t, 'Job T');
 
-  -- The swap, as scripts/login-swap.ts runs it: free the email, create the new login, add it to
-  -- the company, then delete the old login.
-  update auth.users set email = 'swapped-' || s || '@login-swap.invalid' where id = s;
-  update auth.users set email = 'swapped-' || t || '@login-swap.invalid' where id = t;
-  perform pg_temp.add_member(s, s_new, 'first-58s@test.local');
-  perform pg_temp.add_member(t, t_new, 'first-58t@test.local');
-  delete from auth.users where id in (s, t);
-  assert not exists (select 1 from auth.users u join public.companies c on c.id = u.id where c.id in (s, t)),
-         'a user id still equals a company id';
+  delete from auth.users where id = s1;
+  perform pg_temp.add_member(s, s_new, 'new-58s@test.local');
   assert exists (select 1 from public.jobs where id = job) and exists (select 1 from public.candidates where id = cand and cv_path = s || '/s.pdf'),
-         'the swap lost company data';
-  assert exists (select 1 from storage.objects where name = s || '/s.pdf'), 'the swap lost the old login''s CV';
+         'deleting a login lost company data';
+  assert exists (select 1 from storage.objects where name = s || '/s.pdf'), 'deleting a login lost the CV it uploaded';
 
   set local role authenticated;
   foreach who in array array[s_new, s2] loop
     perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', who), true);
-    assert public.current_company_id() = s, 'a member of S after the swap is not in S';
+    assert public.current_company_id() = s, 'a member of S is not in S';
     assert (select array_agg(customer_id) from public.jobs) = array[s], 'a member of S does not see only S''s job';
     assert (select count(*) from public.candidates where cv_path is not null) = 1, 'a member of S does not see its candidate';
     assert (select count(*) from public.applications) = 1, 'a member of S does not see its card';
     assert (select count(*) from public.pipeline_stages) = 6, 'a member of S does not see its columns';
     assert (select count(*) from storage.objects where bucket_id = 'cvs' and name like s || '/%') = 1, 'a member of S does not see its CV';
   end loop;
-  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', t_new), true);
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', pg_temp.first_user(t)), true);
   assert (select array_agg(customer_id) from public.jobs) = array[t], 'T sees S''s jobs, or not its own';
   assert not exists (select 1 from public.candidates where customer_id = s), 'T sees S''s candidates';
   assert not exists (select 1 from storage.objects where bucket_id = 'cvs' and name like s || '/%'), 'T sees S''s CVs';
   assert not exists (select 1 from public.pipeline_stages where customer_id = s), 'T sees S''s columns';
   reset role;
-  raise notice 'OK 59: after the login swap the new login and a second member share their company''s rows, CVs and columns, another company sees none of them, and no user id equals a company id';
+  raise notice 'OK 59: deleting a login keeps its company''s rows and the CVs it uploaded, the other members share them, and another company sees none of them';
 end $$;
+
+-- 60. One id, one meaning (ATS-61): a company cannot take an account's id, and an account cannot
+-- take a company's, not even with the service role.
+reset role;
+do $$ declare
+  s uuid := '00000000-0000-0000-0000-0000000058a1';
+  s2 uuid := '00000000-0000-0000-0000-0000000058a2';
+  account uuid := '00000000-0000-0000-0000-0000000061a1';
+begin
+  set local role service_role;
+  assert pg_temp.error_of(format('insert into public.companies (id, name) values (%L, %L)', s2, 'Bolag 60')) = '23505',
+         'a company took an account''s id';
+  assert pg_temp.error_of(format('update public.companies set id = %L where id = %L', s2, s)) = '23505',
+         'a company changed its id to an account''s';
+  reset role;
+  assert pg_temp.error_of(format('insert into auth.users (id, email) values (%L, %L)', s, 'shared-60@test.local')) = '23505',
+         'an account took a company''s id';
+  insert into auth.users (id, email) values (account, 'own-60@test.local');
+  assert pg_temp.error_of(format('update public.profiles set id = %L where id = %L', s, account)) = '23505',
+         'an account changed its id to a company''s';
+  assert not exists (select 1 from public.companies c join public.profiles p on p.id = c.id),
+         'a company shares its id with an account';
+  begin
+    insert into public.companies (id, name) values (s2, 'Bolag 60');
+  exception when unique_violation then
+    if sqlerrm <> 'id_shared' then raise; end if;
+  end;
+  raise notice 'OK 60: no company takes an account''s id, and no account a company''s';
+end $$;
+
 
 rollback;
