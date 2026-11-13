@@ -709,6 +709,10 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] `zod` has a high advisory (GHSA-mrhx-c7xc-m3w5, memory on oversized constrained collections) fixed only in zod 4. Not bumped in ATS-61: the app's zod runs in the browser on the user's own input, so the worst case is the user's own tab, and zod 4 changes every schema and `@hookform/resolvers`. The Edge Functions import `npm:zod@3.25.76` too, but their schemas have no constrained collections. Migrate to zod 4 in its own ticket — `package.json`, `supabase/functions/` (found in ATS-61)
+- [ ] `typescript-eslint` pulls a `minimatch` with a moderate advisory (GHSA-g3hv-75wg-m249, a slow glob), and no release fixes it yet (8.72.2 is the latest). Lint-only, run on our own files; bump when a fixed release is out — `package.json` (found in ATS-61)
+- [ ] Two races the ATS-61 lock design leaves, both failing safe: an account restored while its company is restored can stay banned, and a user moved out of a company while it is being deleted can be banned by that delete. Repeating the restore, or the move, puts it right — `supabase/functions/_shared/logins.ts`, `admin-manage-company` (found in ATS-61)
+- [ ] `login_swap_blockers()` is named after the retired swap; it now guards that no customer table references a user. A rename needs a migration and a type change — `supabase/migrations/20261111120000_login_swap_check.sql` (found in ATS-61)
 
 ## Found while reviewing PRs
 
