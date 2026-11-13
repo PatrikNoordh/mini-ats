@@ -1877,5 +1877,28 @@ begin
   raise notice 'OK 60: no company takes an account''s id, and no account a company''s';
 end $$;
 
+-- 61. Nobody joins or moves into a deleted company, not even with the service role (ATS-61 AC7).
+-- check_company_member() locks the account and the company before it checks them; the races it
+-- closes run in membership_concurrency.sh.
+reset role;
+do $$ declare
+  s uuid := '00000000-0000-0000-0000-0000000058a1';
+  s2 uuid := '00000000-0000-0000-0000-0000000058a2';
+  t uuid := '00000000-0000-0000-0000-0000000058b1';
+  joiner uuid := '00000000-0000-0000-0000-0000000061b1';
+begin
+  insert into auth.users (id, email, raw_app_meta_data) values (joiner, 'joiner-61@test.local', '{"role":"customer"}');
+  update public.companies set deleted_at = now() where id = t;
+  set local role service_role;
+  assert pg_temp.error_of(format('insert into public.company_members (company_id, user_id) values (%L, %L)', t, joiner))
+         = 'company_deleted', 'a user joined a deleted company';
+  assert pg_temp.error_of(format('update public.company_members set company_id = %L where user_id = %L', t, s2))
+         = 'company_deleted', 'a member moved into a deleted company';
+  insert into public.company_members (company_id, user_id) values (s, joiner);
+  reset role;
+  assert (select company_id from public.company_members where user_id = s2) = s, 'the refused move changed the membership';
+  update public.companies set deleted_at = null where id = t;
+  raise notice 'OK 61: nobody joins or moves into a deleted company';
+end $$;
 
 rollback;

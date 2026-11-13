@@ -81,6 +81,8 @@ jobs:
         run: bash supabase/tests/last_admin_concurrency.sh
       - name: Concurrent writes to pipeline stages
         run: bash supabase/tests/pipeline_stages_concurrency.sh
+      - name: Memberships written during a promotion or a company delete
+        run: bash supabase/tests/membership_concurrency.sh
 
   e2e:
     name: End-to-end tests
