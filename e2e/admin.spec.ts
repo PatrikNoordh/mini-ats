@@ -11,7 +11,11 @@ test("an admin acts for customer A, switches to B and sees nothing of A's", asyn
   const jobB = `Designer ${tag}`;
   const nameB = `Ivar ${tag}`;
   const a = await makeCustomer("KundA", {
-    jobs: [job("a", jobA)],
+    jobs: [
+      job("a", jobA),
+      job("a2", `Lagerchef ${tag}`),
+      { ...job("a3", `Säljare ${tag}`), status: "closed" },
+    ],
     candidates: [candidate(nameA, "a")],
   });
   const b = await makeCustomer("KundB", {
@@ -21,6 +25,16 @@ test("an admin acts for customer A, switches to B and sees nothing of A's", asyn
   await signIn(page, E2E_ADMIN.email);
 
   await expect(page.getByRole("heading", { name: sv.gate.title })).toBeVisible();
+  // Each customer's open jobs, counted in one request across companies and jobs (ATS-61 AC9: a
+  // broken embed shows "count unavailable" instead, which no other test would notice).
+  const openJobs = (template: string, count: number) =>
+    template.replace("{{count, number}}", String(count));
+  await expect(page.getByRole("button", { name: new RegExp(a.company) })).toContainText(
+    openJobs(sv.gate.openJobs_other, 2),
+  );
+  await expect(page.getByRole("button", { name: new RegExp(b.company) })).toContainText(
+    openJobs(sv.gate.openJobs_one, 1),
+  );
   await page.getByRole("button", { name: new RegExp(a.company) }).click();
   await expect(card(page, nameA)).toBeVisible();
 

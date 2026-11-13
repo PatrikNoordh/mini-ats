@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { localStack } from "../../scripts/local-stack";
+import {
+  assertMigrationsApplied,
+  localStack,
+  migrationVersions,
+  missingMigrations,
+} from "../../scripts/local-stack";
 
 /** The stack the E2E_* variables name, as CI sets them, so `npx supabase status` never runs. */
 function stackAt(url: string) {
@@ -37,5 +42,28 @@ describe("the end-to-end tests' Supabase stack", () => {
     expect(() => stackAt(url)).toThrow(
       /^Refusing .*: the end-to-end tests only run against the local stack\.$/,
     );
+  });
+});
+
+describe("the local database's migrations", () => {
+  it("reads each migration's version from its file name, oldest first", () => {
+    const versions = migrationVersions();
+    expect(versions[0]).toBe("20261006000000");
+    expect(versions).toContain("20261113120000");
+    expect([...versions].sort()).toEqual(versions);
+    expect(versions.every((v) => /^\d{14}$/.test(v))).toBe(true);
+  });
+
+  it("names the migrations the database has not applied", () => {
+    expect(missingMigrations(["1", "2"], ["1", "2", "3", "4"])).toEqual(["3", "4"]);
+    expect(missingMigrations(["1", "2", "3"], ["1", "2", "3"])).toEqual([]);
+  });
+
+  it("stops with the fix when one is missing, and passes when none is", () => {
+    expect(() => assertMigrationsApplied(["1"], ["1", "2"])).toThrow(
+      "missing 1 migration(s): 2. npx supabase start restored it from its last backup and skipped them. " +
+        "Run npx supabase stop --no-backup, then npx supabase start.",
+    );
+    expect(() => assertMigrationsApplied(["1", "2"], ["1", "2"])).not.toThrow();
   });
 });
