@@ -15,10 +15,10 @@ All 8 tickets are closed with merged PRs that use the template, all 60 acceptanc
 | Code quality | No TODO, `console.log`, `any`, raw colours, arbitrary sizes or hardcoded text. The new query keys go through `queryKeys.*`; `profiles()`, `companies()` and `openJobCounts()` are admin-wide lists |
 | Validation | `npm ci`, lint, `tsc`, 423/423 tests and the build pass. CI on `main` is green on `28aad96`: app, Edge Functions, RLS and End-to-end tests |
 | Acceptance criteria | 60 of 60 met |
-| Checkpoint | Covered end to end: `e2e/team.spec.ts` (two users of one company share the board and see each other's changes, another company sees none of it) and `e2e/isolation.spec.ts`, both as the first and the second member |
+| Checkpoint | Covered end to end: `e2e/team.spec.ts` (two users of one company share the board and see each other's changes, another company sees none of it) and `e2e/isolation.spec.ts`, both as the first and the second member. The developer also ran it by hand in production on 13 November 2026 |
 | Deployment | No route tree diff after a build, and no new `VITE_*` variable. Vercel production is green on `28aad96`, and `mini-ats-submission.vercel.app` returns 404. The developer ran `migration list --remote` (all 24 migrations on Remote) and `functions list` (all 6 functions active; the four admin and purge functions deployed 2026-11-09 20:43 UTC, after their last change at 20:10, and `admin-manage-company` at version 1). In the SQL Editor, no company shares its id with a login, so the login swap has run |
 
-Not verified by the review: the types generated from the project, since Claude does not run the Supabase CLI against it. PRs #118, #120 and #121 record that each migration was pushed with a dry run listing only its own file, and that the regenerated types were committed. The developer did not say whether the checkpoint was also tested by hand in production.
+Not verified by the review: the types generated from the project, since Claude does not run the Supabase CLI against it. PRs #118, #120 and #121 record that each migration was pushed with a dry run listing only its own file, and that the regenerated types were committed.
 
 ## Warnings and what was done
 
