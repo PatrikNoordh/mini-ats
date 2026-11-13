@@ -89,10 +89,11 @@ Also check the highest `ATS-<N>` in `TICKETS.md` and use whichever is higher. Ca
 - `database` if it changes `supabase/migrations/`
 - Any label or milestone the request names explicitly, for example `priority:high` from `ats-audit-to-issues`
 
-Create a label if it is missing (safe to re-run):
+Create a label only if `gh label list` does not have it, and never with `--force`: on a label that exists, `--force` resets its colour and description (it reset `feat`, `security` and `database` while #109–#112 were created). Safe to re-run:
 
 ```bash
-gh label create "<label>" --repo "$REPO" --force
+gh label list --repo "$REPO" --limit 200 --json name --jq '.[].name' | grep -qxF "<label>" \
+  || gh label create "<label>" --repo "$REPO"
 ```
 
 ---
@@ -229,7 +230,7 @@ Creates one issue per ticket in `TICKETS.md`. Run it once, before the first pull
    gh api "repos/$REPO/milestones" -f title="Epic 0 — Foundation" -f description="<first paragraph under the heading, if any>"
    ```
 
-4. **Create the type labels** with `gh label create ... --force`. Add `security` for ATS-5, ATS-6, ATS-7, ATS-17 and ATS-18, and `database` for ATS-5.
+4. **Create the missing type labels** as in Step 4: only the ones `gh label list` does not have, never with `--force`. Add `security` for ATS-5, ATS-6, ATS-7, ATS-17 and ATS-18, and `database` for ATS-5.
 
 5. **Create the issues in ATS order**, one at a time:
    - Title: `[ATS-<N>] <Title>`
