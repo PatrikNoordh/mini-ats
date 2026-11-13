@@ -157,6 +157,7 @@ export function createHandler(deps: Deps) {
       }
       if (refusal) {
         await undo(() => deps.deleteUser(userId), refusal);
+        await dropNewCompany(refusal);
         return json({ error: refusal }, 409);
       }
       return json({ id: userId, company_id: companyId }, 201);

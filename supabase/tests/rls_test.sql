@@ -387,7 +387,7 @@ do $$ begin
   raise notice 'OK 18: admin can delete a customer''s candidate';
 end $$;
 
--- Deleting company A's first user, whose id is the company's, keeps everything the company owns:
+-- Deleting company A's first user keeps everything the company owns:
 -- no customer table references profiles or auth.users since ATS-44, so the delete reaches only
 -- the user's profile and membership. Deleting the company then cascades to its jobs, candidates
 -- and cards in one statement. The job foreign key checks at the end of the statement, so this

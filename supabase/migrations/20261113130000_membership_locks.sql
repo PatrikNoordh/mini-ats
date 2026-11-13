@@ -17,8 +17,9 @@
 -- membership waits for them. Whichever commits second sees the first: the promotion removes a
 -- membership that committed before it, a membership is refused for an admin, a company deleted
 -- before it is refused with company_deleted, and the delete reads a membership that committed
--- before its mark and bans it. The Edge Functions write the membership before they lift a ban or
--- after they create the login, so a ban made by the delete is never lifted by them afterwards.
+-- before its mark and bans it. The Edge Functions lift a ban before they write the membership,
+-- and write a new login's membership after they create it, so they never lift a ban the delete
+-- made (supabase/functions/_shared/logins.ts).
 -- supabase/tests/membership_concurrency.sh runs both races.
 --
 -- Backwards compatible with the code on main: it never adds a member to a deleted company (the

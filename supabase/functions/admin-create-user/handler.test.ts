@@ -202,6 +202,17 @@ Deno.test(
     );
     assertEquals([res.status, res.body.error], [409, "company_deleted"]);
     assertEquals(ran, ["user", `member ${COMPANY} new-id`, "drop user new-id"]);
+
+    // A company made for this account, and deleted by another admin before it joined, goes too.
+    const fresh = setup({ memberRefusal: "company_deleted" });
+    await quietly(() => call(fresh.handler, post(valid)));
+    assertEquals(fresh.ran, [
+      "company Nordkust Bygg AB",
+      "user",
+      `member ${NEW_COMPANY} new-id`,
+      "drop user new-id",
+      `drop company ${NEW_COMPANY}`,
+    ]);
   },
 );
 
