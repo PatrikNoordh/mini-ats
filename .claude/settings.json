@@ -144,7 +144,14 @@
       "Bash(npx --yes supabase*)",
       "Read(~/.supabase/**)",
       "Bash(*/.supabase*)",
-      "Bash(*.supabase/*)"
+      "Bash(*.supabase/*)",
+      "Bash(*/.supa*)",
+      "Bash(find ~*)",
+      "Bash(find $HOME*)",
+      "Bash(find \"$HOME\"*)",
+      "Bash(security find-generic-password*)",
+      "Bash(security find-internet-password*)",
+      "Bash(security dump-keychain*)"
     ]
   }
 }
