@@ -46,7 +46,7 @@ export async function upsertAccount(
     password,
     email_confirm: true,
     // The same metadata as admin-create-user: the trigger copies the role from app_metadata.
-    user_metadata: { full_name: account.full_name, company_name: account.company_name },
+    user_metadata: { full_name: account.full_name },
     app_metadata: { role: account.role },
   });
   if (error) throw error;

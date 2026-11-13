@@ -17,13 +17,20 @@ import { useDeleteProfileNow, useRestoreProfile } from "@/hooks/useProfiles";
 import { deleteConfirmText, purgeDate } from "@/lib/accounts";
 import { ACCOUNT_DELETE_GRACE_DAYS } from "@/lib/constants";
 import { useFormat } from "@/lib/format";
-import type { Profile } from "@/types";
+import type { Company, Profile } from "@/types";
 
 /**
  * The deleted accounts, each kept until its date: Återställ brings the login back, Radera för gott
  * deletes it now after the admin types its email. The company's data is never part of it (ATS-46).
+ * Each account shows the name of its company, looked up in `companies`.
  */
-export function DeletedAccounts({ accounts }: { accounts: Profile[] }) {
+export function DeletedAccounts({
+  accounts,
+  companies,
+}: {
+  accounts: Profile[];
+  companies: Company[];
+}) {
   const { t } = useTranslation();
   const format = useFormat();
   const restore = useRestoreProfile();
@@ -83,7 +90,9 @@ export function DeletedAccounts({ accounts }: { accounts: Profile[] }) {
                   <TableRow key={a.id}>
                     <TableCell className="wrap-anywhere">
                       <div className="font-semibold">{a.full_name || a.email}</div>
-                      <div className="text-xs text-muted-foreground">{a.company_name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {companies.find((c) => c.id === a.company_id)?.name}
+                      </div>
                       <div className="text-xs text-muted-foreground md:hidden">
                         {t("accounts.purgeOn", { date })}
                       </div>

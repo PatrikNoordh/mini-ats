@@ -18,8 +18,6 @@ export interface Profile {
   full_name: string;
   /** The company the user is a member of, or null: an admin, or a customer without a company. */
   company_id: string | null;
-  /** That company's name from `companies.name`, or "" without one. */
-  company_name: string;
   email: string;
   created_at: string;
   /** Set when an admin deleted the account; it is deleted for good ACCOUNT_DELETE_GRACE_DAYS later. */

@@ -38,7 +38,6 @@ const member: Profile = {
   role: "customer",
   full_name: "Karin Exempel",
   company_id: "co1",
-  company_name: "Lumen AB",
   email: "karin@lumen.test",
   created_at: "2026-10-01T08:00:00Z",
   deleted_at: null,

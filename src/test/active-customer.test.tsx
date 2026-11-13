@@ -16,7 +16,6 @@ function account(id: string, role: Profile["role"], companyId: string | null = n
     role,
     full_name: id,
     company_id: companyId,
-    company_name: companyId ? `${companyId} AB` : "",
     email: `${id}@test.local`,
     created_at: "2026-10-01T08:00:00Z",
     deleted_at: null,
