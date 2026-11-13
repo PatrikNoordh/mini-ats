@@ -379,7 +379,7 @@ npm run test:e2e                  # or npx playwright test --ui, to watch each s
 npx supabase stop                 # --no-backup also drops the data, for a fresh database next time
 ```
 
-`npm run test:e2e` does not start the stack: it stops with a message if the stack is not running. It does seed it before every run, then builds the app against it and serves the build on port 4173. When a test fails in CI, download the `playwright-traces` artifact from the run's summary page and open the trace with `npx playwright show-trace <path>/trace.zip`, or drop the file on [trace.playwright.dev](https://trace.playwright.dev).
+`npm run test:e2e` does not start the stack: it stops with a message if the stack is not running, and if its database lacks a migration from `supabase/migrations/`, which happens when `npx supabase start` restores the last backup and skips the migrations added since (then `npx supabase stop --no-backup` and `npx supabase start`). It does seed it before every run, then builds the app against it and serves the build on port 4173. When a test fails in CI, download the `playwright-traces` artifact from the run's summary page and open the trace with `npx playwright show-trace <path>/trace.zip`, or drop the file on [trace.playwright.dev](https://trace.playwright.dev).
 
 One convention worth knowing: a `beforeEach` or `beforeAll` callback has a block body. Vitest runs a function returned from it as cleanup, so `beforeEach(() => mock.mockReset())` would call the mock again after the test. ESLint enforces this in `src/test/`.
 
