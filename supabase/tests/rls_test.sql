@@ -1712,7 +1712,9 @@ begin
 end $$;
 
 -- Deleting or restoring a user never deletes or restores a company (ATS-46). A new company gets
--- the six default columns, a new user none.
+-- the six default columns, a new user none. profiles.company_name is gone (ATS-61): a new user's
+-- profile is made without it, and only a role change reaches the company, by removing an admin's
+-- membership (check 53).
 reset role;
 do $$ declare
   e uuid := '00000000-0000-0000-0000-0000000044e1'; e1 uuid := pg_temp.first_user(e);
@@ -1729,7 +1731,15 @@ begin
   assert (select deleted_at is null from public.companies where id = e), 'deleting a second member deleted the company';
   update public.profiles set deleted_at = null where id = e2;
 
-  insert into auth.users (id, email, raw_app_meta_data) values (lone, 'lone-44@test.local', '{"role":"customer"}');
+  insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data)
+  values (lone, 'lone-44@test.local', '{"role":"customer"}', '{"full_name":"Lone","company_name":"Ignored AB"}');
+  assert (select full_name from public.profiles where id = lone) = 'Lone', 'a new user got no profile';
+  assert not exists (select 1 from information_schema.columns
+                     where table_schema = 'public' and table_name = 'profiles' and column_name = 'company_name'),
+         'profiles.company_name is still there';
+  assert (select pg_get_triggerdef(oid) from pg_trigger
+          where tgrelid = 'public.profiles'::regclass and tgname = 'profiles_sync_company')
+         like '%AFTER UPDATE OF role ON public.profiles%', 'profiles_sync_company fires on more than a role change';
   assert not exists (select 1 from public.pipeline_stages where customer_id = lone), 'a new user got columns';
   assert not exists (select 1 from public.company_members where user_id = lone), 'a new user got a company';
   insert into public.companies (name) values ('Nytt bolag') returning id into added;
@@ -1739,7 +1749,7 @@ begin
   assert pg_temp.error_of(format('insert into public.companies (name) values (%L)', repeat('x', 201))) = '23514',
          'a company name over 200 characters was accepted';
   assert pg_temp.error_of('insert into public.companies (name) values (''  '')') = '23514', 'a blank company name was accepted';
-  raise notice 'OK 56: deleting or restoring a user never deletes or restores its company, a new company gets the six columns, and a new user none';
+  raise notice 'OK 56: deleting or restoring a user never deletes or restores its company, a new company gets the six columns, a new user none, and profiles has no company_name';
 end $$;
 
 -- 57. A company deleted more than 30 days ago is due for the company purge (ATS-46), which no
