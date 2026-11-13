@@ -92,7 +92,8 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 | `job_has_candidates`              | jobs                                                                | The job still has candidates, so it cannot be deleted      |
 | `text_too_long`                   | jobs, candidates (checks)                                           | A text is over its length limit in the database            |
 | `account_not_found`               | `admin-manage-account`                                              | The account does not exist                                 |
-| `account_deleted`                 | `admin-manage-account`, auth                                        | The account is deleted (also a deleted account signing in) |
+| `account_deleted`                 | `admin-manage-account`                                              | The account is deleted                                     |
+| `account_or_company_deleted`      | auth                                                                | A banned login: its account or its company is deleted      |
 | `account_not_deleted`             | `admin-manage-account`                                              | Restore or delete for good on an account not deleted       |
 | `company_not_found`               | `admin-manage-company`, `admin-create-user`, `admin-manage-account` | The company does not exist (ATS-46)                        |
 | `company_deleted`                 | `admin-manage-company`, `admin-create-user`, `admin-manage-account` | Rename or delete a deleted company, or put a user in one   |

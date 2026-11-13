@@ -88,6 +88,7 @@
     "text_too_long": "En av texterna är för lång. Korta den och försök igen.",
     "account_not_found": "Kontot finns inte.",
     "account_deleted": "Kontot är borttaget. Kontakta administratören om det ska återställas.",
+    "account_or_company_deleted": "Kontot eller företaget är borttaget. Kontakta administratören om det ska återställas.",
     "account_not_deleted": "Kontot är inte borttaget.",
     "cannot_change_self": "Du kan inte ta bort ditt eget konto eller ta bort din egen adminroll.",
     "last_admin": "Det måste finnas minst en admin kvar.",

@@ -73,7 +73,7 @@ test("an admin deletes an account, finds it in Deleted accounts and restores it"
   try {
     const customerPage = await customerContext.newPage();
     await submitSignIn(customerPage, customer.email);
-    await expect(customerPage.getByRole("alert")).toHaveText(sv.errors.account_deleted);
+    await expect(customerPage.getByRole("alert")).toHaveText(sv.errors.account_or_company_deleted);
 
     await deletedRow.getByRole("button", { name: sv.accounts.restore }).click();
     await expect(page.getByText(sv.accounts.restored)).toBeVisible();

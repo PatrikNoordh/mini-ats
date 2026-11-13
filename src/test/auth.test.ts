@@ -22,9 +22,9 @@ describe("auth error codes", () => {
     expect(authErrorCode(new Error("boom"))).toBeNull();
   });
 
-  it("maps a deleted account's blocked login", () => {
+  it("maps a blocked login to one message for a deleted account and a deleted company", () => {
     expect(authErrorCode(new AuthApiError("User is banned", 400, "user_banned"))).toBe(
-      "account_deleted",
+      "account_or_company_deleted",
     );
   });
 });
