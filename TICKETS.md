@@ -590,6 +590,10 @@ Tracked in #116. Built before ATS-44: `docs/data-safety.md` maps how the data is
 
 ## Epic 10 — Audit log
 
+### ATS-61 · chore · Small hygiene fixes from epic 9
+
+Tracked in #123. Done before ATS-47: its AC1 locks the owner of a card and an assessment, which the audit triggers rely on.
+
 ### ATS-47 · feat · Audit log in the database
 
 Tracked in #87.
@@ -705,24 +709,9 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
-- [ ] `ats-create-ticket` runs `gh label create <label> --force` for every label it uses, and `--force` resets an existing label's colour: it changed `feat`, `security` and `database` while creating #109–#112 (restored by hand), and maybe `chore` and `refactor`. Create a label only when `gh label list` does not have it, and never pass `--force` for a label that exists — `.claude/skills/ats-create-ticket/SKILL.md` (found in ATS-43)
-- [ ] `npm audit` reports high-severity advisories for `vite` and `zod` and moderate ones for `typescript-eslint` and `seroval`, all from before ATS-57 (the Supabase CLI adds none). Check each against how the app uses it and bump what is safe — `package.json` (found in ATS-57)
-- [ ] The deny rules in `.claude/settings.json` have no automated test; they were checked by hand in ATS-57. A small script that feeds each denied form to the rule matcher, or a checklist in the PR template when the file changes — `.claude/settings.json` (found in ATS-60)
-- [x] No test proves that public sign-up is off (security rule 3). An end-to-end test can call `signUp` on the local stack and expect a refusal — `e2e/`, `supabase/config.toml` (found in ATS-60; done in ATS-59: `e2e/sign-in.spec.ts`)
-- [ ] `npx supabase start` restores the local database from its last backup and does not apply migrations added since, so the end-to-end tests run against the old schema without a warning. `npx supabase stop --no-backup` and a new `start` apply them. The skills' end-to-end step, or `e2e/global-setup.ts`, could check the last applied migration against `supabase/migrations/` — `.claude/skills/ats-implement-ticket`, `.claude/skills/ats-git-ship`, `e2e/global-setup.ts` (found in ATS-44)
-- [ ] A membership written while the same account is promoted to admin, in two transactions at once, can leave an admin as a member: each trigger reads the other's row before it commits. Only the service role writes memberships, so the admin Edge Functions in ATS-46 should take a lock per user, or the check move to a constraint — `supabase/migrations/20261109120000_companies.sql` (found in ATS-44)
-- [x] `removeCvFolder` in `supabase/functions/_shared/cvs.ts` has no caller between ATS-44 and the company purge in ATS-46, which removes a deleted company's folder with it; drop it there if ATS-46 does not use it — `supabase/functions/_shared/cvs.ts` (found in ATS-44; done in ATS-46: the company purge uses it)
-- [ ] A member of a deleted company who signs in is told their account is deleted (`account_deleted`): Auth reports every ban the same way. A `company_deleted` message at sign-in would need the app to read why, before the session exists — `src/lib/api/auth.ts` (found in ATS-46)
-- [ ] A user added to a company while it is being deleted can miss the ban: they see nothing, since the company is marked first, but can sign in until the company is restored or purged. A lock per company in `admin-manage-company` and `admin-manage-account`, or a ban check in the membership write, would close it — `supabase/functions/admin-manage-company/index.ts` (found in ATS-46)
 
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
-
-- [ ] The Supabase deny list still has gaps no prefix rule closes well: remote commands it does not name (`sso`, `domains`, `vanity-subdomains`, `network-bans`, `network-restrictions`, `ssl-enforcement`, `orgs`, `snippets`, `bootstrap`, `encryption`), and the CLI token read through a glob such as `~/.supa*`, through `find`, or from the macOS keychain, where the CLI can keep it instead of the file. A Claude Code sandbox read block on `~/.supabase/` would close the shell paths for good — `.claude/settings.json` (PR #115, ATS-57)
-- [ ] No end-to-end test shows the open-job counts in the admin's customer chooser, so the break when ATS-44 moved `jobs.customer_id` from `profiles` to `companies` (PostgREST `PGRST200`, "Antalet öppna jobb kunde inte hämtas") passed CI. Assert a count in `e2e/admin.spec.ts`, and let diff mode in `/ats-data-safety` grep `src/lib/api/` for embeds across a moved foreign key — `e2e/admin.spec.ts`, `.claude/skills/ats-data-safety/SKILL.md` (PR #118, ATS-44)
-- [ ] Two guards in `docs/data-safety.md` § 3 have no test that fails when they are removed: the TanStack Query cache clear when the signed-in user changes (a unit test that signs in as A, fills the cache, signs in as B and expects it empty), and the host check in `scripts/local-stack.ts` (a unit test that expects a refusal for any host but `127.0.0.1` and `localhost`) — `src/contexts/AuthContext.tsx`, `scripts/local-stack.ts` (PR #117, ATS-60)
-
-- [ ] A login swap resumed at step "create" or "finish" also runs for a company deleted since the swap began, and adds the new login to it unbanned: it sees nothing, since the company is deleted, but can sign in until the company is restored or purged. Skip a deleted company at every step, or ban the new login when its company is deleted — `scripts/login-swap.ts` (PR #121, ATS-58)
