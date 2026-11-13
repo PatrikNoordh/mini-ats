@@ -30,9 +30,10 @@ additional_redirect_urls = ["http://127.0.0.1:4173", "http://localhost:4173"]
 enable_signup = false
 
 [auth.email]
-# This switch is the email provider itself: false would turn off password sign-in too. Sign-up
-# stays closed through enable_signup above.
-enable_signup = true
+# The email provider itself: false would turn off password sign-in too. Sign-up stays closed
+# through [auth] enable_signup above. CLI v3 names this switch `enabled`; `enable_signup` here is
+# its deprecated name (ATS-59).
+enabled = true
 enable_confirmations = false
 
 [storage]
