@@ -457,7 +457,7 @@ end $$;
 
 -- The grants are exactly what the app uses. A change here is a deliberate change to this list.
 do $$ declare actual text; expected text :=
-  'applications:DELETE,INSERT,SELECT,UPDATE candidates:DELETE,INSERT,SELECT,UPDATE companies:SELECT '
+  'applications:DELETE,INSERT,SELECT,UPDATE audit_events:SELECT candidates:DELETE,INSERT,SELECT,UPDATE companies:SELECT '
   'company_members:SELECT cv_assessments:DELETE,SELECT jobs:DELETE,INSERT,SELECT,UPDATE '
   'pipeline_stages:DELETE,SELECT profiles:SELECT';
 begin
@@ -1476,18 +1476,20 @@ do $$ declare b uuid := '00000000-0000-0000-0000-0000000040b1'; begin
 end $$;
 
 -- ---------------------------------------------------------------- companies (ATS-44)
--- No customer table, and not companies, references profiles or auth.users, so deleting a user can
--- never cascade to company data. Every customer_id references companies, on delete cascade.
+-- No customer table, not companies and not the audit log references profiles or auth.users, so
+-- deleting a user can never cascade to company data or its history. Every customer_id references
+-- companies, on delete cascade.
 reset role;
 do $$ declare tbl text; bad text; begin
   select string_agg(conrelid::regclass::text || ' -> ' || confrelid::regclass::text, ', ') into bad
   from pg_constraint
   where contype = 'f'
     and conrelid in ('public.jobs'::regclass, 'public.candidates'::regclass, 'public.applications'::regclass,
-                     'public.cv_assessments'::regclass, 'public.pipeline_stages'::regclass, 'public.companies'::regclass)
+                     'public.cv_assessments'::regclass, 'public.pipeline_stages'::regclass, 'public.companies'::regclass,
+                     'public.audit_events'::regclass)
     and confrelid in ('public.profiles'::regclass, 'auth.users'::regclass);
   if bad is not null then raise exception 'FAIL 51: a customer table references a user: %', bad; end if;
-  foreach tbl in array array['jobs', 'candidates', 'applications', 'cv_assessments', 'pipeline_stages'] loop
+  foreach tbl in array array['jobs', 'candidates', 'applications', 'cv_assessments', 'pipeline_stages', 'audit_events'] loop
     if not exists (
       select 1 from pg_constraint
       where contype = 'f' and conrelid = format('public.%I', tbl)::regclass
@@ -1909,6 +1911,195 @@ begin
   assert (select company_id from public.company_members where user_id = s2) = s, 'the refused move changed the membership';
   update public.companies set deleted_at = null where id = t;
   raise notice 'OK 61: nobody joins or moves into a deleted company';
+end $$;
+
+-- ---------------------------------------------------------------- audit log (ATS-47)
+-- Companies E and F, each with a second member who signs in for it. Their rows are written by the
+-- members, the admin and the service role, so the events below are the only ones they have.
+reset role;
+select pg_temp.add_customer('00000000-0000-0000-0000-0000000047e1', 'audit-e-47@test.local');
+select pg_temp.add_customer('00000000-0000-0000-0000-0000000047f1', 'audit-f-47@test.local');
+select pg_temp.add_member('00000000-0000-0000-0000-0000000047e1', '00000000-0000-0000-0000-0000000047e2', 'audit-e2-47@test.local');
+select pg_temp.add_member('00000000-0000-0000-0000-0000000047f1', '00000000-0000-0000-0000-0000000047f2', 'audit-f2-47@test.local');
+
+-- 62. The triggers write one event per insert, update and delete on jobs, candidates and cards,
+-- with the row's customer and the caller as actor. An update that changes no tracked column
+-- writes none. A job and a card keep their small values; a candidate keeps only the names of the
+-- fields that changed, never a value. A deleted candidate's events stay.
+do $$ declare
+  e uuid := '00000000-0000-0000-0000-0000000047e1';
+  e2 uuid := '00000000-0000-0000-0000-0000000047e2';
+  admin uuid := '00000000-0000-0000-0000-0000000000ad';
+  job uuid; other_job uuid; cand uuid; card uuid; other_card uuid;
+  first_open uuid := pg_temp.stage_of('00000000-0000-0000-0000-0000000047e1', 'new');
+  offer uuid := pg_temp.stage_of('00000000-0000-0000-0000-0000000047e1', 'offer');
+  ev public.audit_events;
+  log text;
+begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', e2), true);
+  insert into public.jobs (customer_id, title, description, location)
+  values (e, 'Job E', 'A long description', 'Malmö') returning id into job;
+  insert into public.jobs (customer_id, title) values (e, 'Other job E') returning id into other_job;
+  update public.jobs set title = 'Job E, renamed', description = 'Another description' where id = job;
+  update public.jobs set title = title where id = job;
+  insert into public.candidates (customer_id, full_name, email, notes)
+  values (e, 'Secret Name', 'secret@test.local', 'Secret note') returning id into cand;
+  update public.candidates set email = 'other-secret@test.local', notes = 'Other secret note' where id = cand;
+  insert into public.applications (job_id, candidate_id) values (job, cand) returning id into card;
+  insert into public.applications (job_id, candidate_id) values (other_job, cand) returning id into other_card;
+  perform public.move_application(card, e, offer);
+  update public.applications set position = position + 1 where id = card;
+  delete from public.applications where id = other_card;
+
+  reset role;
+  assert (select count(*) from public.audit_events where customer_id = e) = 9,
+         'the member''s writes did not make exactly nine events';
+  assert not exists (select 1 from public.audit_events where customer_id = e and actor_id is distinct from e2),
+         'an event of the member''s has another actor';
+
+  select * into ev from public.audit_events where row_id = job and action = 'insert';
+  assert ev.table_name = 'jobs' and ev.fields is null and ev.before is null
+         and ev.after = jsonb_build_object('title', 'Job E', 'location', 'Malmö', 'status', 'open'),
+         'a new job''s event is wrong';
+  assert (select count(*) from public.audit_events where row_id = job and action = 'update') = 1,
+         'an update that changed nothing wrote an event';
+  select * into ev from public.audit_events where row_id = job and action = 'update';
+  assert ev.fields = array['title', 'description'], 'a job update does not name the changed fields';
+  assert ev.before ->> 'title' = 'Job E' and ev.after ->> 'title' = 'Job E, renamed'
+         and not ev.before ? 'description' and not ev.after ? 'description',
+         'a job update does not keep the title, or copies the description';
+
+  select * into ev from public.audit_events where row_id = card and action = 'insert';
+  assert ev.table_name = 'applications'
+         and ev.after = jsonb_build_object('job_id', job, 'candidate_id', cand, 'stage_id', first_open),
+         'a new card''s event does not hold its job, candidate and first open column';
+  assert (select count(*) from public.audit_events where row_id = card and action = 'update') = 1,
+         'a card reordered within its column wrote an event';
+  select * into ev from public.audit_events where row_id = card and action = 'update';
+  assert ev.fields = array['stage_id'] and ev.before ->> 'stage_id' = first_open::text
+         and ev.after ->> 'stage_id' = offer::text and ev.after ->> 'candidate_id' = cand::text,
+         'a card move does not hold the column before and after';
+  select * into ev from public.audit_events where row_id = other_card and action = 'delete';
+  assert ev.after is null and ev.before ->> 'job_id' = other_job::text, 'a removed job link''s event is wrong';
+
+  select * into ev from public.audit_events where row_id = cand and action = 'update';
+  assert ev.fields = array['email', 'notes'], 'a candidate update does not name the changed fields';
+
+  -- The admin, acting for the company, and the service role.
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', admin), true);
+  update public.jobs set status = 'closed' where id = job;
+  reset role;
+  select * into ev from public.audit_events where row_id = job order by id desc limit 1;
+  assert ev.actor_id = admin and ev.customer_id = e and ev.fields = array['status'],
+         'the admin''s change is not logged as the admin''s, for the company';
+  set local role service_role;
+  perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
+  update public.jobs set location = 'Lund' where id = job;
+  reset role;
+  select * into ev from public.audit_events where row_id = job order by id desc limit 1;
+  assert ev.actor_id is null and ev.fields = array['location'], 'a service role change has an actor';
+
+  -- The candidate is deleted, with its last card: the delete is logged, and its events stay.
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', e2), true);
+  delete from public.candidates where id = cand;
+  reset role;
+  assert exists (select 1 from public.audit_events where row_id = card and action = 'delete'),
+         'a card removed with its candidate was not logged';
+  assert (select array_agg(action order by id) from public.audit_events where row_id = cand)
+         = array['insert', 'update', 'delete'], 'a deleted candidate''s events are not all kept';
+  assert not exists (select 1 from public.audit_events
+                     where table_name = 'candidates' and (before is not null or after is not null)),
+         'a candidate event holds values';
+  select string_agg(a::text, ' ') into log from public.audit_events a where customer_id = e;
+  assert log not ilike '%secret%' and log not ilike '%long description%' and log not ilike '%another description%',
+         'the log holds a candidate''s data or a job description';
+  raise notice 'OK 62: every write to a job, candidate or card is logged with its customer and actor, a candidate''s only by field name';
+end $$;
+
+-- 63. Each company reads only its own events, an admin reads all, a member of a deleted company
+-- none, and no client writes one: not a member, not an admin, not the service role.
+reset role;
+do $$ declare
+  e uuid := '00000000-0000-0000-0000-0000000047e1';
+  f uuid := '00000000-0000-0000-0000-0000000047f1';
+  admin uuid := '00000000-0000-0000-0000-0000000000ad';
+  who uuid;
+  role_name text;
+  e_events bigint;
+begin
+  insert into public.jobs (customer_id, title) values (f, 'Job F');
+  e_events := (select count(*) from public.audit_events where customer_id = e);
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000047f2","role":"authenticated"}', true);
+  assert (select array_agg(distinct customer_id) from public.audit_events) = array[f], 'F does not see only its own events';
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000047e2","role":"authenticated"}', true);
+  assert (select count(*) from public.audit_events) = e_events
+         and not exists (select 1 from public.audit_events where customer_id <> e), 'E does not see only its own events';
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', admin), true);
+  assert exists (select 1 from public.audit_events where customer_id = e)
+         and exists (select 1 from public.audit_events where customer_id = f), 'the admin does not see every company''s events';
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  set local role anon;
+  assert pg_temp.error_of('select 1 from public.audit_events') = '42501', 'a signed-out user reads the log';
+
+  reset role;
+  update public.companies set deleted_at = now() where id = e;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000047e2","role":"authenticated"}', true);
+  assert not exists (select 1 from public.audit_events), 'a member of a deleted company reads its events';
+  reset role;
+  update public.companies set deleted_at = null where id = e;
+
+  foreach who in array array['00000000-0000-0000-0000-0000000047e2'::uuid, admin] loop
+    set local role authenticated;
+    perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', who), true);
+    assert pg_temp.error_of(format(
+             'insert into public.audit_events (customer_id, action, table_name, row_id) values (%L, ''insert'', ''jobs'', %L)',
+             e, gen_random_uuid())) = '42501', 'a client wrote an event';
+    assert pg_temp.error_of('update public.audit_events set actor_id = null') = '42501', 'a client changed an event';
+    assert pg_temp.error_of('delete from public.audit_events') = '42501', 'a client deleted an event';
+    assert pg_temp.error_of('truncate public.audit_events') = '42501', 'a client emptied the log';
+    reset role;
+  end loop;
+  set local role service_role;
+  assert pg_temp.error_of(format(
+           'insert into public.audit_events (customer_id, action, table_name, row_id) values (%L, ''insert'', ''jobs'', %L)',
+           e, gen_random_uuid())) = '42501', 'the service role wrote an event';
+  assert pg_temp.error_of('update public.audit_events set actor_id = null') = '42501', 'the service role changed an event';
+  assert pg_temp.error_of('delete from public.audit_events') = '42501', 'the service role deleted an event';
+  reset role;
+  foreach role_name in array array['anon', 'authenticated', 'service_role'] loop
+    assert not has_function_privilege(role_name, 'public.write_audit_event()', 'execute'),
+           format('%s may run the audit trigger function', role_name);
+  end loop;
+  assert (select count(*) from public.audit_events where customer_id = e) = e_events, 'a refused write changed the log';
+  raise notice 'OK 63: each company reads only its own events, an admin all, and no client or service role writes one';
+end $$;
+
+-- 64. A company delete takes its log with it, and its cascade writes no event for the company
+-- being deleted. The service role deletes, as admin-manage-company's "delete for good" does.
+reset role;
+do $$ declare
+  e uuid := '00000000-0000-0000-0000-0000000047e1';
+  f uuid := '00000000-0000-0000-0000-0000000047f1';
+  job uuid; cand uuid;
+begin
+  insert into public.candidates (customer_id, full_name) values (f, 'Cand F') returning id into cand;
+  select id into job from public.jobs where customer_id = f;
+  insert into public.applications (job_id, candidate_id) values (job, cand);
+  assert (select count(*) from public.audit_events where customer_id = f) = 3, 'F''s rows are not logged';
+  set local role service_role;
+  delete from public.companies where id = f;
+  reset role;
+  assert not exists (select 1 from public.audit_events where customer_id = f), 'a deleted company''s events stayed';
+  assert not exists (select 1 from public.audit_events a where not exists (select 1 from public.companies c where c.id = a.customer_id)),
+         'an event outlived its company';
+  assert exists (select 1 from public.audit_events where customer_id = e), 'deleting F removed E''s events';
+  raise notice 'OK 64: deleting a company removes its events and writes none for its rows';
 end $$;
 
 rollback;
