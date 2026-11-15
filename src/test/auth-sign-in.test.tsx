@@ -28,7 +28,6 @@ const profile: Profile = {
   role: "customer",
   full_name: "Anna",
   company_id: "c1",
-  company_name: "Nordkust",
   email: "anna@test.local",
   created_at: "2026-10-01T00:00:00Z",
   deleted_at: null,
@@ -98,7 +97,7 @@ describe("sign-in", () => {
   });
 
   it("signs out a customer user without an active company", async () => {
-    api.getProfile.mockResolvedValue({ ...profile, company_id: null, company_name: "" });
+    api.getProfile.mockResolvedValue({ ...profile, company_id: null });
     const { result } = renderAuth();
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -113,7 +112,7 @@ describe("sign-in", () => {
   });
 
   it("signs in an admin, who belongs to no company", async () => {
-    const admin: Profile = { ...profile, role: "admin", company_id: null, company_name: "" };
+    const admin: Profile = { ...profile, role: "admin", company_id: null };
     api.getProfile.mockResolvedValue(admin);
     const { result } = renderAuth();
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -137,7 +136,7 @@ describe("a session restored on a reload", () => {
   });
 
   it("is ended for a customer user whose company is no longer active", async () => {
-    api.getProfile.mockResolvedValue({ ...profile, company_id: null, company_name: "" });
+    api.getProfile.mockResolvedValue({ ...profile, company_id: null });
     const { result } = renderAuth();
     await waitFor(() => expect(api.signOut).toHaveBeenCalled());
     expect(result.current.isLoading).toBe(false);

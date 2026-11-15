@@ -12,8 +12,10 @@ export interface AuthUser {
 export function authErrorCode(error: unknown): ErrorCode | null {
   if (!isAuthError(error)) return null;
   if (error.code === "invalid_credentials") return "invalid_credentials";
-  // A deleted account is banned until it is restored (ATS-27).
-  if (error.code === "user_banned") return "account_deleted";
+  // A login is banned while its account is deleted (ATS-27) or its company is (ATS-46). Auth
+  // reports both the same way, before there is a session to tell them apart, so the message
+  // covers both (ATS-61).
+  if (error.code === "user_banned") return "account_or_company_deleted";
   if (error.code === "over_request_rate_limit" || error.status === 429) return "too_many_attempts";
   // Changing your own password (ATS-34). The form checks both first; this is for anything past it.
   if (error.code === "same_password") return "same_password";

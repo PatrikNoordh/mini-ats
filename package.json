@@ -14,8 +14,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "seed:e2e": "node scripts/seed-e2e.ts",
-    "seed:demo": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.seed.local scripts/seed-demo.ts",
-    "swap:logins": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.seed.local scripts/swap-logins.ts"
+    "seed:demo": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.seed.local scripts/seed-demo.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -103,7 +102,7 @@
     "supabase": "3.1.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "8.1.5",
+    "vite": "8.3.8",
     "vitest": "^4.1.10"
   }
 }

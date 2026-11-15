@@ -47,7 +47,6 @@ function account(id: string, role: Profile["role"], extra: Partial<Profile> = {}
     role,
     full_name: "Erik Exempel",
     company_id: role === "customer" ? `${id}-company` : null,
-    company_name: "Exempelbygg AB",
     email: "kund@exempelbygg.test",
     created_at: "2026-10-22T08:00:00Z",
     deleted_at: null,
@@ -178,6 +177,7 @@ describe("a new account", () => {
 
 describe("deleted accounts", () => {
   const gone = account("c1", "customer", { deleted_at: "2026-10-22T10:00:00Z" });
+  const deletedCompany: Company = { ...lumen, id: "c1-company", name: "Exempelbygg AB" };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -185,7 +185,8 @@ describe("deleted accounts", () => {
 
   it("shows each account with the date it is deleted for good, and restores it", async () => {
     m.restore.mockResolvedValue(undefined);
-    inEnglish(<DeletedAccounts accounts={[gone]} />);
+    inEnglish(<DeletedAccounts accounts={[gone]} companies={[deletedCompany]} />);
+    expect(screen.getByText("Exempelbygg AB")).toBeInTheDocument();
     expect(screen.getAllByText("Deleted for good on 21 Nov 2026").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Restore" }));
     await waitFor(() => expect(m.restore).toHaveBeenCalledWith("c1"));
@@ -194,7 +195,7 @@ describe("deleted accounts", () => {
 
   it("deletes the login for good only after the email is typed, and says the data stays", async () => {
     m.deleteNow.mockResolvedValue(undefined);
-    inEnglish(<DeletedAccounts accounts={[gone]} />);
+    inEnglish(<DeletedAccounts accounts={[gone]} companies={[deletedCompany]} />);
     fireEvent.click(screen.getByRole("button", { name: "Delete for good" }));
     const confirm = await screen.findByRole("alertdialog");
     expect(confirm).toHaveTextContent("stay with the company");
@@ -210,7 +211,7 @@ describe("deleted accounts", () => {
   });
 
   it("has an empty state", () => {
-    inEnglish(<DeletedAccounts accounts={[]} />);
+    inEnglish(<DeletedAccounts accounts={[]} companies={[]} />);
     expect(screen.getByText("No deleted accounts")).toBeInTheDocument();
   });
 });

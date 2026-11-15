@@ -3,6 +3,7 @@
 // end-to-end seed and Playwright read them from here, and refuse anything that is not local, so
 // the tests can never write to the project.
 import { execFileSync } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
 import { z } from "zod";
 
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost"]);
@@ -53,4 +54,67 @@ export function localStack(): LocalStack {
     anonKey: status.ANON_KEY,
     serviceRoleKey: status.SERVICE_ROLE_KEY,
   };
+}
+
+/** The version of each migration in supabase/migrations: the timestamp its file name starts with. */
+export function migrationVersions(dir = "supabase/migrations"): string[] {
+  return readdirSync(dir)
+    .filter((name) => name.endsWith(".sql"))
+    .map((name) => name.split("_")[0] ?? name)
+    .sort();
+}
+
+/**
+ * The migrations the local stack's database has applied, read with psql in its container. The
+ * container is named after project_id in supabase/config.toml, as `npx supabase start` names it.
+ */
+export function appliedMigrations(): string[] {
+  const config = readFileSync("supabase/config.toml", "utf8");
+  const projectId = /^project_id\s*=\s*"([^"]+)"/m.exec(config)?.[1];
+  if (!projectId) throw new Error("supabase/config.toml has no project_id.");
+  let output: string;
+  try {
+    output = execFileSync(
+      "docker",
+      [
+        "exec",
+        `supabase_db_${projectId}`,
+        "psql",
+        "-U",
+        "postgres",
+        "-tAc",
+        "select version from supabase_migrations.schema_migrations order by version",
+      ],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    );
+  } catch {
+    throw new Error(
+      "Could not read the local stack's migrations. Start it with: npx supabase start",
+    );
+  }
+  return output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+/** The migrations in the repo that the local database has not applied, oldest first. */
+export function missingMigrations(applied: readonly string[], inRepo: readonly string[]): string[] {
+  const done = new Set(applied);
+  return inRepo.filter((version) => !done.has(version));
+}
+
+/**
+ * Refuses to run the end-to-end tests against an old schema (ATS-61). `npx supabase start`
+ * restores the local database from its last backup and skips the migrations added since, so a
+ * new migration would silently not be there.
+ */
+export function assertMigrationsApplied(applied: readonly string[], inRepo: readonly string[]) {
+  const missing = missingMigrations(applied, inRepo);
+  if (missing.length === 0) return;
+  throw new Error(
+    `The local database is missing ${missing.length} migration(s): ${missing.join(", ")}. ` +
+      "npx supabase start restored it from its last backup and skipped them. " +
+      "Run npx supabase stop --no-backup, then npx supabase start.",
+  );
 }

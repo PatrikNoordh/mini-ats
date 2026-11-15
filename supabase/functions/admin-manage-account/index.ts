@@ -3,7 +3,7 @@
 // banned and marked deleted. Its company and the company's data are never touched.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.118.0";
 
-import { inDeletedCompany, setBanned } from "../_shared/logins.ts";
+import { loginDeps, moveToCompany, restoreAccount, setBanned } from "../_shared/logins.ts";
 import {
   createHandler,
   type Account,
@@ -130,13 +130,11 @@ async function updateAccount(
     const refusal = await softDeleteOrDemote(service, update.id, "demote");
     if (refusal) return { error: refusal };
   }
-  // company_name only comes from the accounts page on main, which still edits the old column.
-  const companyName = update.company_name ? { company_name: update.company_name } : {};
   const { error } = await service.auth.admin.updateUserById(update.id, {
     email: update.email,
     email_confirm: true,
     ...(update.password ? { password: update.password } : {}),
-    user_metadata: { full_name: update.full_name, ...companyName },
+    user_metadata: { full_name: update.full_name },
     // The role trigger (ATS-28) copies this to profiles.role; it is set below too, at once. A
     // demotion has already set it above, under the last-admin lock.
     app_metadata: { role: update.role },
@@ -148,7 +146,7 @@ async function updateAccount(
   }
   const profile = await service
     .from("profiles")
-    .update({ full_name: update.full_name, ...companyName, email: update.email, role: update.role })
+    .update({ full_name: update.full_name, email: update.email, role: update.role })
     .eq("id", update.id);
   if (profile.error) throw profile.error;
   return null;
@@ -171,32 +169,15 @@ async function softDelete(id: string): Promise<RemovalRefusal | null> {
   return null;
 }
 
-/**
- * The ban is lifted first and the mark last, so a failure leaves the account deleted and a new
- * restore finishes the work. A member of a deleted company stays banned: restoring the company
- * opens their login (ATS-46).
- */
-async function restore(id: string): Promise<void> {
-  const service = admin();
-  if (!(await inDeletedCompany(service, id))) await setBanned(service, id, false);
-  await setProfile(service, id, { deleted_at: null });
-}
+/** Unmarks the account and opens its login unless its company is deleted (_shared/logins.ts). */
+const restore = (id: string) => restoreAccount(loginDeps(admin()), id);
 
 /**
- * One membership per user (user_id is unique), so a move replaces the row. The account is active
- * and the company too (checked by the handler), so the login opens: it was banned if the user's
- * old company was deleted.
+ * One membership per user (user_id is unique), so a move replaces the row, and opens the login,
+ * which was banned if the user's old company was deleted (_shared/logins.ts).
  */
-async function setCompany(userId: string, companyId: string | null): Promise<void> {
-  const service = admin();
-  const { error } = companyId
-    ? await service
-        .from("company_members")
-        .upsert({ company_id: companyId, user_id: userId }, { onConflict: "user_id" })
-    : await service.from("company_members").delete().eq("user_id", userId);
-  if (error) throw error;
-  await setBanned(service, userId, false);
-}
+const setCompany = (userId: string, companyId: string | null) =>
+  moveToCompany(loginDeps(admin()), userId, companyId);
 
 /**
  * Deletes the Auth user, and the cascades remove the profile and the membership. The data and the

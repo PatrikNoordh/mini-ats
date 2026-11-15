@@ -322,21 +322,9 @@ Or add a user under **Authentication → Users** in the Dashboard and promote it
 update public.profiles set role = 'admin' where email = '<email>';
 ```
 
-### Once, after ATS-45 is live: the login swap
+### The login swap, retired
 
-Each company migrated in ATS-44 kept its first user's id. `scripts/swap-logins.ts` replaces those logins with new accounts with the same email, so no user id equals a company id (ATS-58). It checks first that deleting a login can never reach company data, swaps each company on its own, and can be run again to finish a swap that stopped. Each new login gets a temporary password, printed once, to hand over privately.
-
-```bash
-# 1. A data dump of the project, outside the repo
-npx supabase db dump --remote -f ../mini-ats-backup/schema.sql
-npx supabase db dump --remote --data-only -f ../mini-ats-backup/data.sql
-# 2. The dry run: lists the logins it would replace
-npm run swap:logins
-# 3. The swap
-npm run swap:logins -- --yes --dump ../mini-ats-backup/data.sql
-```
-
-The demo seed swaps the demo customers' logins itself, with their passwords from `DEMO_<KEY>_PASSWORD`.
+Each company migrated in ATS-44 kept its first user's id. The login swap (`scripts/swap-logins.ts`, ATS-58) gave those users new logins, so no user id equals a company id. It ran once on the project and was retired in ATS-61; git history keeps the script. The database now refuses a company whose id is an account's, and an account whose id is a company's.
 
 ### 6. Run it
 
@@ -362,7 +350,6 @@ The repository is connected to Vercel: every push to `main` deploys the live app
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run format` | Prettier |
 | `npm run seed:demo -- --yes` | Create or rebuild the demo accounts and data |
-| `npm run swap:logins` | Dry run of the login swap: lists the logins whose id is their company's (ATS-58). `-- --yes --dump <file>` swaps them, after a data dump saved outside the repo |
 | `npm run test:e2e` | Playwright against the local Supabase stack: seeds it, builds the app against it and runs the tests. Needs Docker and `npx supabase start` first |
 | `npm run seed:e2e` | Seed the test accounts and data into the local stack, to look at them in the app |
 
@@ -392,7 +379,7 @@ npm run test:e2e                  # or npx playwright test --ui, to watch each s
 npx supabase stop                 # --no-backup also drops the data, for a fresh database next time
 ```
 
-`npm run test:e2e` does not start the stack: it stops with a message if the stack is not running. It does seed it before every run, then builds the app against it and serves the build on port 4173. When a test fails in CI, download the `playwright-traces` artifact from the run's summary page and open the trace with `npx playwright show-trace <path>/trace.zip`, or drop the file on [trace.playwright.dev](https://trace.playwright.dev).
+`npm run test:e2e` does not start the stack: it stops with a message if the stack is not running, and if its database lacks a migration from `supabase/migrations/`, which happens when `npx supabase start` restores the last backup and skips the migrations added since (then `npx supabase stop --no-backup` and `npx supabase start`). It does seed it before every run, then builds the app against it and serves the build on port 4173. When a test fails in CI, download the `playwright-traces` artifact from the run's summary page and open the trace with `npx playwright show-trace <path>/trace.zip`, or drop the file on [trace.playwright.dev](https://trace.playwright.dev).
 
 One convention worth knowing: a `beforeEach` or `beforeAll` callback has a block body. Vitest runs a function returned from it as cleanup, so `beforeEach(() => mock.mockReset())` would call the mock again after the test. ESLint enforces this in `src/test/`.
 

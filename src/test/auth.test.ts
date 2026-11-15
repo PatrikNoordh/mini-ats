@@ -22,9 +22,9 @@ describe("auth error codes", () => {
     expect(authErrorCode(new Error("boom"))).toBeNull();
   });
 
-  it("maps a deleted account's blocked login", () => {
+  it("maps a blocked login to one message for a deleted account and a deleted company", () => {
     expect(authErrorCode(new AuthApiError("User is banned", 400, "user_banned"))).toBe(
-      "account_deleted",
+      "account_or_company_deleted",
     );
   });
 });
@@ -37,10 +37,7 @@ describe("profile row", () => {
     email: "karin@nordkust.test",
     created_at: "2026-10-20T08:00:00+00:00",
     deleted_at: null,
-    company_members: {
-      company_id: "00000000-0000-0000-0000-0000000000c1",
-      companies: { name: "Nordkust Bygg AB" },
-    },
+    company_members: { company_id: "00000000-0000-0000-0000-0000000000c1" },
   };
 
   it("reads the role from the row", () => {
@@ -53,17 +50,13 @@ describe("profile row", () => {
     expect(profile).toMatchObject({ full_name: "", email: "" });
   });
 
-  it("reads the company and its name from the membership, not from the profile", () => {
-    const profile = parseProfileRow({ ...row, company_name: "An old name" });
-    expect(profile).toMatchObject({
-      company_id: "00000000-0000-0000-0000-0000000000c1",
-      company_name: "Nordkust Bygg AB",
-    });
+  it("reads the company from the membership", () => {
+    expect(parseProfileRow(row).company_id).toBe("00000000-0000-0000-0000-0000000000c1");
   });
 
   it("has no company without a membership, as for an admin", () => {
     const profile = parseProfileRow({ ...row, role: "admin", company_members: null });
-    expect(profile).toMatchObject({ company_id: null, company_name: "" });
+    expect(profile.company_id).toBeNull();
   });
 
   it("reads when the account was deleted", () => {

@@ -36,6 +36,7 @@ export const ERROR_CODES = [
   "text_too_long",
   "account_not_found",
   "account_deleted",
+  "account_or_company_deleted",
   "account_not_deleted",
   "cannot_change_self",
   "last_admin",

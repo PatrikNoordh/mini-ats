@@ -36,7 +36,8 @@ Data safety: no data path touched (<n> files, all <UI / docs / tests>). Nothing 
 1. Read `docs/data-safety.md`.
 2. Read the diff of the data paths: `git diff origin/main...HEAD -- <paths>`.
 3. For each changed table, function, policy, bucket or flow, find its rows in the map (§ 1 to § 6) and read the files those rows name: the migration that last defined it, the Edge Function handler, the `src/lib/api/` file, the checks in `supabase/tests/rls_test.sql`. Follow a delete chain one step past the changed table in each direction (what references it, and what it references).
-4. Do not read the rest of the repo. If the map has no row for something the diff changes, that is a finding in itself (the map is out of date), and read just enough to describe it.
+4. If the diff adds, drops or moves a foreign key, or renames a table or a column a key uses, grep the data layer for PostgREST embeds across it, for each table at either end of the key: `grep -rnE "<table>(!\w+)?\(" src/lib/api/`. An embed such as `companies(name)` or `jobs(count)` needs a foreign key between the two tables; without one PostgREST answers `PGRST200` at run time, and no type check or unit test sees it. Each embed the diff breaks is a 🔴 finding, and one without an end-to-end assertion is a gap (ATS-44 broke the open-job counts this way and CI passed; ATS-61 AC9).
+5. Do not read the rest of the repo. If the map has no row for something the diff changes, that is a finding in itself (the map is out of date), and read just enough to describe it.
 
 ### Step 3 — The lenses
 
@@ -48,7 +49,7 @@ Ask each question of every change the diff reaches. Each one that gets a "yes" o
 | **References and deletes** | What references this row, and what does it reference? With which `on delete`? Where does a delete spread, and does it reach data it should not, or stop short and leave orphans? Is `no action` versus `restrict` still right? |
 | **Database and Storage** | Does a flow write to both without a shared transaction? Which order did it choose, and is its worst case written down in § 4? Can it leave a file no row points at? |
 | **Between `db push` and merge** | The migration reaches the project before the merge, so the code on `main` runs against it. Does that code still work: an added column with a default or nullable, a drop or rename only once `main` no longer uses it? What if the PR is closed after the push? |
-| **Ids and shared values** | Does an id ever change? Do two concepts share one value (today the Auth user, the profile, the row owner and the CV folder), and does the change treat one as the other? Is a placeholder (the nil UUID) ever stored as real? |
+| **Ids and shared values** | Does an id ever change? Do two concepts share one value, and does the change treat one as the other? Until the login swap a migrated company's id was also its first user's, and since ATS-61 the database refuses a company and an account with the same id (check 60); a change that writes ids itself must keep that. Is a placeholder (the nil UUID) ever stored as real? |
 | **Guards in layers** | Which layers guard this: structure, schema, CI test, tool check, permission? Does the change remove or weaken one? Does the change rest on the frontend alone (rule 6)? Does a new table have RLS, policies and explicit grants (rule 5)? Does a new definer function check its caller? |
 | **Proof** | For every guard the change adds or relies on: is there a test that fails when the guard is removed? Name the file and check number. A guard without such a test is a gap, not a guard. |
 

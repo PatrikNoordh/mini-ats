@@ -1,6 +1,6 @@
 # Next: teams
 
-A design sketch for epic 9 (ATS-43). Step 1, the migration, is built (ATS-44, `supabase/migrations/20261109120000_companies.sql`), the app reads by company (ATS-45), admins manage companies and their users, with the 30-day delete and the purge by company (ATS-46), and the login swap is built (ATS-58, `scripts/swap-logins.ts`): it runs once, by the developer, after a data dump. The decisions below were made with the developer, and the work is split into tickets at the end.
+A design sketch for epic 9 (ATS-43). Step 1, the migration, is built (ATS-44, `supabase/migrations/20261109120000_companies.sql`), the app reads by company (ATS-45), admins manage companies and their users, with the 30-day delete and the purge by company (ATS-46), and the login swap (ATS-58) ran once on the project, after a data dump, and was retired in ATS-61, which also dropped `profiles.company_name` and made a shared company and account id impossible. The decisions below were made with the developer, and the work is split into tickets at the end.
 
 ## Today
 
@@ -25,7 +25,7 @@ Several users per company instead of one shared login. They see and edit the sam
 - **The 30-day delete and the nightly purge move to companies.** Deleting a user removes one login and its membership. Deleting a company removes its data, CV files included, after 30 days.
 - **A company whose last member is removed stays**, with all its data. The members page marks it as having no users; an admin adds a user to it or deletes it. It is never deleted on its own.
 - **No bridge for new accounts.** Between ATS-44 and ATS-46, `admin-create-user` on `main` makes an account with no membership, which sees nothing. No customer accounts are created in that window. The members page in ATS-46 lists users without a company, so an account created anyway can be placed.
-- **`profiles.company_name` stays for now**, as `applications.stage` did until ATS-42. The code on `main` reads it in the header and on the accounts page, and `handle_new_user` writes it. ATS-44 copies it to `companies.name`, and a trigger keeps `companies.name` in step while `main` still edits the profile. A later ticket drops it once no code reads it.
+- **`profiles.company_name` stays for now**, as `applications.stage` did until ATS-42. The code on `main` reads it in the header and on the accounts page, and `handle_new_user` writes it. ATS-44 copies it to `companies.name`, and a trigger keeps `companies.name` in step while `main` still edits the profile. A later ticket drops it once no code reads it: ATS-61 dropped it.
 
 ## Step 1: the migration (ATS-44)
 
@@ -95,6 +95,8 @@ All of them keep reading with the caller's JWT, and RLS answers by company inste
 
 ## Step 2: the login swap (ATS-58)
 
+Ran once on the project and retired in ATS-61: the script and its tests are gone, git history keeps them, and the database now refuses a company whose id is an account's. Kept below as the record of how it worked.
+
 Built in `scripts/login-swap.ts` and `scripts/swap-logins.ts`. Two choices made while building: the foreign key rule is read through `login_swap_blockers()`, a read-only function only the service role may run (the script reaches the project through the API, not SQL), and each new login gets a generated temporary password, printed once, as the demo seed does.
 
 Once the new code is live, each existing customer's old login is replaced by a new account with a new id and the same email, as a member of the company. After the swap no user id equals a company id, so an old `customer_id = auth.uid()` check fails for everyone, and a missed policy shows up at once.
@@ -141,7 +143,7 @@ The last-admin rule and its lock are unchanged; admins belong to no company.
 ## Security rules that change
 
 - **Rule 5:** customers see only rows where `customer_id` is their company's id, through `current_company_id()`. A customer table never references `profiles` or `auth.users`.
-- **Rule 1** names `scripts/swap-logins.ts` next to the seed scripts: it reads the service role key from the developer's shell, runs only on their machine and never in CI.
+- **Rule 1** named `scripts/swap-logins.ts` next to the seed scripts: it read the service role key from the developer's shell, ran only on their machine and never in CI. Since ATS-61 rule 1 says it ran once and was retired.
 - **Rule 3:** a user joins, moves between or leaves a company only through the admin Edge Functions, which check that the caller is an admin.
 - **Rule 7** is unchanged: the database sets `customer_id` on cards and assessments, and never trusts the client's.
 

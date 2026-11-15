@@ -30,11 +30,6 @@ export const updateSchema = z.object({
    * from their company, and left out keeps the membership as it is. An admin has none.
    */
   company_id: id.nullable().optional(),
-  /**
-   * Only from the accounts page on main (ATS-45), which still edits the old profile column.
-   * Left out, the column keeps its value. Goes when the column is dropped.
-   */
-  company_name: requiredText.optional(),
 });
 
 export const requestSchema = z
@@ -91,9 +86,10 @@ export interface Deps {
   ) => Promise<{ error: "email_exists" | RemovalRefusal } | null>;
   /**
    * Makes the user a member of the company, moving them from another one, or removes their
-   * membership for null. Their login opens again, in case their old company was deleted.
+   * membership for null. Their login opens again, in case their old company was deleted. A
+   * company deleted since the handler checked it is refused by the database (ATS-61).
    */
-  setCompany: (userId: string, companyId: string | null) => Promise<void>;
+  setCompany: (userId: string, companyId: string | null) => Promise<"company_deleted" | null>;
   softDelete: (id: string) => Promise<RemovalRefusal | null>;
   /** Unmarks the account. Its login opens again unless its company is deleted. */
   restore: (id: string) => Promise<void>;
@@ -173,7 +169,8 @@ export function createHandler(deps: Deps) {
           // After the role: the database refuses a membership for an admin, and a promotion has
           // already removed it (ATS-44).
           if (request.role === "customer" && request.company_id !== undefined) {
-            await deps.setCompany(request.id, request.company_id);
+            const moved = await deps.setCompany(request.id, request.company_id);
+            if (moved) return json({ error: moved }, 409);
           }
           break;
         }

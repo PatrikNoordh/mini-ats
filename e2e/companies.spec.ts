@@ -143,7 +143,7 @@ test("an admin deletes a company, its users cannot sign in, and a restore brings
   const [userContext, userPage] = await otherPage(browser);
   try {
     await submitSignIn(userPage, company.email);
-    await expect(userPage.getByRole("alert")).toHaveText(sv.errors.account_deleted);
+    await expect(userPage.getByRole("alert")).toHaveText(sv.errors.account_or_company_deleted);
 
     const row = await deletedRow(page, company.company);
     await row.getByRole("button", { name: sv.accounts.restore }).click();

@@ -214,7 +214,7 @@ function Accounts() {
           )}
           {showDeleted && (
             <div id="deleted-accounts-list">
-              <DeletedAccounts accounts={deleted} />
+              <DeletedAccounts accounts={deleted} companies={companies.data ?? []} />
             </div>
           )}
         </>

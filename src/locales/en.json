@@ -88,6 +88,7 @@
     "text_too_long": "One of the texts is too long. Shorten it and try again.",
     "account_not_found": "The account does not exist.",
     "account_deleted": "The account has been deleted. Contact the administrator to have it restored.",
+    "account_or_company_deleted": "The account or its company has been deleted. Contact the administrator to have it restored.",
     "account_not_deleted": "The account is not deleted.",
     "cannot_change_self": "You cannot delete your own account or remove your own admin role.",
     "last_admin": "There must be at least one admin left.",

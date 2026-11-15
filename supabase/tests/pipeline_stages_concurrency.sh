@@ -23,13 +23,15 @@
 # =============================================================================
 set -euo pipefail
 
+# The company, and its member, whose id is not the company's (ATS-61).
 CUSTOMER=00000000-0000-0000-0000-0000000038c1
+MEMBER=00000000-0000-0000-1000-0000000038c1
 JOB=10000000-0000-0000-0000-0000000038c1
 CARD_1=30000000-0000-0000-0000-0000000038c1
 CARD_2=30000000-0000-0000-0000-0000000038c2
 HOLD_KEY=4444
 TIMEOUT_SECONDS=15
-CLAIMS="{\"sub\":\"$CUSTOMER\",\"role\":\"authenticated\"}"
+CLAIMS="{\"sub\":\"$MEMBER\",\"role\":\"authenticated\"}"
 SECOND_ERROR=$(mktemp)
 
 q() { psql -X -v ON_ERROR_STOP=1 -qtA "$@"; }
@@ -38,7 +40,7 @@ cleanup() {
   q -c "select pg_terminate_backend(pid) from pg_stat_activity
         where application_name like 'stages_test_%' and pid <> pg_backend_pid()" >/dev/null || true
   q -c "delete from public.companies where id = '$CUSTOMER'" >/dev/null || true
-  q -c "delete from auth.users where id = '$CUSTOMER'" >/dev/null || true
+  q -c "delete from auth.users where id = '$MEMBER'" >/dev/null || true
   rm -f "$SECOND_ERROR"
 }
 trap cleanup EXIT
@@ -104,9 +106,9 @@ stage() {
 # One customer, a company under its user's id with the user as member (ATS-44), with two cards in
 # the new column, and a second rejected column.
 q <<SQL
-insert into auth.users (id, email, raw_app_meta_data) values ('$CUSTOMER', 'stages-c-38@test.local', '{"role":"customer"}');
+insert into auth.users (id, email, raw_app_meta_data) values ('$MEMBER', 'stages-c-38@test.local', '{"role":"customer"}');
 insert into public.companies (id, name) values ('$CUSTOMER', 'Company C');
-insert into public.company_members (company_id, user_id) values ('$CUSTOMER', '$CUSTOMER');
+insert into public.company_members (company_id, user_id) values ('$CUSTOMER', '$MEMBER');
 insert into public.jobs (id, customer_id, title) values ('$JOB', '$CUSTOMER', 'Job C 38');
 insert into public.candidates (id, customer_id, full_name) values
   ('20000000-0000-0000-0000-0000000038c1', '$CUSTOMER', 'Cand C1 38'),

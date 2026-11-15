@@ -337,7 +337,6 @@ export type Database = {
       };
       profiles: {
         Row: {
-          company_name: string | null;
           created_at: string;
           deleted_at: string | null;
           email: string | null;
@@ -346,7 +345,6 @@ export type Database = {
           role: string;
         };
         Insert: {
-          company_name?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           email?: string | null;
@@ -355,7 +353,6 @@ export type Database = {
           role?: string;
         };
         Update: {
-          company_name?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           email?: string | null;

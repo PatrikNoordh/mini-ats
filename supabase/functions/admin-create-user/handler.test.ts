@@ -27,14 +27,17 @@ interface Options {
   result?: CreateResult;
   company?: Company | null;
   failAt?: "createUser" | "addMember";
+  /** What the database answers to the membership. */
+  memberRefusal?: "company_deleted";
 }
 
 /** The handler with fake Supabase actions that record what ran, in order. */
 function setup({
   caller = "admin",
   result = { id: "new-id" },
-  company = { id: COMPANY, name: "Lumen AB", deleted: false },
+  company = { id: COMPANY, deleted: false },
   failAt,
+  memberRefusal,
 }: Options = {}) {
   const created: AuthAccount[] = [];
   const ran: string[] = [];
@@ -58,7 +61,9 @@ function setup({
     },
     addMember: (companyId, userId) => {
       ran.push(`member ${companyId} ${userId}`);
-      return failAt === "addMember" ? Promise.reject(new Error("db down")) : Promise.resolve();
+      return failAt === "addMember"
+        ? Promise.reject(new Error("db down"))
+        : Promise.resolve(memberRefusal ?? null);
     },
     deleteUser: (id) => {
       ran.push(`drop user ${id}`);
@@ -145,7 +150,6 @@ Deno.test(
       {
         role: "customer",
         full_name: "Karin Exempel",
-        company_name: "Nordkust Bygg AB",
         email: "karin@nordkust.test",
         password: "long-enough",
       },
@@ -158,14 +162,13 @@ Deno.test("adds a customer to an existing company", async () => {
   const { handler, created, ran } = setup();
   const res = await call(handler, post({ ...withoutCompany, company_id: COMPANY }));
   assertEquals([res.status, res.body], [201, { id: "new-id", company_id: COMPANY }]);
-  assertEquals(created[0]?.company_name, "Lumen AB");
   assertEquals(ran, ["user", `member ${COMPANY} new-id`]);
 });
 
 Deno.test("refuses a company that does not exist or is deleted, and creates nothing", async () => {
   const cases: [Company | null, number, string][] = [
     [null, 404, "company_not_found"],
-    [{ id: COMPANY, name: "Lumen AB", deleted: true }, 409, "company_deleted"],
+    [{ id: COMPANY, deleted: true }, 409, "company_deleted"],
   ];
   for (const [company, status, error] of cases) {
     const { handler, ran } = setup({ company });
@@ -181,6 +184,29 @@ Deno.test(
     const res = await quietly(() => call(handler, post(valid)));
     assertEquals([res.status, res.body.error], [500, "unknown"]);
     assertEquals(ran, [
+      "company Nordkust Bygg AB",
+      "user",
+      `member ${NEW_COMPANY} new-id`,
+      "drop user new-id",
+      `drop company ${NEW_COMPANY}`,
+    ]);
+  },
+);
+
+Deno.test(
+  "deletes the new account again when the company was deleted since it was read",
+  async () => {
+    const { handler, ran } = setup({ memberRefusal: "company_deleted" });
+    const res = await quietly(() =>
+      call(handler, post({ ...withoutCompany, company_id: COMPANY })),
+    );
+    assertEquals([res.status, res.body.error], [409, "company_deleted"]);
+    assertEquals(ran, ["user", `member ${COMPANY} new-id`, "drop user new-id"]);
+
+    // A company made for this account, and deleted by another admin before it joined, goes too.
+    const fresh = setup({ memberRefusal: "company_deleted" });
+    await quietly(() => call(fresh.handler, post(valid)));
+    assertEquals(fresh.ran, [
       "company Nordkust Bygg AB",
       "user",
       `member ${NEW_COMPANY} new-id`,
@@ -216,10 +242,10 @@ Deno.test("accepts a password of exactly 72 bytes, even with å", async () => {
 
 Deno.test("an admin creates another admin, who gets no company", async () => {
   const { handler, created, ran } = setup();
-  // The accounts page on main sends a company name for an admin too; it is ignored.
+  // A company name sent for an admin is ignored.
   const res = await call(handler, post({ ...valid, role: "admin" }));
   assertEquals([res.status, res.body], [201, { id: "new-id", company_id: null }]);
-  assertEquals([created[0]?.role, created[0]?.company_name], ["admin", null]);
+  assertEquals(created[0]?.role, "admin");
   assertEquals(ran, ["user"]);
 });
 
