@@ -594,6 +594,10 @@ Tracked in #116. Built before ATS-44: `docs/data-safety.md` maps how the data is
 
 Tracked in #123. Done before ATS-47: its AC1 locks the owner of a card and an assessment, which the audit triggers rely on.
 
+### ATS-62 · fix · Tie Add user to its company and line up the account table columns
+
+Tracked in #126. Found while testing PR #125 (ATS-61) as admin.
+
 ### ATS-47 · feat · Audit log in the database
 
 Tracked in #87.
