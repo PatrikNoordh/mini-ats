@@ -719,3 +719,6 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
+
+- [ ] An account update whose move is refused with `company_deleted` (a company deleted between the handler's check and the membership write) returns 409 after the name, email and role are already saved, so the admin sees an error for a change that half went through. Move the membership before the account write, or say in the error that the details were saved — `supabase/functions/admin-manage-account/handler.ts` (PR #125, ATS-61)
+- [ ] Mapping the database's `company_deleted` refusal from a membership write (`error.message === "company_deleted"`) is written twice; `admin-create-user`'s `addMember` could use `loginDeps(...).writeMembership` — `supabase/functions/admin-create-user/index.ts`, `supabase/functions/_shared/logins.ts` (PR #125, ATS-61)
