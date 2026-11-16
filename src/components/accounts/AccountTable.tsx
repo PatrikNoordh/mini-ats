@@ -11,7 +11,11 @@ import {
 import { useFormat } from "@/lib/format";
 import type { Profile } from "@/types";
 
-/** Active accounts, each name a button that opens the account to edit. */
+/**
+ * Active accounts, each name a button that opens the account to edit. Every table on the accounts
+ * page has the same fixed column widths, so the columns line up from one company to the next:
+ * Role and Created have named widths, and Name and Email share the rest. Long text wraps.
+ */
 export function AccountTable({
   accounts,
   onEdit,
@@ -22,13 +26,15 @@ export function AccountTable({
   const { t } = useTranslation();
   const format = useFormat();
   return (
-    <Table>
+    <Table className="table-fixed">
       <TableHeader>
         <TableRow>
           <TableHead>{t("accounts.name")}</TableHead>
           <TableHead className="hidden sm:table-cell">{t("accounts.email")}</TableHead>
-          <TableHead>{t("accounts.role")}</TableHead>
-          <TableHead className="hidden md:table-cell">{t("accounts.created")}</TableHead>
+          <TableHead className="w-account-role">{t("accounts.role")}</TableHead>
+          <TableHead className="hidden w-account-created md:table-cell">
+            {t("accounts.created")}
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

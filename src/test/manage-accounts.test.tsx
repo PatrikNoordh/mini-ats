@@ -163,10 +163,14 @@ describe("a new account", () => {
     m.companies = [lumen];
   });
 
-  it("joins the company it was opened from", async () => {
+  it("from a company, is tied to it: no role, the company as text, and starts on the name", async () => {
     m.create.mockResolvedValue("new-id");
     inEnglish(<AccountDialog open onOpenChange={onOpenChange} companyId="co1" />);
-    expect(screen.getByLabelText("Company")).toHaveTextContent("Lumen AB");
+    expect(screen.queryByLabelText("Role")).toBeNull();
+    expect(screen.queryByLabelText("Company")).toBeNull();
+    expect(screen.queryAllByRole("combobox")).toHaveLength(0);
+    expect(screen.getByText("Company").nextElementSibling).toHaveTextContent("Lumen AB");
+    await waitFor(() => expect(screen.getByLabelText("Name")).toHaveFocus());
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Karin Exempel" } });
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "karin@lumen.test" } });
     fireEvent.change(screen.getByLabelText("Temporary password"), {
@@ -187,6 +191,36 @@ describe("a new account", () => {
   it("has no history to link to", () => {
     inEnglish(<AccountDialog open onOpenChange={onOpenChange} />);
     expect(screen.queryByRole("link", { name: "Show history" })).toBeNull();
+  });
+
+  it("from a company deleted meanwhile, says the company is deleted", async () => {
+    m.create.mockRejectedValue(new AppError("company_deleted"));
+    inEnglish(<AccountDialog open onOpenChange={onOpenChange} companyId="co1" />);
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Karin Exempel" } });
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "karin@lumen.test" } });
+    fireEvent.change(screen.getByLabelText("Temporary password"), {
+      target: { value: "long-enough" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    await waitFor(() =>
+      expect(m.toast.error).toHaveBeenCalledWith("Could not create the account.", {
+        description: "The company has been deleted. Restore it first.",
+      }),
+    );
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
+
+  it("from + New account, still offers the role and a company dropdown", () => {
+    inEnglish(<AccountDialog open onOpenChange={onOpenChange} />);
+    expect(screen.getByRole("combobox", { name: "Role" })).toHaveTextContent("Customer");
+    expect(screen.getByRole("combobox", { name: "Company" })).toHaveTextContent("Choose a company");
+  });
+
+  it("from a company, shows a very long name in full", () => {
+    const long = "Ett mycket långt företagsnamn ".repeat(6).trim();
+    m.companies = [{ ...lumen, name: long }];
+    inEnglish(<AccountDialog open onOpenChange={onOpenChange} companyId="co1" />);
+    expect(screen.getByText(long)).toHaveClass("wrap-anywhere");
   });
 
   it("asks a customer to choose a company", async () => {
