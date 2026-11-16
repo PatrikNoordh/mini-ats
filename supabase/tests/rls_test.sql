@@ -2102,4 +2102,106 @@ begin
   raise notice 'OK 64: deleting a company removes its events and writes none for its rows';
 end $$;
 
+-- ---------------------------------------------------------------- reading the history (ATS-48)
+-- Companies C and D, each with a named second member who signs in for it.
+reset role;
+select pg_temp.add_customer('00000000-0000-0000-0000-0000000048c1', 'history-c-48@test.local');
+select pg_temp.add_customer('00000000-0000-0000-0000-0000000048d1', 'history-d-48@test.local');
+select pg_temp.add_member('00000000-0000-0000-0000-0000000048c1', '00000000-0000-0000-0000-0000000048c2', 'history-c2-48@test.local');
+select pg_temp.add_member('00000000-0000-0000-0000-0000000048d1', '00000000-0000-0000-0000-0000000048d2', 'history-d2-48@test.local');
+update public.profiles set full_name = 'Cecilia' where id = '00000000-0000-0000-0000-0000000048c2';
+update public.profiles set full_name = 'David' where id = '00000000-0000-0000-0000-0000000048d2';
+update public.profiles set full_name = 'Admin Name' where id = '00000000-0000-0000-0000-0000000000ad';
+
+-- 65. A candidate's history is its own events and its cards', found by candidate_id, which the
+-- database fills: the row for a candidate, the card's candidate for a card, nothing for a job.
+-- An account's actions are found by actor_id, in every company.
+do $$ declare
+  c uuid := '00000000-0000-0000-0000-0000000048c1';
+  c2 uuid := '00000000-0000-0000-0000-0000000048c2';
+  job uuid; cand uuid; other_cand uuid; card uuid;
+begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', c2), true);
+  insert into public.jobs (customer_id, title) values (c, 'Job C') returning id into job;
+  insert into public.candidates (customer_id, full_name) values (c, 'Cand C') returning id into cand;
+  insert into public.candidates (customer_id, full_name) values (c, 'Other C') returning id into other_cand;
+  insert into public.applications (job_id, candidate_id) values (job, cand) returning id into card;
+  perform public.move_application(card, c, pg_temp.stage_of(c, 'interview'));
+  update public.candidates set notes = 'Note' where id = cand;
+  delete from public.applications where id = card;
+  update public.jobs set title = 'Job C, renamed' where id = job;
+
+  assert (select array_agg(table_name || ':' || action order by id) from public.audit_events where candidate_id = cand)
+         = array['candidates:insert', 'applications:insert', 'applications:update', 'candidates:update', 'applications:delete'],
+         'a candidate''s history is not its own events and its cards''';
+  assert not exists (select 1 from public.audit_events where table_name = 'jobs' and candidate_id is not null),
+         'a job event names a candidate';
+  assert (select count(*) from public.audit_events where candidate_id = other_cand) = 1,
+         'another candidate''s history is not its own';
+  reset role;
+  assert pg_temp.error_of(format('update public.audit_events set candidate_id = %L', other_cand)) = '428C9',
+         'candidate_id can be written';
+  assert (select count(*) from public.audit_events where actor_id = c2) = 8
+         and not exists (select 1 from public.audit_events where actor_id = c2 and customer_id <> c),
+         'an account''s actions are not all its own';
+  assert exists (select 1 from pg_indexes where indexname = 'audit_events_candidate_idx')
+         and exists (select 1 from pg_indexes where indexname = 'audit_events_actor_idx'),
+         'the two histories have no index';
+  raise notice 'OK 65: a candidate''s history holds its own and its cards'' events, and an account''s holds its actions';
+end $$;
+
+-- 66. audit_actor_names() names only the actors of the caller's own company's events: a member,
+-- a former member, and an admin only as an admin. Nobody else, and nothing for a purged user.
+-- An admin gets every name.
+reset role;
+do $$ declare
+  c uuid := '00000000-0000-0000-0000-0000000048c1';
+  d uuid := '00000000-0000-0000-0000-0000000048d1';
+  c2 uuid := '00000000-0000-0000-0000-0000000048c2';
+  d2 uuid := '00000000-0000-0000-0000-0000000048d2';
+  moved uuid := '00000000-0000-0000-0000-0000000048c3';
+  purged uuid := '00000000-0000-0000-0000-0000000048c4';
+  admin uuid := '00000000-0000-0000-0000-0000000000ad';
+  quiet uuid := pg_temp.first_user('00000000-0000-0000-0000-0000000048c1');
+  everyone uuid[];
+  names text;
+begin
+  perform pg_temp.add_member(c, moved, 'history-c3-48@test.local');
+  perform pg_temp.add_member(c, purged, 'history-c4-48@test.local');
+  update public.profiles set full_name = 'Moved' where id = moved;
+  everyone := array[c2, d2, moved, purged, admin, quiet];
+  set local role authenticated;
+  foreach names in array array[moved::text, purged::text, admin::text, d2::text] loop
+    perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', names), true);
+    insert into public.jobs (customer_id, title) values (case when names = d2::text then d else c end, 'Job by ' || names);
+  end loop;
+  reset role;
+  update public.company_members set company_id = d where user_id = moved;
+  delete from auth.users where id = purged;
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', c2), true);
+  select string_agg(coalesce(full_name, '-') || ':' || is_admin, ',' order by full_name nulls last)
+    into names from public.audit_actor_names(everyone);
+  assert names = 'Cecilia:false,Moved:false,-:true',
+         format('C''s member gets the wrong names: %s', names);
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', d2), true);
+  select string_agg(full_name, ',' order by full_name) into names from public.audit_actor_names(everyone);
+  assert names = 'David', format('D''s member gets the wrong names: %s', names);
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', admin), true);
+  select string_agg(full_name, ',' order by full_name) into names from public.audit_actor_names(everyone);
+  assert names = 'Admin Name,Cecilia,David,Moved', format('the admin gets the wrong names: %s', names);
+  assert exists (select 1 from public.audit_events where actor_id = purged), 'a purged user''s events are gone';
+  reset role;
+  update public.companies set deleted_at = now() where id = c;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', c2), true);
+  assert not exists (select 1 from public.audit_actor_names(everyone)), 'a member of a deleted company gets names';
+  reset role;
+  update public.companies set deleted_at = null where id = c;
+  assert not has_function_privilege('anon', 'public.audit_actor_names(uuid[])', 'execute'), 'anon may look up names';
+  raise notice 'OK 66: the actors'' names come only for the caller''s own company''s events, an admin only as an admin';
+end $$;
+
 rollback;
