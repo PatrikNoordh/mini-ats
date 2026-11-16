@@ -12,6 +12,17 @@ export function formatDate(iso: string, language: Language): string {
   return new Intl.DateTimeFormat(LOCALES[language], DATE_OPTIONS).format(new Date(iso));
 }
 
+const DATE_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
+  ...DATE_OPTIONS,
+  hour: "2-digit",
+  minute: "2-digit",
+};
+
+/** A date and time such as "2 okt. 2026 14:05" or "2 Oct 2026, 14:05", for a history (ATS-48). */
+export function formatDateTime(iso: string, language: Language): string {
+  return new Intl.DateTimeFormat(LOCALES[language], DATE_TIME_OPTIONS).format(new Date(iso));
+}
+
 export function formatNumber(value: number, language: Language): string {
   return new Intl.NumberFormat(LOCALES[language]).format(value);
 }
@@ -33,6 +44,7 @@ export function useFormat() {
   return {
     language,
     date: (iso: string) => formatDate(iso, language),
+    dateTime: (iso: string) => formatDateTime(iso, language),
     number: (value: number) => formatNumber(value, language),
     list: (items: readonly string[]) => formatList(items, language),
     compare: (a: string, b: string) => compareText(a, b, language),

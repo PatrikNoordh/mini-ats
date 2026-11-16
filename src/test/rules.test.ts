@@ -5,6 +5,10 @@ describe("business rules", () => {
   it("customer query keys include the customer id", () => {
     expect(queryKeys.jobs("c1")).toEqual(["jobs", "c1"]);
     expect(queryKeys.applications("c2")).not.toEqual(queryKeys.applications("c1"));
+    expect(queryKeys.candidateHistory("c1", "x")).toEqual(["candidateHistory", "c1", "x"]);
+    expect(queryKeys.candidateHistory("c2", "x")).not.toEqual(
+      queryKeys.candidateHistory("c1", "x"),
+    );
   });
   it("days in stage counts whole days", () => {
     expect(daysSince("2026-10-01T00:00:00Z", new Date("2026-10-04T12:00:00Z"))).toBe(3);

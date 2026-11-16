@@ -95,3 +95,8 @@ export const CV_SIGNED_URL_MARGIN_SECONDS = 60;
  * supabase/functions/assess-cv/assessment.ts and the check on cv_assessments.score.
  */
 export const MAX_ASSESSMENT_SCORE = 10;
+/**
+ * The most audit events a history shows, newest first (ATS-48). Older ones stay in the log; the
+ * list says when it was cut off.
+ */
+export const HISTORY_LIMIT = 100;
