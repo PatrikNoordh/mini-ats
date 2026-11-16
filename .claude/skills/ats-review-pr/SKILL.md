@@ -96,6 +96,7 @@ Read each file completely before forming an opinion. Do not review code you have
 - Commits: `(MODEL_NAME) <type> [ATS-<N>] description`, small and in a sensible order
 - PR title: `<type> [ATS-<N>] Title Case Summary`
 - PR body: Summary, What Changed, Acceptance Criteria, Manual Test Steps, Tradeoffs, and `Closes #<n>`
+- The PR body, the docs and the comments name the UI by its English text (`CLAUDE.md` § UI): a Swedish label such as "**+ Lägg till användare**" where "**+ Add user**" is meant is a 🟡 warning, fixed in the PR body before the merge
 - Every acceptance criterion in the issue is either covered or explained
 
 ### Data safety

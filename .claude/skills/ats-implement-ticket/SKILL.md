@@ -119,6 +119,7 @@ Follow `CLAUDE.md` exactly. The rules that matter most:
 
 ### UI
 - Code, comments and identifiers in English
+- Comments, docs and the summary name the UI by its English text from `src/locales/en.json` ("**+ Add user**", not "**+ Lägg till användare**"), as in `CLAUDE.md` § UI
 - Reuse `src/components/ui/` and `States.tsx` before writing new components
 - Every list and board: loading, empty and error states
 - Works at 390 px wide
@@ -202,7 +203,7 @@ Use `ats-git-commit`. Several small commits, ordered database → Edge Functions
 
 ## Step 7 — Summary and issue update
 
-Print this summary in the terminal:
+Print this summary in the terminal. It is in English and names the UI by its English text (`CLAUDE.md` § UI), also in the manual test steps:
 
 ```markdown
 ## [ATS-<N>] Implementation complete

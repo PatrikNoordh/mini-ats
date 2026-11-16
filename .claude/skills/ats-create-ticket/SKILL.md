@@ -100,6 +100,8 @@ gh label list --repo "$REPO" --limit 200 --json name --jq '.[].name' | grep -qxF
 
 ## Step 5 — Draft the issue body
 
+Write the issue in English and name the UI by its English text from `src/locales/en.json` (`CLAUDE.md` § UI): "Accounts → **+ Add user**", not "Konton → **+ Lägg till användare**". A description given in Swedish is translated, labels included.
+
 ### feat / fix / chore template
 
 ```markdown

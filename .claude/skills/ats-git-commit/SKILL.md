@@ -62,6 +62,7 @@ All four must pass. `npm run build` does not type-check on this stack, so `tsc` 
 
 - The ticket id repeats on every commit in the branch
 - Imperative mood, subject under 72 characters, no body
+- In English, naming the UI by its English text (`CLAUDE.md` § UI): "tie Add user to its company", not "Lägg till användare"
 - Never add a `Co-Authored-By` footer or other attribution. The `(MODEL_NAME)` prefix already says who wrote it
 - Never `--no-verify`
 - Never commit `.env*.local`, secrets or the Supabase service role key
