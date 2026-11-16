@@ -9,7 +9,18 @@ import { extendTailwindMerge } from "tailwind-merge";
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
-      w: [{ w: ["kanban-column", "filter", "filter-compact", "search"] }],
+      w: [
+        {
+          w: [
+            "kanban-column",
+            "filter",
+            "filter-compact",
+            "search",
+            "account-role",
+            "account-created",
+          ],
+        },
+      ],
       "max-h": [{ "max-h": ["dialog"] }],
       "font-size": [{ text: ["nav"] }],
     },
