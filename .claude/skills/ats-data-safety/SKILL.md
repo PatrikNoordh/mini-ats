@@ -53,7 +53,7 @@ Ask each question of every change the diff reaches. Each one that gets a "yes" o
 | **Guards in layers** | Which layers guard this: structure, schema, CI test, tool check, permission? Does the change remove or weaken one? Does the change rest on the frontend alone (rule 6)? Does a new table have RLS, policies and explicit grants (rule 5)? Does a new definer function check its caller? |
 | **Proof** | For every guard the change adds or relies on: is there a test that fails when the guard is removed? Name the file and check number. A guard without such a test is a gap, not a guard. |
 
-Security rules 1 to 9 in `CLAUDE.md` apply throughout: the service role only in Edge Functions for their one privileged action, reads with the caller's JWT, `profiles.role` as the role, `customer_id` from triggers for `applications` and `cv_assessments`.
+Security rules 1 to 10 in `CLAUDE.md` apply throughout: the service role only in Edge Functions for their one privileged action, reads with the caller's JWT, `profiles.role` as the role, `customer_id` from triggers for `applications` and `cv_assessments`, and the audit log written only by the database.
 
 ### Step 4 — Report
 
