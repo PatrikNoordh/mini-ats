@@ -67,7 +67,11 @@ export function AccountDialog({
   open: boolean;
   onOpenChange: (o: boolean) => void;
   account?: Profile | null;
-  /** The company a new account joins at first, from the company's own "Add user". */
+  /**
+   * The company a new account is added to, from the company's own "Add user". The dialog is then
+   * tied to it: the company is fixed text and there is no role to choose, since an admin is never
+   * a member (ATS-62).
+   */
   companyId?: string | null;
 }) {
   const { t } = useTranslation();
@@ -85,6 +89,8 @@ export function AccountDialog({
   const [confirming, setConfirming] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
   const isSelf = !!account && account.id === me?.id;
+  const tied = !account && companyId !== null;
+  const tiedCompany = tied ? companies.data?.find((c) => c.id === companyId) : undefined;
   const busy = create.isPending || update.isPending || remove.isPending;
 
   useEffect(() => {
@@ -189,32 +195,42 @@ export function AccountDialog({
           )}
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <Field
-            id="a-role"
-            label={t("accountDialog.role")}
-            // An admin cannot remove its own admin role (admin-manage-account refuses it too).
-            hint={isSelf ? t("accountDialog.selfRoleHint") : undefined}
-            error={errors.role}
-          >
-            {(control) => (
-              <Select
-                value={role}
-                disabled={isSelf}
-                onValueChange={(value) => {
-                  const parsed = roleSchema.safeParse(value);
-                  if (parsed.success) setRole(parsed.data);
-                }}
-              >
-                <SelectTrigger {...control}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="customer">{t("roles.customer")}</SelectItem>
-                  <SelectItem value="admin">{t("roles.admin")}</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </Field>
+          {tied && (
+            <dl className="text-sm">
+              <dt className="font-medium">{t("accountDialog.company")}</dt>
+              <dd className="mt-1 wrap-anywhere text-muted-foreground">
+                {tiedCompany?.name ?? "—"}
+              </dd>
+            </dl>
+          )}
+          {!tied && (
+            <Field
+              id="a-role"
+              label={t("accountDialog.role")}
+              // An admin cannot remove its own admin role (admin-manage-account refuses it too).
+              hint={isSelf ? t("accountDialog.selfRoleHint") : undefined}
+              error={errors.role}
+            >
+              {(control) => (
+                <Select
+                  value={role}
+                  disabled={isSelf}
+                  onValueChange={(value) => {
+                    const parsed = roleSchema.safeParse(value);
+                    if (parsed.success) setRole(parsed.data);
+                  }}
+                >
+                  <SelectTrigger {...control}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="customer">{t("roles.customer")}</SelectItem>
+                    <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </Field>
+          )}
           <Field id="a-name" label={t("accountDialog.name")} error={errors.full_name}>
             {(control) => (
               <Input
@@ -225,7 +241,7 @@ export function AccountDialog({
               />
             )}
           </Field>
-          {role === "customer" && (
+          {role === "customer" && !tied && (
             <Field id="a-co" label={t("accountDialog.company")} error={errors.company}>
               {(control) => (
                 <Select
