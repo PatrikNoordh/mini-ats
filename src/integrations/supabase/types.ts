@@ -117,7 +117,7 @@ export type Database = {
           actor_id?: string | null;
           after?: Json | null;
           before?: Json | null;
-          candidate_id?: never;
+          candidate_id?: string | null;
           created_at?: string;
           customer_id: string;
           fields?: string[] | null;
@@ -130,7 +130,7 @@ export type Database = {
           actor_id?: string | null;
           after?: Json | null;
           before?: Json | null;
-          candidate_id?: never;
+          candidate_id?: string | null;
           created_at?: string;
           customer_id?: string;
           fields?: string[] | null;
