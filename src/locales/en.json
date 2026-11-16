@@ -27,6 +27,10 @@
     "accounts": {
       "title": "Accounts — Mini-ATS",
       "description": "Manage admin and customer accounts on the platform."
+    },
+    "history": {
+      "title": "History — Mini-ATS",
+      "description": "What an account has done, newest first."
     }
   },
   "common": {
@@ -248,7 +252,9 @@
     "cvRemoveFailed": "Could not remove the CV.",
     "cvOpenFailed": "Could not fetch the CV.",
     "removeCvTitle": "Remove CV?",
-    "removeCvDescription": "The CV for {{name}} will be deleted for good."
+    "removeCvDescription": "The CV for {{name}} will be deleted for good.",
+    "tabDetails": "Details",
+    "tabHistory": "History"
   },
   "candidates": {
     "title": "Candidates",
@@ -395,7 +401,9 @@
     "companyDeleteNowTitle": "Delete the company for good?",
     "companyDeleteNowDescription": "{{name}} is deleted now with all its jobs, candidates, cards and CVs and every user account in the company. This cannot be undone.",
     "companyDeletedNow": "The company has been deleted for good.",
-    "companyDeleteNowFailed": "Could not delete the company."
+    "companyDeleteNowFailed": "Could not delete the company.",
+    "showHistory": "Show history",
+    "historyOf": "History of {{name}}"
   },
   "accountDialog": {
     "title": "New account",
@@ -535,5 +543,52 @@
     "amber": "Amber",
     "green": "Green",
     "red": "Red"
+  },
+  "history": {
+    "accountTitle": "History of {{name}}",
+    "accountHint": "What the account has done in every company, newest first.",
+    "accountNotFound": "The account no longer exists.",
+    "back": "Back to accounts",
+    "empty": "No history yet",
+    "emptyHint": "Changes show up here from now on.",
+    "truncated": "Showing the latest {{count}} events.",
+    "by": "by {{actor}}",
+    "system": "The system",
+    "removedUser": "A removed user",
+    "unnamedUser": "A user without a name",
+    "removedCandidate": "a removed candidate",
+    "someCandidate": "a candidate",
+    "removedJob": "a removed job",
+    "removedStage": "a removed column",
+    "candidate": {
+      "insert": "Added {{candidate}}",
+      "update": "Changed {{fields}} for {{candidate}}",
+      "delete": "Deleted {{candidate}}"
+    },
+    "card": {
+      "insert": "Linked {{candidate}} to {{job}}",
+      "move": "Moved {{candidate}} from {{from}} to {{to}} in {{job}}",
+      "update": "Changed the link between {{candidate}} and {{job}}",
+      "delete": "Removed {{candidate}} from {{job}}"
+    },
+    "job": {
+      "insert": "Created the job {{job}}",
+      "update": "Changed {{fields}} for the job {{job}}",
+      "close": "Closed the job {{job}}",
+      "reopen": "Reopened the job {{job}}",
+      "delete": "Deleted the job {{job}}"
+    },
+    "fields": {
+      "full_name": "name",
+      "email": "email",
+      "phone": "phone",
+      "linkedin_url": "LinkedIn",
+      "notes": "notes",
+      "cv_path": "CV",
+      "title": "title",
+      "description": "description",
+      "location": "location",
+      "status": "status"
+    }
   }
 }

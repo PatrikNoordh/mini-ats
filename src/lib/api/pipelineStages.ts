@@ -135,3 +135,17 @@ export async function reorderStages(
   if (error) throw stageWriteError(error);
   return z.array(z.unknown()).parse(data).map(parseStageRow);
 }
+
+/**
+ * The given columns, of any company, for a history that spans companies (ATS-48). A removed
+ * column is missing. RLS decides which columns the reader sees.
+ */
+export async function listStagesByIds(ids: readonly string[]): Promise<PipelineStage[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("pipeline_stages")
+    .select(STAGE_COLUMNS)
+    .in("id", [...ids]);
+  if (error) throw error;
+  return data.map(parseStageRow);
+}

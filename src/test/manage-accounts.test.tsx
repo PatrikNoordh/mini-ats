@@ -33,6 +33,20 @@ vi.mock("@/hooks/useProfiles", () => ({
   useDeleteProfileNow: () => mutation(m.deleteNow),
 }));
 vi.mock("@/hooks/useCompanies", () => ({ useCompanies: () => ({ data: m.companies }) }));
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({
+    children,
+    params,
+    ...props
+  }: {
+    children: ReactNode;
+    params: { accountId: string };
+  }) => (
+    <a href={`/admin/accounts/${params.accountId}/history`} {...props}>
+      {children}
+    </a>
+  ),
+}));
 
 const lumen: Company = {
   id: "co1",
@@ -132,6 +146,14 @@ describe("editing an account", () => {
     expect(screen.getByLabelText("Role")).toBeDisabled();
     expect(screen.getByText("You cannot remove your own admin role.")).toBeInTheDocument();
   });
+
+  it("links to the account's history (ATS-48)", () => {
+    inEnglish(<AccountDialog open onOpenChange={onOpenChange} account={customer} />);
+    expect(screen.getByRole("link", { name: "Show history" })).toHaveAttribute(
+      "href",
+      "/admin/accounts/c1/history",
+    );
+  });
 });
 
 describe("a new account", () => {
@@ -160,6 +182,11 @@ describe("a new account", () => {
         company_id: "co1",
       }),
     );
+  });
+
+  it("has no history to link to", () => {
+    inEnglish(<AccountDialog open onOpenChange={onOpenChange} />);
+    expect(screen.queryByRole("link", { name: "Show history" })).toBeNull();
   });
 
   it("asks a customer to choose a company", async () => {
@@ -208,6 +235,14 @@ describe("deleted accounts", () => {
     expect(button).toBeEnabled();
     fireEvent.click(button);
     await waitFor(() => expect(m.deleteNow).toHaveBeenCalledWith("c1"));
+  });
+
+  it("links to each deleted account's history (ATS-48)", () => {
+    inEnglish(<DeletedAccounts accounts={[gone]} companies={[deletedCompany]} />);
+    expect(screen.getByRole("link", { name: "History of Erik Exempel" })).toHaveAttribute(
+      "href",
+      "/admin/accounts/c1/history",
+    );
   });
 
   it("has an empty state", () => {

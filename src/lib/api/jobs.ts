@@ -116,3 +116,18 @@ export async function deleteJob(customerId: string, id: string): Promise<void> {
   }
   if (!data) throw new AppError("job_not_found");
 }
+
+/**
+ * The titles of the given jobs, by id, for a history that spans companies (ATS-48). A deleted job
+ * is missing from the map. RLS decides which jobs the reader sees.
+ */
+export async function listJobTitles(ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("id, title")
+    .in("id", [...ids]);
+  if (error) throw error;
+  const rows = z.array(z.object({ id: z.string(), title: z.string() })).parse(data);
+  return new Map(rows.map((r) => [r.id, r.title]));
+}

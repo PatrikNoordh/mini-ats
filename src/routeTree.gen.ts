@@ -16,6 +16,7 @@ import { Route as AuthenticatedCandidatesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated.jobs'
 import { Route as AuthenticatedPipelineRouteImport } from './routes/_authenticated.pipeline'
 import { Route as AuthenticatedAdminAccountsRouteImport } from './routes/_authenticated.admin.accounts'
+import { Route as AuthenticatedAdminAccountsAccountIdHistoryRouteImport } from './routes/_authenticated.admin.accounts_.$accountId.history'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,12 @@ const AuthenticatedAdminAccountsRoute =
     path: '/admin/accounts',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminAccountsAccountIdHistoryRoute =
+  AuthenticatedAdminAccountsAccountIdHistoryRouteImport.update({
+    id: '/admin/accounts_/$accountId/history',
+    path: '/admin/accounts/$accountId/history',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/jobs': typeof AuthenticatedJobsRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
   '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
+  '/admin/accounts/$accountId/history': typeof AuthenticatedAdminAccountsAccountIdHistoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,6 +76,7 @@ export interface FileRoutesByTo {
   '/jobs': typeof AuthenticatedJobsRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
   '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
+  '/admin/accounts/$accountId/history': typeof AuthenticatedAdminAccountsAccountIdHistoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -78,13 +87,27 @@ export interface FileRoutesById {
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
   '/_authenticated/pipeline': typeof AuthenticatedPipelineRoute
   '/_authenticated/admin/accounts': typeof AuthenticatedAdminAccountsRoute
+  '/_authenticated/admin/accounts_/$accountId/history': typeof AuthenticatedAdminAccountsAccountIdHistoryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/login' | '/candidates' | '/jobs' | '/pipeline' | '/admin/accounts'
+    | '/'
+    | '/login'
+    | '/candidates'
+    | '/jobs'
+    | '/pipeline'
+    | '/admin/accounts'
+    | '/admin/accounts/$accountId/history'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/candidates' | '/jobs' | '/pipeline' | '/admin/accounts'
+  to:
+    | '/'
+    | '/login'
+    | '/candidates'
+    | '/jobs'
+    | '/pipeline'
+    | '/admin/accounts'
+    | '/admin/accounts/$accountId/history'
   id:
     | '__root__'
     | '/'
@@ -94,6 +117,7 @@ export interface FileRouteTypes {
     | '/_authenticated/jobs'
     | '/_authenticated/pipeline'
     | '/_authenticated/admin/accounts'
+    | '/_authenticated/admin/accounts_/$accountId/history'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -153,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAccountsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/accounts_/$accountId/history': {
+      id: '/_authenticated/admin/accounts_/$accountId/history'
+      path: '/admin/accounts/$accountId/history'
+      fullPath: '/admin/accounts/$accountId/history'
+      preLoaderRoute: typeof AuthenticatedAdminAccountsAccountIdHistoryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -161,6 +192,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
   AuthenticatedPipelineRoute: typeof AuthenticatedPipelineRoute
   AuthenticatedAdminAccountsRoute: typeof AuthenticatedAdminAccountsRoute
+  AuthenticatedAdminAccountsAccountIdHistoryRoute: typeof AuthenticatedAdminAccountsAccountIdHistoryRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -168,6 +200,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedJobsRoute: AuthenticatedJobsRoute,
   AuthenticatedPipelineRoute: AuthenticatedPipelineRoute,
   AuthenticatedAdminAccountsRoute: AuthenticatedAdminAccountsRoute,
+  AuthenticatedAdminAccountsAccountIdHistoryRoute:
+    AuthenticatedAdminAccountsAccountIdHistoryRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

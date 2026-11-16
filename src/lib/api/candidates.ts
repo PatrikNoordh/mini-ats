@@ -126,3 +126,18 @@ export async function setCandidateCvPath(
 export async function deleteCandidate(id: string): Promise<void> {
   await invokeFunction("delete-candidate", { candidate_id: id });
 }
+
+/**
+ * The names of the given candidates, by id, for a history that spans companies (ATS-48). A
+ * deleted candidate is missing from the map. RLS decides which candidates the reader sees.
+ */
+export async function listCandidateNames(ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from("candidates")
+    .select("id, full_name")
+    .in("id", [...ids]);
+  if (error) throw error;
+  const rows = z.array(z.object({ id: z.string(), full_name: z.string() })).parse(data);
+  return new Map(rows.map((r) => [r.id, r.full_name]));
+}

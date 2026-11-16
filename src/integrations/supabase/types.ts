@@ -104,6 +104,7 @@ export type Database = {
           actor_id: string | null;
           after: Json | null;
           before: Json | null;
+          candidate_id: string | null;
           created_at: string;
           customer_id: string;
           fields: string[] | null;
@@ -116,6 +117,7 @@ export type Database = {
           actor_id?: string | null;
           after?: Json | null;
           before?: Json | null;
+          candidate_id?: string | null;
           created_at?: string;
           customer_id: string;
           fields?: string[] | null;
@@ -128,6 +130,7 @@ export type Database = {
           actor_id?: string | null;
           after?: Json | null;
           before?: Json | null;
+          candidate_id?: string | null;
           created_at?: string;
           customer_id?: string;
           fields?: string[] | null;
@@ -434,6 +437,14 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      audit_actor_names: {
+        Args: { actor_ids: string[] };
+        Returns: {
+          full_name: string;
+          id: string;
+          is_admin: boolean;
+        }[];
       };
       companies_due_for_purge: { Args: never; Returns: string[] };
       create_default_stages: { Args: { customer: string }; Returns: undefined };

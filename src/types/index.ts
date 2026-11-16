@@ -102,3 +102,39 @@ export interface Application {
   created_at: string;
   updated_at: string;
 }
+
+/** What a write to a job, candidate or card did, in the audit log (ATS-47). */
+export type AuditAction = "insert" | "update" | "delete";
+export type AuditTable = "jobs" | "candidates" | "applications";
+
+/**
+ * One event of the audit log, written by the database. `before` and `after` hold the values the
+ * log keeps: a job's title, location and status, a card's job, candidate and column ids. A
+ * candidate event holds none, only the names of the fields an update changed.
+ */
+export interface AuditEvent {
+  id: number;
+  customer_id: string;
+  /** The user who made the change, or null when the service role or the database did. */
+  actor_id: string | null;
+  action: AuditAction;
+  table_name: AuditTable;
+  row_id: string;
+  /** The candidate the event concerns: the candidate's own events and its cards'. */
+  candidate_id: string | null;
+  /** The fields an update changed, null for an insert or a delete. */
+  fields: string[] | null;
+  before: Record<string, string | null> | null;
+  after: Record<string, string | null> | null;
+  created_at: string;
+}
+
+/**
+ * The name the reader may see for an actor (ATS-48). A customer sees an admin only as an admin,
+ * so `full_name` is null then. A purged user has no entry at all.
+ */
+export interface AuditActor {
+  id: string;
+  full_name: string | null;
+  is_admin: boolean;
+}

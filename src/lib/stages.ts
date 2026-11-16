@@ -265,4 +265,9 @@ export const queryKeys = {
   cvUrls: (customerId: string | null) => ["cvUrl", customerId] as const,
   /** A short-lived link to open one CV (ATS-17). */
   cvUrl: (customerId: string | null, path: string | null) => ["cvUrl", customerId, path] as const,
+  /** One candidate's history: its events and its cards', with the actors' names (ATS-48). */
+  candidateHistory: (customerId: string | null, candidateId: string | null) =>
+    ["candidateHistory", customerId, candidateId] as const,
+  /** What one account did, in every company. Admin only, so it holds no customer's id (ATS-48). */
+  accountHistory: (accountId: string) => ["accountHistory", accountId] as const,
 };

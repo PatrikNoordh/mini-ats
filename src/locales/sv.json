@@ -27,6 +27,10 @@
     "accounts": {
       "title": "Konton — Mini-ATS",
       "description": "Hantera admin- och kundkonton på plattformen."
+    },
+    "history": {
+      "title": "Historik — Mini-ATS",
+      "description": "Vad ett konto har gjort, nyast först."
     }
   },
   "common": {
@@ -248,7 +252,9 @@
     "cvRemoveFailed": "Kunde inte ta bort CV:t.",
     "cvOpenFailed": "Kunde inte hämta CV:t.",
     "removeCvTitle": "Ta bort CV?",
-    "removeCvDescription": "CV:t för {{name}} tas bort för gott."
+    "removeCvDescription": "CV:t för {{name}} tas bort för gott.",
+    "tabDetails": "Uppgifter",
+    "tabHistory": "Historik"
   },
   "candidates": {
     "title": "Kandidater",
@@ -395,7 +401,9 @@
     "companyDeleteNowTitle": "Radera företaget för gott?",
     "companyDeleteNowDescription": "{{name}} raderas nu med alla jobb, kandidater, kort och CV:n och alla användarkonton i företaget. Det går inte att ångra.",
     "companyDeletedNow": "Företaget är raderat för gott.",
-    "companyDeleteNowFailed": "Kunde inte radera företaget."
+    "companyDeleteNowFailed": "Kunde inte radera företaget.",
+    "showHistory": "Visa historik",
+    "historyOf": "Historik för {{name}}"
   },
   "accountDialog": {
     "title": "Nytt konto",
@@ -535,5 +543,52 @@
     "amber": "Gul",
     "green": "Grön",
     "red": "Röd"
+  },
+  "history": {
+    "accountTitle": "Historik för {{name}}",
+    "accountHint": "Vad kontot har gjort i alla företag, nyast först.",
+    "accountNotFound": "Kontot finns inte längre.",
+    "back": "Tillbaka till konton",
+    "empty": "Ingen historik än",
+    "emptyHint": "Ändringar visas här från och med nu.",
+    "truncated": "Visar de senaste {{count}} händelserna.",
+    "by": "av {{actor}}",
+    "system": "Systemet",
+    "removedUser": "En borttagen användare",
+    "unnamedUser": "En användare utan namn",
+    "removedCandidate": "en borttagen kandidat",
+    "someCandidate": "en kandidat",
+    "removedJob": "ett borttaget jobb",
+    "removedStage": "en borttagen kolumn",
+    "candidate": {
+      "insert": "Lade till {{candidate}}",
+      "update": "Ändrade {{fields}} för {{candidate}}",
+      "delete": "Tog bort {{candidate}}"
+    },
+    "card": {
+      "insert": "Kopplade {{candidate}} till {{job}}",
+      "move": "Flyttade {{candidate}} från {{from}} till {{to}} i {{job}}",
+      "update": "Ändrade kopplingen mellan {{candidate}} och {{job}}",
+      "delete": "Tog bort {{candidate}} från {{job}}"
+    },
+    "job": {
+      "insert": "Skapade jobbet {{job}}",
+      "update": "Ändrade {{fields}} för jobbet {{job}}",
+      "close": "Stängde jobbet {{job}}",
+      "reopen": "Öppnade jobbet {{job}} igen",
+      "delete": "Tog bort jobbet {{job}}"
+    },
+    "fields": {
+      "full_name": "namn",
+      "email": "e-post",
+      "phone": "telefon",
+      "linkedin_url": "LinkedIn",
+      "notes": "anteckningar",
+      "cv_path": "CV",
+      "title": "titel",
+      "description": "beskrivning",
+      "location": "ort",
+      "status": "status"
+    }
   }
 }
