@@ -195,12 +195,11 @@ export function AccountDialog({
           )}
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          {tied && (
+          {/* The page has already loaded the companies, so the name is there when it opens. */}
+          {tiedCompany && (
             <dl className="text-sm">
               <dt className="font-medium">{t("accountDialog.company")}</dt>
-              <dd className="mt-1 wrap-anywhere text-muted-foreground">
-                {tiedCompany?.name ?? "—"}
-              </dd>
+              <dd className="mt-1 wrap-anywhere text-muted-foreground">{tiedCompany.name}</dd>
             </dl>
           )}
           {!tied && (
