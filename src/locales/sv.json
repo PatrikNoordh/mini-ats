@@ -557,6 +557,7 @@
     "removedUser": "En borttagen användare",
     "unnamedUser": "En användare utan namn",
     "removedCandidate": "en borttagen kandidat",
+    "someCandidate": "en kandidat",
     "removedJob": "ett borttaget jobb",
     "removedStage": "en borttagen kolumn",
     "candidate": {

@@ -89,7 +89,20 @@ describe("describeEvent", () => {
     );
     expect(
       describeEvent({ ...edit, row_id: "gone", action: "delete", fields: null }, names, en, enList),
-    ).toBe("Deleted a removed candidate");
+    ).toBe("Deleted a candidate");
+    expect(
+      describeEvent({ ...edit, row_id: "gone", action: "delete", fields: null }, names, sv, svList),
+    ).toBe("Tog bort en kandidat");
+  });
+
+  it("names a card's removed candidate without saying removed twice when the card goes too", () => {
+    const gone = { job_id: "job", candidate_id: "gone", stage_id: "s1" };
+    expect(describeEvent(event({ action: "delete", before: gone }), names, sv, svList)).toBe(
+      "Tog bort en kandidat från Snickare",
+    );
+    expect(describeEvent(event({ after: gone }), names, sv, svList)).toBe(
+      "Kopplade en borttagen kandidat till Snickare",
+    );
   });
 
   it("names a job by the title it keeps, also after the job is deleted", () => {

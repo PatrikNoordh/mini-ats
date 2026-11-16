@@ -557,6 +557,7 @@
     "removedUser": "A removed user",
     "unnamedUser": "A user without a name",
     "removedCandidate": "a removed candidate",
+    "someCandidate": "a candidate",
     "removedJob": "a removed job",
     "removedStage": "a removed column",
     "candidate": {

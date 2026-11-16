@@ -55,8 +55,10 @@ export function describeEvent(
   list: (items: readonly string[]) => string,
 ): string {
   const kept = event.after ?? event.before;
+  // A delete of a candidate, or of its card with it, happens as the candidate goes, so "a removed
+  // candidate" would say it twice: "Tog bort en borttagen kandidat". It is just "a candidate" then.
   const removed = {
-    candidate: t("history.removedCandidate"),
+    candidate: t(event.action === "delete" ? "history.someCandidate" : "history.removedCandidate"),
     job: t("history.removedJob"),
     stage: t("history.removedStage"),
   };
