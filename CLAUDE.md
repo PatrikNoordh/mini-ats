@@ -23,6 +23,7 @@ A small applicant tracking system (ATS) for companies that recruit. The goal is 
 | Application | `applications` | Links a candidate to a job. One card on the kanban board. Has a `stage_id` (its column) and `stage_changed_at`. |
 | Pipeline stage | `pipeline_stages` | One column of a customer's board, ordered by `position`. Its `kind` is `open`, `hired` or `rejected`. |
 | CV assessment | `cv_assessments` | Optional AI feature. A suggestion for the recruiter, never a decision. |
+| Audit event | `audit_events` | Who created, changed or deleted a job, candidate or card, and when. Written only by database triggers; clients only read it. Holds no candidate values, only the names of the fields that changed (ATS-47). |
 
 **Pipeline stages:** every customer starts with six default columns, `new` → `screening` → `interview` → `offer` → `hired`, plus `rejected`, and can rename, recolour, add, remove and reorder them (epic 8). A board always keeps exactly one Hired column, at least one Rejected and at least one open column.
 
@@ -76,7 +77,8 @@ Quality over speed. Do every ticket the way a careful senior engineer would:
 6. **Do not rely on the frontend for access control.** Hiding a button is UX, not security. RLS is the security.
 7. **The database sets `customer_id` where it can.** `applications.customer_id` comes from the job and `cv_assessments.customer_id` from the application, both via triggers. Never trust a `customer_id` sent from the client for those tables.
 8. **Clients may read and delete their own assessments; only `assess-cv` creates them.** No client inserts or updates `cv_assessments` (ATS-56).
-9. No secrets in the repo. Use `.env.local`, Vercel environment variables and Supabase secrets.
+9. **Only the database writes the audit log.** The triggers on `jobs`, `candidates` and `applications` write `audit_events`, with the actor from `auth.uid()`. No client, admin or Edge Function inserts, updates or deletes an event, and no event copies a candidate's values (ATS-47).
+10. No secrets in the repo. Use `.env.local`, Vercel environment variables and Supabase secrets.
 
 ## How data access works
 
