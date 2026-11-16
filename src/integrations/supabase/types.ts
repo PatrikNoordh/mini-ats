@@ -98,6 +98,53 @@ export type Database = {
           },
         ];
       };
+      audit_events: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          after: Json | null;
+          before: Json | null;
+          created_at: string;
+          customer_id: string;
+          fields: string[] | null;
+          id: number;
+          row_id: string;
+          table_name: string;
+        };
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          after?: Json | null;
+          before?: Json | null;
+          created_at?: string;
+          customer_id: string;
+          fields?: string[] | null;
+          id?: never;
+          row_id: string;
+          table_name: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          after?: Json | null;
+          before?: Json | null;
+          created_at?: string;
+          customer_id?: string;
+          fields?: string[] | null;
+          id?: never;
+          row_id?: string;
+          table_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       candidates: {
         Row: {
           created_at: string;
