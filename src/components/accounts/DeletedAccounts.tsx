@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -118,6 +119,15 @@ export function DeletedAccounts({
                           onClick={() => setPurging(a)}
                         >
                           {t("accounts.deleteNow")}
+                        </Button>
+                        <Button asChild variant="ghost" size="sm">
+                          <Link
+                            to="/admin/accounts/$accountId/history"
+                            params={{ accountId: a.id }}
+                            aria-label={t("accounts.historyOf", { name: a.full_name || a.email })}
+                          >
+                            {t("accounts.showHistory")}
+                          </Link>
                         </Button>
                       </div>
                     </TableCell>

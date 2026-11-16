@@ -11,10 +11,12 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { AddToJob } from "@/components/pipeline/AddToJob";
 import { CandidateAssessment } from "@/components/pipeline/CandidateAssessment";
 import { CandidateCv } from "@/components/pipeline/CandidateCv";
+import { CandidateHistory } from "@/components/pipeline/CandidateHistory";
 import { useRemoveApplication } from "@/hooks/useApplications";
 import { useErrorToast } from "@/hooks/useErrorToast";
 import { useFormat } from "@/lib/format";
@@ -72,108 +74,132 @@ export function CandidateSheet({
                 {t("candidateSheet.added", { date: format.date(candidate.created_at) })}
               </SheetDescription>
             </SheetHeader>
-            <dl className="mt-6 space-y-4 px-4 text-sm">
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("candidateSheet.email")}
-                </dt>
-                <dd>
-                  <a className="text-primary hover:underline" href={`mailto:${candidate.email}`}>
-                    {candidate.email}
-                  </a>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("candidateSheet.phone")}
-                </dt>
-                <dd>{candidate.phone || "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("candidateSheet.linkedin")}
-                </dt>
-                <dd>
-                  {candidate.linkedin_url ? (
-                    <a
-                      className="inline-flex items-center gap-1 text-primary hover:underline"
-                      href={candidate.linkedin_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {t("candidateSheet.openProfile")} <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  ) : (
-                    "—"
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("candidateSheet.notes")}
-                </dt>
-                <dd className="whitespace-pre-wrap">
-                  {candidate.notes || (
-                    <span className="text-muted-foreground">{t("candidateSheet.noNotes")}</span>
-                  )}
-                </dd>
-              </div>
-              <CandidateCv customerId={customerId} candidate={candidate} />
-              <div>
-                <dt className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("candidateSheet.linkedJobs")}
-                </dt>
-                <dd className="space-y-2">
-                  {links.length === 0 && (
-                    <span className="text-muted-foreground">
-                      {t("candidateSheet.noLinkedJobs")}
-                    </span>
-                  )}
-                  {links.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex items-center justify-between rounded-md border px-3 py-2"
-                    >
-                      <span className="min-w-0 truncate font-medium">{jobTitle(a)}</span>
-                      <span className="flex shrink-0 items-center gap-2">
-                        <Badge variant="secondary">{stageName(a)}</Badge>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {t("pipeline.days", { count: daysSince(a.stage_changed_at) })}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                          aria-label={t("candidateSheet.removeFromJob", { job: jobTitle(a) })}
-                          disabled={remove.isPending}
-                          onClick={() => setRemoving(a)}
+            {/* Keyed by candidate, so another candidate opens on its details. */}
+            <Tabs key={candidate.id} defaultValue="details" className="mt-4">
+              <TabsList className="mx-4">
+                <TabsTrigger value="details" className="data-[state=active]:bg-card">
+                  {t("candidateSheet.tabDetails")}
+                </TabsTrigger>
+                <TabsTrigger value="history" className="data-[state=active]:bg-card">
+                  {t("candidateSheet.tabHistory")}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="details">
+                <dl className="mt-2 space-y-4 px-4 text-sm">
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("candidateSheet.email")}
+                    </dt>
+                    <dd>
+                      <a
+                        className="text-primary hover:underline"
+                        href={`mailto:${candidate.email}`}
+                      >
+                        {candidate.email}
+                      </a>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("candidateSheet.phone")}
+                    </dt>
+                    <dd>{candidate.phone || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("candidateSheet.linkedin")}
+                    </dt>
+                    <dd>
+                      {candidate.linkedin_url ? (
+                        <a
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                          href={candidate.linkedin_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          <X className="h-4 w-4" aria-hidden="true" />
-                        </Button>
-                      </span>
-                    </div>
-                  ))}
-                </dd>
-              </div>
-            </dl>
-            <div className="mt-4 px-4 pb-4 text-sm">
-              <AddToJob
-                key={candidate.id}
-                customerId={customerId}
-                candidateId={candidate.id}
-                applications={applications}
-                jobs={jobs}
-              />
-            </div>
-            <div className="px-4 pb-4 text-sm">
-              <CandidateAssessment
-                customerId={customerId}
-                candidate={candidate}
-                links={links}
-                jobTitle={jobTitle}
-              />
-            </div>
+                          {t("candidateSheet.openProfile")} <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("candidateSheet.notes")}
+                    </dt>
+                    <dd className="whitespace-pre-wrap">
+                      {candidate.notes || (
+                        <span className="text-muted-foreground">{t("candidateSheet.noNotes")}</span>
+                      )}
+                    </dd>
+                  </div>
+                  <CandidateCv customerId={customerId} candidate={candidate} />
+                  <div>
+                    <dt className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("candidateSheet.linkedJobs")}
+                    </dt>
+                    <dd className="space-y-2">
+                      {links.length === 0 && (
+                        <span className="text-muted-foreground">
+                          {t("candidateSheet.noLinkedJobs")}
+                        </span>
+                      )}
+                      {links.map((a) => (
+                        <div
+                          key={a.id}
+                          className="flex items-center justify-between rounded-md border px-3 py-2"
+                        >
+                          <span className="min-w-0 truncate font-medium">{jobTitle(a)}</span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <Badge variant="secondary">{stageName(a)}</Badge>
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {t("pipeline.days", { count: daysSince(a.stage_changed_at) })}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              aria-label={t("candidateSheet.removeFromJob", { job: jobTitle(a) })}
+                              disabled={remove.isPending}
+                              onClick={() => setRemoving(a)}
+                            >
+                              <X className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                          </span>
+                        </div>
+                      ))}
+                    </dd>
+                  </div>
+                </dl>
+                <div className="mt-4 px-4 pb-4 text-sm">
+                  <AddToJob
+                    key={candidate.id}
+                    customerId={customerId}
+                    candidateId={candidate.id}
+                    applications={applications}
+                    jobs={jobs}
+                  />
+                </div>
+                <div className="px-4 pb-4 text-sm">
+                  <CandidateAssessment
+                    customerId={customerId}
+                    candidate={candidate}
+                    links={links}
+                    jobTitle={jobTitle}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="history" className="px-4 pb-4">
+                <CandidateHistory
+                  customerId={customerId}
+                  candidate={candidate}
+                  jobs={jobs}
+                  stages={stages}
+                />
+              </TabsContent>
+            </Tabs>
             <ConfirmDeleteDialog
               open={removing !== null}
               onOpenChange={(o) => !o && setRemoving(null)}

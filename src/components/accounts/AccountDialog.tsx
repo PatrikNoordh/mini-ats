@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -177,6 +178,15 @@ export function AccountDialog({
           <DialogTitle>
             {account ? t("accountDialog.titleEdit") : t("accountDialog.title")}
           </DialogTitle>
+          {account && (
+            <Link
+              to="/admin/accounts/$accountId/history"
+              params={{ accountId: account.id }}
+              className="w-fit text-sm text-primary hover:underline"
+            >
+              {t("accounts.showHistory")}
+            </Link>
+          )}
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <Field
