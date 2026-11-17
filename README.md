@@ -179,6 +179,7 @@ mini-ats/
 │   ├── migrations/          # schema, RLS, triggers, database functions
 │   ├── functions/           # admin-create-user, admin-manage-account (+ Deno tests)
 │   ├── tests/               # rls_test.sql, the concurrency test
+│   ├── templates/           # Auth emails in Swedish and English
 │   └── config.toml          # the local stack for the end-to-end tests
 ├── e2e/                     # Playwright tests
 ├── scripts/                 # the demo seed and the end-to-end test seed
@@ -336,6 +337,10 @@ npm run dev     # http://localhost:8080
 
 The repository is connected to Vercel: every push to `main` deploys the live app and every pull request gets a preview. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for Production and Preview. Nitro builds for Vercel without extra configuration.
 
+### Email
+
+Supabase Auth sends its emails (invites, password resets) through **Brevo** as custom SMTP, from a free address made for the app, **without a domain of its own**. Emails may therefore land in spam. A real deployment would verify a domain it owns with the provider (SPF, DKIM and DMARC) and send from it; switching changes only the SMTP settings in the Supabase dashboard, not the code. The SMTP key and the sender live only in the dashboard. The templates, in Swedish and English, are in `supabase/templates/`. Setup and checks: [`docs/auth-email.md`](docs/auth-email.md).
+
 ---
 
 ## Scripts
@@ -421,6 +426,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 | **A job with candidates can't be deleted** | Nobody empties a board by mistake | Two steps to remove a job with candidates |
 | **Error codes instead of messages** | Translated in both languages; no internal details leak | Every new error needs a code, a translation and a doc line |
 | **Saves fail fast when offline** | A clear error instead of a spinner that never stops | No offline queue |
+| **Auth email through Brevo from a free address** | A real provider without buying a domain for a portfolio project | Emails may land in spam until a domain is verified; switching is a dashboard setting |
 
 ---
 
