@@ -13,22 +13,26 @@ const statusSchema = z.object({
   API_URL: z.string().url(),
   ANON_KEY: z.string().min(1),
   SERVICE_ROLE_KEY: z.string().min(1),
+  // The stack's mail inbox, where Auth's emails land locally (ATS-49).
+  MAILPIT_URL: z.string().url(),
 });
 
 export interface LocalStack {
   url: string;
   anonKey: string;
   serviceRoleKey: string;
+  mailpitUrl: string;
 }
 
 /** Reads the local stack from E2E_* variables (CI sets them) or from `npx supabase status`. */
 function readStatus(): z.infer<typeof statusSchema> {
-  const { E2E_SUPABASE_URL, E2E_ANON_KEY, E2E_SERVICE_ROLE_KEY } = process.env;
-  if (E2E_SUPABASE_URL && E2E_ANON_KEY && E2E_SERVICE_ROLE_KEY) {
+  const { E2E_SUPABASE_URL, E2E_ANON_KEY, E2E_SERVICE_ROLE_KEY, E2E_MAILPIT_URL } = process.env;
+  if (E2E_SUPABASE_URL && E2E_ANON_KEY && E2E_SERVICE_ROLE_KEY && E2E_MAILPIT_URL) {
     return statusSchema.parse({
       API_URL: E2E_SUPABASE_URL,
       ANON_KEY: E2E_ANON_KEY,
       SERVICE_ROLE_KEY: E2E_SERVICE_ROLE_KEY,
+      MAILPIT_URL: E2E_MAILPIT_URL,
     });
   }
   let output: string;
@@ -45,14 +49,17 @@ function readStatus(): z.infer<typeof statusSchema> {
 
 export function localStack(): LocalStack {
   const status = readStatus();
-  const host = new URL(status.API_URL).hostname;
-  if (!LOCAL_HOSTS.has(host)) {
-    throw new Error(`Refusing ${host}: the end-to-end tests only run against the local stack.`);
+  for (const url of [status.API_URL, status.MAILPIT_URL]) {
+    const host = new URL(url).hostname;
+    if (!LOCAL_HOSTS.has(host)) {
+      throw new Error(`Refusing ${host}: the end-to-end tests only run against the local stack.`);
+    }
   }
   return {
     url: status.API_URL,
     anonKey: status.ANON_KEY,
     serviceRoleKey: status.SERVICE_ROLE_KEY,
+    mailpitUrl: status.MAILPIT_URL,
   };
 }
 

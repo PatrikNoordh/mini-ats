@@ -99,15 +99,17 @@ jobs:
           version: 3.1.0
       - run: npm ci
       - name: Local Supabase stack (applies the migrations)
-        # Only what the app uses: database, Auth, API, Storage and the Edge Functions.
-        run: supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,logflare,vector,supavisor
+        # Only what the app uses: database, Auth, API, Storage, the Edge Functions and Mailpit, the
+        # inbox the Auth email tests read (ATS-49).
+        run: supabase start -x realtime,imgproxy,postgres-meta,studio,logflare,vector,supavisor
       - name: Point the tests at the local stack
         # The CLI's fixed local keys, not secrets. scripts/local-stack.ts reads these variables.
         run: |
           supabase status -o json | jq -r '
             "E2E_SUPABASE_URL=\(.API_URL)",
             "E2E_ANON_KEY=\(.ANON_KEY)",
-            "E2E_SERVICE_ROLE_KEY=\(.SERVICE_ROLE_KEY)"' >> "$GITHUB_ENV"
+            "E2E_SERVICE_ROLE_KEY=\(.SERVICE_ROLE_KEY)",
+            "E2E_MAILPIT_URL=\(.MAILPIT_URL)"' >> "$GITHUB_ENV"
       - run: npx playwright install --with-deps chromium
       - name: Seed, build and run Playwright
         # e2e/global-setup.ts seeds the stack; the web server in playwright.config.ts builds the app

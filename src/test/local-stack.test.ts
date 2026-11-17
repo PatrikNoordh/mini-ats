@@ -8,12 +8,16 @@ import {
 } from "../../scripts/local-stack";
 
 /** The stack the E2E_* variables name, as CI sets them, so `npx supabase status` never runs. */
-function stackAt(url: string) {
+function stackAt(url: string, mailpitUrl = LOCAL_MAILPIT) {
   vi.stubEnv("E2E_SUPABASE_URL", url);
   vi.stubEnv("E2E_ANON_KEY", "anon-key");
   vi.stubEnv("E2E_SERVICE_ROLE_KEY", "service-role-key");
+  vi.stubEnv("E2E_MAILPIT_URL", mailpitUrl);
   return localStack();
 }
+
+const LOCAL_API = "http://127.0.0.1:54321";
+const LOCAL_MAILPIT = "http://127.0.0.1:54324";
 
 describe("the end-to-end tests' Supabase stack", () => {
   afterEach(() => {
@@ -27,6 +31,7 @@ describe("the end-to-end tests' Supabase stack", () => {
         url,
         anonKey: "anon-key",
         serviceRoleKey: "service-role-key",
+        mailpitUrl: LOCAL_MAILPIT,
       });
     },
   );
@@ -43,6 +48,15 @@ describe("the end-to-end tests' Supabase stack", () => {
       /^Refusing .*: the end-to-end tests only run against the local stack\.$/,
     );
   });
+
+  it.each(["https://mail.example.com", "http://192.168.1.10:54324"])(
+    "refuses a mail inbox at %s (ATS-49)",
+    (mailpitUrl) => {
+      expect(() => stackAt(LOCAL_API, mailpitUrl)).toThrow(
+        /^Refusing .*: the end-to-end tests only run against the local stack\.$/,
+      );
+    },
+  );
 });
 
 describe("the local database's migrations", () => {
