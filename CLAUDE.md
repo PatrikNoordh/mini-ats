@@ -114,6 +114,7 @@ Allowed exceptions: `src/components/ui/` (vendored shadcn/ui code), dynamic valu
 ## UI
 
 - UI text in Swedish and English through i18n. Swedish is the default. Code, comments, commits and docs in English.
+- **Everything written about the app names the UI in English.** Docs, tickets, PRs, issue comments, manual test steps, commits and code comments refer to pages, buttons, fields and messages by their English text from `src/locales/en.json`, so anyone can follow them: "Accounts → **+ Add user** on a company", not "Konton → **+ Lägg till användare**". This holds even though Swedish is the app's default. Quote the Swedish text only when it is itself the subject (a Swedish translation fix), and then give the English beside it.
 - Every new string gets a key in both locale files in the same commit.
 - Desktop first, but every screen must work at 390 px wide.
 - The kanban board is **compact**: small cards showing candidate name, job title and days in the current stage (`stage_changed_at`). Details open in a side panel.

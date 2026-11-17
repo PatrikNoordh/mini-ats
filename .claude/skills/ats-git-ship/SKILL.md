@@ -103,7 +103,7 @@ On conflicts, **stop and report**. Never resolve conflicts automatically. After 
 
 ## Step 6 — Open the PR
 
-Use `.github/pull_request_template.md` if it exists, filled in. Otherwise use this body:
+Use `.github/pull_request_template.md` if it exists, filled in. Otherwise use this body. Write it in English and name the UI by its English text, as in `CLAUDE.md` § UI: "Accounts → **+ Add user**", never "Konton → **+ Lägg till användare**".
 
 ```markdown
 ## [ATS-<N>] <Title>

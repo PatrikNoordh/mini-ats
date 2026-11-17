@@ -36,7 +36,7 @@ gh pr list --repo "$REPO" --state merged --json number,title,headRefName,mergedA
 
 For each ticket check:
 - There is a merged PR from an `ats/ATS-<N>-...` branch
-- The PR body has What Changed, Acceptance Criteria, Manual Test Steps and `Closes #<n>`
+- The PR body has What Changed, Acceptance Criteria, Manual Test Steps and `Closes #<n>`, and names the UI by its English text (`CLAUDE.md` § UI)
 - No ticket was closed without a merged PR (a closed issue without a PR is fine only if the work happened outside the code, like ATS-1 in Lovable, and the issue says so)
 
 ---
