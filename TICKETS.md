@@ -717,7 +717,6 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 - [ ] `typescript-eslint` pulls a `minimatch` with a moderate advisory (GHSA-g3hv-75wg-m249, a slow glob), and no release fixes it yet (8.72.2 is the latest). Lint-only, run on our own files; bump when a fixed release is out — `package.json` (found in ATS-61)
 - [ ] Two races the ATS-61 lock design leaves, both failing safe: an account restored while its company is restored can stay banned, and a user moved out of a company while it is being deleted can be banned by that delete. Repeating the restore, or the move, puts it right — `supabase/functions/_shared/logins.ts`, `admin-manage-company` (found in ATS-61)
 - [ ] `login_swap_blockers()` is named after the retired swap; it now guards that no customer table references a user. A rename needs a migration and a type change — `supabase/migrations/20261111120000_login_swap_check.sql` (found in ATS-61)
-- [ ] The docs written before the rule in `CLAUDE.md` § UI still name the UI by its Swedish labels (**Lägg till kolumn**, **Byt namn**, Konton, Kandidater …). Rewrite them with the English text from `src/locales/en.json` — `docs/ui-spec.md`, `README.md`, `docs/next-teams.md`, `docs/review-ats-1.md` (found in ATS-62)
 
 ## Found while reviewing PRs
 
