@@ -625,6 +625,14 @@ Tracked in #88.
 
 ## Epic 11 — Email
 
+### ATS-63 · chore · Small hygiene fixes from epic 10
+
+Tracked in #131. Done first in epic 11, like ATS-61 in epic 10.
+
+### ATS-64 · chore · Migrate to zod 4
+
+Tracked in #132. From the epic 10 close-out.
+
 ### ATS-49 · chore · Send Auth emails through our own SMTP provider
 
 Tracked in #89.
@@ -713,18 +721,8 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
-- [ ] `zod` has a high advisory (GHSA-mrhx-c7xc-m3w5, memory on oversized constrained collections) fixed only in zod 4. Not bumped in ATS-61: the app's zod runs in the browser on the user's own input, so the worst case is the user's own tab, and zod 4 changes every schema and `@hookform/resolvers`. The Edge Functions import `npm:zod@3.25.76` too, but their schemas have no constrained collections. Migrate to zod 4 in its own ticket — `package.json`, `supabase/functions/` (found in ATS-61)
-- [ ] `typescript-eslint` pulls a `minimatch` with a moderate advisory (GHSA-g3hv-75wg-m249, a slow glob), and no release fixes it yet (8.72.2 is the latest). Lint-only, run on our own files; bump when a fixed release is out — `package.json` (found in ATS-61)
-- [ ] Two races the ATS-61 lock design leaves, both failing safe: an account restored while its company is restored can stay banned, and a user moved out of a company while it is being deleted can be banned by that delete. Repeating the restore, or the move, puts it right — `supabase/functions/_shared/logins.ts`, `admin-manage-company` (found in ATS-61)
-- [ ] `login_swap_blockers()` is named after the retired swap; it now guards that no customer table references a user. A rename needs a migration and a type change — `supabase/migrations/20261111120000_login_swap_check.sql` (found in ATS-61)
-
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
-
-- [ ] An account update whose move is refused with `company_deleted` (a company deleted between the handler's check and the membership write) returns 409 after the name, email and role are already saved, so the admin sees an error for a change that half went through. Move the membership before the account write, or say in the error that the details were saved — `supabase/functions/admin-manage-account/handler.ts` (PR #125, ATS-61)
-- [ ] Mapping the database's `company_deleted` refusal from a membership write (`error.message === "company_deleted"`) is written twice; `admin-create-user`'s `addMember` could use `loginDeps(...).writeMembership` — `supabase/functions/admin-create-user/index.ts`, `supabase/functions/_shared/logins.ts` (PR #125, ATS-61)
-- [ ] `audit_events` grows without limit: only a company delete removes events. Decide a retention (for example events older than N years) or write down that the log is kept for the company's lifetime, in `docs/data-safety.md` — `supabase/migrations/20261115120000_audit_events.sql` (PR #127, ATS-47)
-- [ ] A history says it was cut off whenever it shows exactly `HISTORY_LIMIT` events, also when there were exactly that many. Fetch `HISTORY_LIMIT + 1` and show the note only when the extra one came back — `src/components/history/HistoryList.tsx`, `src/lib/api/auditEvents.ts` (PR #128, ATS-48)
