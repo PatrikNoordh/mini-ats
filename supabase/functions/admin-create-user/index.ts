@@ -4,6 +4,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 
 import { sendInvite } from "../_shared/invites.ts";
+import { loginDeps } from "../_shared/logins.ts";
 import {
   createHandler,
   type AuthAccount,
@@ -86,14 +87,13 @@ async function createUser(account: AuthAccount): Promise<CreateResult> {
   return { id: data.user.id };
 }
 
-async function addMember(companyId: string, userId: string): Promise<"company_deleted" | null> {
-  const { error } = await admin()
-    .from("company_members")
-    .insert({ company_id: companyId, user_id: userId });
-  if (!error) return null;
-  if (error.message === "company_deleted") return "company_deleted";
-  throw error;
-}
+/**
+ * The membership write the admin functions share (_shared/logins.ts), which also turns the
+ * database's company_deleted refusal into its code (ATS-63 AC2). A new user has no membership yet,
+ * so the write adds one.
+ */
+const addMember = (companyId: string, userId: string) =>
+  loginDeps(admin()).writeMembership(userId, companyId);
 
 async function deleteUser(id: string): Promise<void> {
   const { error } = await admin().auth.admin.deleteUser(id);
