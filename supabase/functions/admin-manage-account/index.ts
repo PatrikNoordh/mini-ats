@@ -1,14 +1,17 @@
 // admin-manage-account: an admin edits, deletes, restores or deletes for good another account, and
 // moves a user between companies (ATS-46). A delete is kept for 30 days (ATS-27): the account is
-// banned and marked deleted. Its company and the company's data are never touched.
+// banned and marked deleted. Its company and the company's data are never touched. It also sends
+// a new invite to an account that has not accepted one (ATS-50).
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.118.0";
 
+import { sendInvite } from "../_shared/invites.ts";
 import { loginDeps, moveToCompany, restoreAccount, setBanned } from "../_shared/logins.ts";
 import {
   createHandler,
   type Account,
   type Caller,
   type Company,
+  type InviteRefusal,
   type RemovalRefusal,
   type Update,
 } from "./handler.ts";
@@ -55,12 +58,17 @@ async function getCaller(authorization: string): Promise<Caller> {
 async function getAccount(authorization: string, id: string): Promise<Account | null> {
   const { data, error } = await asCaller(authorization)
     .from("profiles")
-    .select("id, role, deleted_at")
+    .select("id, role, email, deleted_at")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
   if (!data || (data.role !== "admin" && data.role !== "customer")) return null;
-  return { id: data.id, role: data.role, deleted: data.deleted_at !== null };
+  return {
+    id: data.id,
+    role: data.role,
+    email: data.email ?? "",
+    deleted: data.deleted_at !== null,
+  };
 }
 
 async function getCompany(authorization: string, id: string): Promise<Company | null> {
@@ -132,8 +140,10 @@ async function updateAccount(
   }
   const { error } = await service.auth.admin.updateUserById(update.id, {
     email: update.email,
-    email_confirm: true,
-    ...(update.password ? { password: update.password } : {}),
+    // A new password confirms the account, so an invited user given one can sign in with it.
+    // Otherwise the confirmation stays as it is: an invite not yet accepted can still be resent
+    // (ATS-50), and an admin's change of address needs no confirmation from the user.
+    ...(update.password ? { password: update.password, email_confirm: true } : {}),
     user_metadata: { full_name: update.full_name },
     // The role trigger (ATS-28) copies this to profiles.role; it is set below too, at once. A
     // demotion has already set it above, under the last-admin lock.
@@ -188,6 +198,13 @@ async function deleteNow(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Sends the invite again; an account that is already confirmed has accepted one (ATS-50). */
+async function resendInvite(email: string): Promise<InviteRefusal | null> {
+  const result = await sendInvite(admin(), email);
+  if (result === "already_confirmed") return "invite_accepted";
+  return result === "not_sent" ? "invite_not_sent" : null;
+}
+
 Deno.serve(
   createHandler({
     getCaller,
@@ -198,5 +215,6 @@ Deno.serve(
     softDelete,
     restore,
     deleteNow,
+    resendInvite,
   }),
 );

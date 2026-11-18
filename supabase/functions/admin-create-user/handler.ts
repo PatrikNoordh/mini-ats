@@ -18,10 +18,14 @@ export const newAccountSchema = z
     role: z.enum(["admin", "customer"]),
     full_name: requiredText,
     email: z.string().trim().toLowerCase().max(MAX_EMAIL_LENGTH).email(),
+    /** A temporary password the admin hands over. Left out when the account is invited. */
     password: z
       .string()
       .min(MIN_PASSWORD_LENGTH)
-      .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES),
+      .refine((password) => utf8Length(password) <= MAX_PASSWORD_BYTES)
+      .optional(),
+    /** Or an invite by email: the user chooses their own password (ATS-50). */
+    invite: z.literal(true).optional(),
     /** A customer joins this existing company (ATS-46). */
     company_id: z.string().uuid().optional(),
     /** Or a new company with this name. Ignored for an admin, who belongs to no company. */
@@ -29,6 +33,8 @@ export const newAccountSchema = z
   })
   .superRefine((account, ctx) => {
     const issue = (path: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path] });
+    // Exactly one way in: a password, or an invite.
+    if ((account.invite === true) === (account.password !== undefined)) issue("password");
     // An admin belongs to no company (ATS-44).
     if (account.role === "admin" && account.company_id) issue("company_id");
     if (account.role === "customer" && !account.company_id && !account.company_name) {
@@ -41,13 +47,19 @@ export const newAccountSchema = z
 
 export type NewAccount = z.infer<typeof newAccountSchema>;
 
-/** The account Auth creates. */
+/**
+ * The account Auth creates. Without a password it is created unconfirmed, so nobody can sign in
+ * to it until the invite is accepted (ATS-50).
+ */
 export interface AuthAccount {
   role: NewAccount["role"];
   full_name: string;
   email: string;
-  password: string;
+  password?: string;
 }
+
+/** Why an invite was not sent: Auth could not send the email, or refused it (a rate limit). */
+export type InviteRefusal = "invite_not_sent";
 
 /** Who is calling, according to `is_admin()` run with the caller's own JWT. */
 export type Caller = "admin" | "not_admin" | "invalid_token";
@@ -74,6 +86,8 @@ export interface Deps {
   /** The database refuses a company deleted since it was read, with company_deleted (ATS-61). */
   addMember: (companyId: string, userId: string) => Promise<"company_deleted" | null>;
   deleteUser: (id: string) => Promise<void>;
+  /** Emails the invite to the account just created, with the invite template (ATS-50). */
+  sendInvite: (email: string) => Promise<InviteRefusal | null>;
 }
 
 /** Runs an undo after a failed step, and logs it if the undo fails too. */
@@ -108,10 +122,41 @@ export function createHandler(deps: Deps) {
       }
       const account = parsed.data;
       const { role, full_name, email, password } = account;
+      const authAccount: AuthAccount = {
+        role,
+        full_name,
+        email,
+        ...(password ? { password } : {}),
+      };
+
+      /**
+       * Sends the invite once the account is complete, and undoes the account and a new company
+       * when it is not sent: an invited account nobody can reach would only block its address.
+       */
+      const invite = async (
+        userId: string,
+        dropCompany: (cause: unknown) => Promise<void>,
+      ): Promise<Response | null> => {
+        if (!account.invite) return null;
+        let refusal: InviteRefusal | null;
+        try {
+          refusal = await deps.sendInvite(email);
+        } catch (error) {
+          await undo(() => deps.deleteUser(userId), error);
+          await dropCompany(error);
+          throw error;
+        }
+        if (!refusal) return null;
+        await undo(() => deps.deleteUser(userId), refusal);
+        await dropCompany(refusal);
+        return json({ error: refusal }, 502);
+      };
 
       if (role === "admin") {
-        const result = await deps.createUser({ role, full_name, email, password });
+        const result = await deps.createUser(authAccount);
         if ("error" in result) return json({ error: result.error }, 409);
+        const failed = await invite(result.id, () => Promise.resolve());
+        if (failed) return failed;
         return json({ id: result.id, company_id: null }, 201);
       }
 
@@ -133,7 +178,7 @@ export function createHandler(deps: Deps) {
 
       let result: CreateResult;
       try {
-        result = await deps.createUser({ role, full_name, email, password });
+        result = await deps.createUser(authAccount);
       } catch (error) {
         await dropNewCompany(error);
         throw error;
@@ -160,6 +205,8 @@ export function createHandler(deps: Deps) {
         await dropNewCompany(refusal);
         return json({ error: refusal }, 409);
       }
+      const failed = await invite(userId, dropNewCompany);
+      if (failed) return failed;
       return json({ id: userId, company_id: companyId }, 201);
     } catch (error) {
       // Logged for the Supabase function logs. The body never holds the password.

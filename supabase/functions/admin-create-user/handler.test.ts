@@ -21,6 +21,9 @@ const valid = {
   password: "long-enough",
 };
 const { company_name: _, ...withoutCompany } = valid;
+const { password: _password, ...withoutPassword } = valid;
+/** The same customer, invited by email instead of given a password (ATS-50). */
+const invited = { ...withoutPassword, invite: true };
 
 interface Options {
   caller?: Caller;
@@ -29,6 +32,8 @@ interface Options {
   failAt?: "createUser" | "addMember";
   /** What the database answers to the membership. */
   memberRefusal?: "company_deleted";
+  /** What sending the invite does: refused by Auth, or failing outright. */
+  invite?: "refused" | "throws";
 }
 
 /** The handler with fake Supabase actions that record what ran, in order. */
@@ -38,6 +43,7 @@ function setup({
   company = { id: COMPANY, deleted: false },
   failAt,
   memberRefusal,
+  invite,
 }: Options = {}) {
   const created: AuthAccount[] = [];
   const ran: string[] = [];
@@ -68,6 +74,11 @@ function setup({
     deleteUser: (id) => {
       ran.push(`drop user ${id}`);
       return Promise.resolve();
+    },
+    sendInvite: (email) => {
+      ran.push(`invite ${email}`);
+      if (invite === "throws") return Promise.reject(new Error("auth down"));
+      return Promise.resolve(invite === "refused" ? "invite_not_sent" : null);
     },
   };
   return { handler: createHandler(deps), created, ran };
@@ -258,7 +269,11 @@ Deno.test("returns email_exists for a taken email", async () => {
 Deno.test("names the invalid fields and creates nothing", async () => {
   const cases: [unknown, string[]][] = [
     ["not json", ["body"]],
-    [{}, ["role", "full_name", "email", "password"]],
+    [{}, ["role", "full_name", "email"]],
+    // Exactly one way in: a password or an invite, never both or neither (ATS-50).
+    [withoutPassword, ["password"]],
+    [{ ...valid, invite: true }, ["password"]],
+    [{ ...invited, invite: false }, ["invite"]],
     [withoutCompany, ["company_id"]],
     [{ ...valid, company_id: COMPANY }, ["company_name"]],
     [{ ...withoutCompany, role: "admin", company_id: COMPANY }, ["company_id"]],
@@ -284,4 +299,76 @@ Deno.test("hides unexpected errors behind the unknown code", async () => {
   const { handler } = setup({ failAt: "createUser" });
   const res = await quietly(() => call(handler, post(valid)));
   assertEquals([res.status, res.body], [500, { error: "unknown" }]);
+});
+
+Deno.test(
+  "invites a customer: the account without a password, the membership, then the invite",
+  async () => {
+    const { handler, created, ran } = setup();
+    const res = await call(handler, post(invited));
+    assertEquals([res.status, res.body], [201, { id: "new-id", company_id: NEW_COMPANY }]);
+    assertEquals(created, [
+      { role: "customer", full_name: "Karin Exempel", email: "karin@nordkust.test" },
+    ]);
+    assertEquals(ran, [
+      "company Nordkust Bygg AB",
+      "user",
+      `member ${NEW_COMPANY} new-id`,
+      "invite karin@nordkust.test",
+    ]);
+  },
+);
+
+Deno.test("invites an admin, who gets no company", async () => {
+  const { handler, ran } = setup();
+  const res = await call(handler, post({ ...invited, role: "admin" }));
+  assertEquals([res.status, res.body], [201, { id: "new-id", company_id: null }]);
+  assertEquals(ran, ["user", "invite karin@nordkust.test"]);
+});
+
+Deno.test("sends no invite for an account made with a password", async () => {
+  const { handler, ran } = setup();
+  await call(handler, post(valid));
+  assertEquals(
+    ran.some((step) => step.startsWith("invite")),
+    false,
+  );
+});
+
+Deno.test(
+  "undoes the account and the new company when the invite is not sent, and says so",
+  async () => {
+    const { handler, ran } = setup({ invite: "refused" });
+    const res = await quietly(() => call(handler, post(invited)));
+    assertEquals([res.status, res.body.error], [502, "invite_not_sent"]);
+    assertEquals(ran, [
+      "company Nordkust Bygg AB",
+      "user",
+      `member ${NEW_COMPANY} new-id`,
+      "invite karin@nordkust.test",
+      "drop user new-id",
+      `drop company ${NEW_COMPANY}`,
+    ]);
+  },
+);
+
+Deno.test("keeps an existing company when the invite fails, and removes the account", async () => {
+  const { handler, ran } = setup({ invite: "throws" });
+  const res = await quietly(() =>
+    call(handler, post({ ...invited, company_name: undefined, company_id: COMPANY })),
+  );
+  assertEquals([res.status, res.body.error], [500, "unknown"]);
+  assertEquals(ran, [
+    "user",
+    `member ${COMPANY} new-id`,
+    "invite karin@nordkust.test",
+    "drop user new-id",
+  ]);
+});
+
+Deno.test("removes an invited admin again when the invite is not sent", async () => {
+  const { handler, ran } = setup({ invite: "refused" });
+  const res = await quietly(() => call(handler, post({ ...invited, role: "admin" })));
+  assertEquals([res.status, res.body.error], [502, "invite_not_sent"]);
+  assertEquals(ran, ["user", "invite karin@nordkust.test", "drop user new-id"]);
 });

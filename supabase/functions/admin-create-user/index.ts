@@ -1,14 +1,16 @@
 // admin-create-user: an admin creates an admin account, or a customer account as a member of an
-// existing company or a new one (ATS-46). Public sign-up is disabled, so this is the only way
-// accounts are made (CLAUDE.md, security rule 3).
+// existing company or a new one (ATS-46), with a password or by an invite (ATS-50). Public sign-up
+// is disabled, so this is the only way accounts are made (CLAUDE.md, security rule 3).
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 
+import { sendInvite } from "../_shared/invites.ts";
 import {
   createHandler,
   type AuthAccount,
   type Caller,
   type Company,
   type CreateResult,
+  type InviteRefusal,
 } from "./handler.ts";
 
 function env(name: string): string {
@@ -70,8 +72,8 @@ async function deleteCompany(id: string): Promise<void> {
 async function createUser(account: AuthAccount): Promise<CreateResult> {
   const { data, error } = await admin().auth.admin.createUser({
     email: account.email,
-    password: account.password,
-    email_confirm: true,
+    // An invited account has no password and stays unconfirmed until the invite is accepted.
+    ...(account.password ? { password: account.password, email_confirm: true } : {}),
     // The profile triggers copy these: the name from user_metadata at insert, and the role from
     // app_metadata (server only), which Auth sets in an update right after (ATS-28).
     user_metadata: { full_name: account.full_name },
@@ -98,6 +100,16 @@ async function deleteUser(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Sends the invite to the account just created, unconfirmed, so Auth never answers that it is
+ * confirmed already (ATS-50).
+ */
+async function sendNewInvite(email: string): Promise<InviteRefusal | null> {
+  const result = await sendInvite(admin(), email);
+  if (result === "already_confirmed") throw new Error("A new account was already confirmed.");
+  return result === "not_sent" ? "invite_not_sent" : null;
+}
+
 Deno.serve(
   createHandler({
     checkCaller,
@@ -107,5 +119,6 @@ Deno.serve(
     createUser,
     addMember,
     deleteUser,
+    sendInvite: sendNewInvite,
   }),
 );
