@@ -142,3 +142,17 @@ export function referencedIds(events: readonly AuditEvent[]): {
   }
   return { jobs: [...jobs], candidates: [...candidates], stages: [...stages] };
 }
+
+/** The newest events of a history, and whether there were more than it shows. */
+export interface HistoryPage {
+  events: AuditEvent[];
+  truncated: boolean;
+}
+
+/**
+ * Cuts the rows fetched for a history to `limit`. They are fetched with one extra, so the page
+ * says it was cut off only when there was more to show (ATS-63 AC4).
+ */
+export function historyPage(rows: AuditEvent[], limit: number): HistoryPage {
+  return { events: rows.slice(0, limit), truncated: rows.length > limit };
+}

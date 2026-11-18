@@ -10,7 +10,7 @@ import { DEFAULT_TEST_STAGES, TEST_CUSTOMER, stageId } from "./stage-fixtures";
 
 const m = vi.hoisted(() => ({
   history: {} as {
-    data: { events: AuditEvent[]; actors: Map<string, AuditActor> } | undefined;
+    data: { events: AuditEvent[]; truncated: boolean; actors: Map<string, AuditActor> } | undefined;
     isLoading: boolean;
     isError: boolean;
     refetch: ReturnType<typeof vi.fn>;
@@ -80,7 +80,7 @@ const actors = new Map<string, AuditActor>([
 ]);
 
 function openHistory() {
-  render(
+  const view = render(
     <I18nextProvider i18n={getI18n("en")}>
       <CandidateSheet
         customerId={TEST_CUSTOMER}
@@ -93,6 +93,7 @@ function openHistory() {
     </I18nextProvider>,
   );
   fireEvent.mouseDown(screen.getByRole("tab", { name: "History" }));
+  return view;
 }
 
 describe("the history tab in the candidate panel", () => {
@@ -123,6 +124,7 @@ describe("the history tab in the candidate panel", () => {
 
   it("lists the stage moves, edits and job links newest first, each with who made it", () => {
     m.history.data = {
+      truncated: false,
       events: [
         event(3, {
           action: "update",
@@ -162,7 +164,7 @@ describe("the history tab in the candidate panel", () => {
   });
 
   it("says when there is no history yet", () => {
-    m.history.data = { events: [], actors: new Map() };
+    m.history.data = { events: [], truncated: false, actors: new Map() };
     openHistory();
     expect(screen.getByText("No history yet")).toBeInTheDocument();
   });
@@ -174,11 +176,14 @@ describe("the history tab in the candidate panel", () => {
     expect(m.history.refetch).toHaveBeenCalled();
   });
 
-  it("says when the list stops at the limit", () => {
-    m.history.data = {
-      events: Array.from({ length: HISTORY_LIMIT }, (_, i) => event(HISTORY_LIMIT - i, {})),
-      actors,
-    };
+  it("says the list is cut off only when older events came back too (ATS-63 AC4)", () => {
+    const full = Array.from({ length: HISTORY_LIMIT }, (_, i) => event(HISTORY_LIMIT - i, {}));
+    m.history.data = { events: full, truncated: false, actors };
+    const { unmount } = openHistory();
+    expect(screen.queryByText(`Showing the latest ${HISTORY_LIMIT} events.`)).toBeNull();
+    unmount();
+
+    m.history.data = { events: full, truncated: true, actors };
     openHistory();
     expect(screen.getByText(`Showing the latest ${HISTORY_LIMIT} events.`)).toBeInTheDocument();
   });

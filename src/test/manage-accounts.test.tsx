@@ -18,7 +18,7 @@ const m = vi.hoisted(() => ({
   remove: vi.fn(),
   restore: vi.fn(),
   deleteNow: vi.fn(),
-  toast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
 
 vi.mock("sonner", () => ({ toast: m.toast }));
@@ -97,6 +97,19 @@ describe("editing an account", () => {
         email: "kund@exempelbygg.test",
       }),
     );
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("says the changes are saved when the move was refused after them (ATS-63 AC1)", async () => {
+    m.update.mockRejectedValue(new AppError("saved_not_moved"));
+    inEnglish(<AccountDialog open onOpenChange={onOpenChange} account={customer} />);
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() =>
+      expect(m.toast.warning).toHaveBeenCalledWith(
+        "The changes were saved, but the company was deleted in the meantime, so the account was not moved.",
+      ),
+    );
+    expect(m.toast.error).not.toHaveBeenCalled();
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 

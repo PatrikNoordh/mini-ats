@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import type { AuditActor, AuditEvent } from "@/types";
 import { HISTORY_LIMIT } from "@/lib/constants";
+import { historyPage, type HistoryPage } from "@/lib/history";
 
 const AUDIT_EVENT_COLUMNS =
   "id, customer_id, actor_id, action, table_name, row_id, candidate_id, fields, before, after, created_at";
@@ -41,31 +42,33 @@ const auditActorRowSchema = z.object({
 export async function listCandidateHistory(
   customerId: string,
   candidateId: string,
-): Promise<AuditEvent[]> {
+): Promise<HistoryPage> {
   const { data, error } = await supabase
     .from("audit_events")
     .select(AUDIT_EVENT_COLUMNS)
     .eq("customer_id", customerId)
     .eq("candidate_id", candidateId)
     .order("id", { ascending: false })
-    .limit(HISTORY_LIMIT);
+    // One more than shown, to know whether there are more (ATS-63 AC4).
+    .limit(HISTORY_LIMIT + 1);
   if (error) throw error;
-  return data.map(parseAuditEventRow);
+  return historyPage(data.map(parseAuditEventRow), HISTORY_LIMIT);
 }
 
 /**
  * What one account did, in every company, newest first, at most HISTORY_LIMIT (ATS-48 AC2).
  * Admin only: RLS gives a customer only their own company's events.
  */
-export async function listAccountHistory(accountId: string): Promise<AuditEvent[]> {
+export async function listAccountHistory(accountId: string): Promise<HistoryPage> {
   const { data, error } = await supabase
     .from("audit_events")
     .select(AUDIT_EVENT_COLUMNS)
     .eq("actor_id", accountId)
     .order("id", { ascending: false })
-    .limit(HISTORY_LIMIT);
+    // One more than shown, to know whether there are more (ATS-63 AC4).
+    .limit(HISTORY_LIMIT + 1);
   if (error) throw error;
-  return data.map(parseAuditEventRow);
+  return historyPage(data.map(parseAuditEventRow), HISTORY_LIMIT);
 }
 
 /**

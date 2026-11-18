@@ -30,6 +30,7 @@ export function AccountHistory({ accountId }: { accountId: string }) {
   return (
     <HistoryList
       items={items}
+      truncated={data?.truncated ?? false}
       isLoading={history.isLoading || companies.isLoading}
       isError={history.isError || companies.isError}
       onRetry={() => {

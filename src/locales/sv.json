@@ -111,6 +111,7 @@
     "company_not_found": "Företaget finns inte.",
     "company_deleted": "Företaget är borttaget. Återställ det först.",
     "company_not_deleted": "Företaget är inte borttaget.",
+    "saved_not_moved": "Ändringarna sparades, men företaget togs bort under tiden, så kontot flyttades inte.",
     "invite_invalid": "Den här inbjudningslänken har gått ut, har redan använts eller har ersatts av en nyare inbjudan. Be din administratör skicka en ny.",
     "invite_accepted": "Kontot har redan tackat ja till sin inbjudan eller har ett lösenord. Sätt ett nytt lösenord för det i stället.",
     "invite_not_sent": "Inbjudan kunde inte skickas. Vänta en stund och försök igen.",

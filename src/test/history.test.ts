@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import { HISTORY_LIMIT } from "@/lib/constants";
 import { getI18n } from "@/lib/i18n";
 import { formatList } from "@/lib/format";
 import {
   actorIds,
   actorLabel,
   describeEvent,
+  historyPage,
   referencedIds,
   type HistoryNames,
 } from "@/lib/history";
@@ -212,5 +214,21 @@ describe("the ids a history looks up", () => {
       candidates: ["cand", "c2"],
       stages: ["s1", "s2"],
     });
+  });
+});
+
+describe("a history page (ATS-63 AC4)", () => {
+  const rows = (count: number) => Array.from({ length: count }, (_, i) => event({ id: count - i }));
+
+  it.each([
+    [0, 0, false],
+    [HISTORY_LIMIT - 1, HISTORY_LIMIT - 1, false],
+    [HISTORY_LIMIT, HISTORY_LIMIT, false],
+    [HISTORY_LIMIT + 1, HISTORY_LIMIT, true],
+  ])("of %i rows shows %i, cut off: %s", (count, shown, truncated) => {
+    const page = historyPage(rows(count), HISTORY_LIMIT);
+    expect(page.events).toHaveLength(shown);
+    expect(page.truncated).toBe(truncated);
+    expect(page.events[0]?.id).toBe(count === 0 ? undefined : count);
   });
 });

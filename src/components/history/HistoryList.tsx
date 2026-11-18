@@ -12,16 +12,18 @@ export interface HistoryItem {
 }
 
 /**
- * A history, newest first, with its loading, empty and error states (ATS-48). Says so when the
- * list stops at HISTORY_LIMIT events.
+ * A history, newest first, with its loading, empty and error states (ATS-48). Says so when there
+ * are older events than the HISTORY_LIMIT it shows.
  */
 export function HistoryList({
   items,
+  truncated,
   isLoading,
   isError,
   onRetry,
 }: {
   items: readonly HistoryItem[];
+  truncated: boolean;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
@@ -45,7 +47,7 @@ export function HistoryList({
           </li>
         ))}
       </ol>
-      {items.length >= HISTORY_LIMIT && (
+      {truncated && (
         <p className="pt-3 text-xs text-muted-foreground">
           {t("history.truncated", { count: HISTORY_LIMIT })}
         </p>

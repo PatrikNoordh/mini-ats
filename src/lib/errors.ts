@@ -43,6 +43,7 @@ export const ERROR_CODES = [
   "company_not_found",
   "company_deleted",
   "company_not_deleted",
+  "saved_not_moved",
   "invite_invalid",
   "invite_accepted",
   "invite_not_sent",

@@ -44,6 +44,7 @@ export function CandidateHistory({
   return (
     <HistoryList
       items={items}
+      truncated={history.data?.truncated ?? false}
       isLoading={history.isLoading}
       isError={history.isError}
       onRetry={() => void history.refetch()}

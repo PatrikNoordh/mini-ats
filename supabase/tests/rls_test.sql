@@ -1792,26 +1792,27 @@ end $$;
 
 
 -- 58. No customer table, and not companies, references a user, so deleting a login never reaches
--- company data. login_swap_blockers() lists every foreign key that would let it. It was the login
--- swap's safety check (ATS-58); the swap is retired (ATS-61), and the function stays as this guard.
--- Only the service role may run it.
+-- company data. company_data_user_references() lists every foreign key that would let it. It was
+-- the login swap's safety check (ATS-58), kept as this guard when the swap was retired (ATS-61) and
+-- renamed after it (ATS-63). Only the service role may run it.
 reset role;
 do $$ begin
-  assert not exists (select 1 from public.login_swap_blockers()), 'a customer table references a user';
+  assert not exists (select 1 from public.company_data_user_references()), 'a customer table references a user';
   alter table public.jobs add column guard_test_owner uuid
     constraint jobs_guard_test_owner_fkey references public.profiles (id);
-  assert exists (select 1 from public.login_swap_blockers()
+  assert exists (select 1 from public.company_data_user_references()
                  where table_name = 'jobs' and constraint_name = 'jobs_guard_test_owner_fkey'),
          'a job referencing a profile is not listed';
   alter table public.jobs drop column guard_test_owner;
   alter table public.companies add column guard_test_user uuid
     constraint companies_guard_test_user_fkey references auth.users (id);
-  assert exists (select 1 from public.login_swap_blockers() where table_name = 'companies'),
+  assert exists (select 1 from public.company_data_user_references() where table_name = 'companies'),
          'a company referencing an Auth user is not listed';
   alter table public.companies drop column guard_test_user;
-  assert not exists (select 1 from public.login_swap_blockers()), 'a dropped reference is still listed';
-  assert not has_function_privilege('anon', 'public.login_swap_blockers()', 'execute'), 'anon can run the check';
-  assert not has_function_privilege('authenticated', 'public.login_swap_blockers()', 'execute'), 'a client can run the check';
+  assert not exists (select 1 from public.company_data_user_references()), 'a dropped reference is still listed';
+  assert not has_function_privilege('anon', 'public.company_data_user_references()', 'execute'), 'anon can run the check';
+  assert not has_function_privilege('authenticated', 'public.company_data_user_references()', 'execute'), 'a client can run the check';
+  assert not exists (select 1 from pg_proc where proname = 'login_swap_blockers'), 'the old name is still there';
   raise notice 'OK 58: every foreign key from a customer table or companies to a user is listed, and only the service role may list them';
 end $$;
 

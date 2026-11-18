@@ -55,7 +55,7 @@ The data layer maps the message to an `AppError` with `fromDbError()` in `src/li
 
 Two refusals from the companies migration (ATS-44) are raised but not in `ERROR_CODES`, because no app path reaches them, so they would show as `errors.unknown`: `admin_cannot_be_member`, when a membership is written for an admin account (only the service role writes memberships, and `admin-create-user` and `admin-manage-account` refuse a company for an admin with `invalid_input` before they write one), and `owner_change_not_allowed`, when an update changes `customer_id` on a job, a candidate and, since ATS-61, a card or an assessment. The second is raised with SQLSTATE `42501` (`insufficient_privilege`), like a column the grants leave out; the app never sends `customer_id` on an update. ATS-61 adds a third, `id_shared` (SQLSTATE `23505`), when a company would take an account's id or an account a company's; every id is random, so no app path reaches it.
 
-The membership trigger raises `company_deleted` since ATS-61, when a user joins or moves into a company deleted after the admin function read it. `admin-create-user` and `admin-manage-account` pass it on (409), as they do for a company already deleted when they read it.
+The membership trigger raises `company_deleted` since ATS-61, when a user joins or moves into a company deleted after the admin function read it. `admin-create-user` passes it on (409), as it does for a company already deleted when it reads it, and undoes the new account. `admin-manage-account` has saved the account's changes by then, so it answers `saved_not_moved` (409) instead, and the account dialog closes with a warning that the changes are saved but the account was not moved (ATS-63).
 
 ## Storage (from epic 6)
 
@@ -100,6 +100,7 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 | `company_not_found`               | `admin-manage-company`, `admin-create-user`, `admin-manage-account` | The company does not exist (ATS-46)                        |
 | `company_deleted`                 | `admin-manage-company`, `admin-create-user`, `admin-manage-account` | Rename or delete a deleted company, or put a user in one   |
 | `company_not_deleted`             | `admin-manage-company`                                              | Restore or delete for good on a company not deleted        |
+| `saved_not_moved`                 | `admin-manage-account`                                              | Saved, but not moved: the company was deleted (ATS-63)     |
 | `invite_invalid`                  | auth (`verifyInvite`: `otp_expired`)                                | Invite link expired, used or replaced (ATS-50)             |
 | `invite_accepted`                 | `admin-manage-account` (`resend_invite`)                            | No new invite: the account is confirmed (ATS-50)           |
 | `invite_not_sent`                 | `admin-create-user`, `admin-manage-account`                         | Invite email not sent; a new account is undone (ATS-50)    |

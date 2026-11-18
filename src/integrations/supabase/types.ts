@@ -447,6 +447,13 @@ export type Database = {
         }[];
       };
       companies_due_for_purge: { Args: never; Returns: string[] };
+      company_data_user_references: {
+        Args: never;
+        Returns: {
+          constraint_name: string;
+          table_name: string;
+        }[];
+      };
       create_default_stages: { Args: { customer: string }; Returns: undefined };
       current_company_id: { Args: never; Returns: string };
       default_stage_specs: {
@@ -459,13 +466,6 @@ export type Database = {
         }[];
       };
       is_admin: { Args: never; Returns: boolean };
-      login_swap_blockers: {
-        Args: never;
-        Returns: {
-          constraint_name: string;
-          table_name: string;
-        }[];
-      };
       move_application: {
         Args: {
           application_id: string;
