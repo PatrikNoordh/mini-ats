@@ -35,6 +35,14 @@
     "acceptInvite": {
       "title": "Accept your invite — Mini-ATS",
       "description": "Choose a password for your new Mini-ATS account."
+    },
+    "forgotPassword": {
+      "title": "Reset your password — Mini-ATS",
+      "description": "Get a link to choose a new password for your Mini-ATS account."
+    },
+    "resetPassword": {
+      "title": "Choose a new password — Mini-ATS",
+      "description": "Choose a new password for your Mini-ATS account."
     }
   },
   "common": {
@@ -106,6 +114,7 @@
     "invite_invalid": "This invite link has expired, has already been used or has been replaced by a newer invite. Ask your administrator to send a new one.",
     "invite_accepted": "This account has already accepted its invite or has a password. Set a new password for it instead.",
     "invite_not_sent": "The invite email could not be sent. Wait a moment and try again.",
+    "reset_link_invalid": "This link has expired, has already been used or has been replaced by a newer one. Request a new link.",
     "cv_not_pdf": "The CV must be a PDF file.",
     "cv_too_large": "The CV can be at most {{maxCvMegabytes}} MB.",
     "cv_not_found": "The CV file could not be found. Upload it again.",
@@ -180,7 +189,8 @@
     "emailPlaceholder": "name@company.com",
     "password": "Password",
     "submit": "Sign in",
-    "submitting": "Signing in…"
+    "submitting": "Signing in…",
+    "forgotPassword": "Forgot password?"
   },
   "acceptInvite": {
     "title": "Accept your invite",
@@ -191,8 +201,31 @@
     "submit": "Set password and sign in",
     "submitting": "Saving…",
     "done": "Your password is set. Welcome to Mini-ATS!",
-    "toLogin": "Go to sign in",
+    "restart": "Go to sign in",
     "signedInAs": "You are signed in as {{email}} in this browser. Sign out first to accept the invite.",
+    "signOut": "Sign out"
+  },
+  "forgotPassword": {
+    "title": "Reset your password",
+    "subtitle": "Enter your account's email address and we will send you a link to choose a new password.",
+    "email": "Email",
+    "submit": "Send link",
+    "submitting": "Sending…",
+    "sent": "If {{email}} has an account, a link to choose a new password is on its way. Check your inbox, and the spam folder too.",
+    "toLogin": "Back to sign in"
+  },
+  "resetPassword": {
+    "title": "Choose a new password",
+    "subtitle": "Choose a new password for your account. Your other devices will be signed out.",
+    "password": "New password",
+    "passwordHint": "At least {{min}} characters.",
+    "confirmPassword": "Repeat the password",
+    "submit": "Save password and sign in",
+    "submitting": "Saving…",
+    "done": "Your password is changed.",
+    "doneOthersKept": "Your password is changed, but your other devices could not be signed out.",
+    "restart": "Request a new link",
+    "signedInAs": "You are signed in as {{email}} in this browser. Sign out first to reset the password.",
     "signOut": "Sign out"
   },
   "pipeline": {

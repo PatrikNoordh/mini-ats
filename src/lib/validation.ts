@@ -231,3 +231,10 @@ export const newPasswordSchema = z
   });
 
 export type NewPasswordInput = z.infer<typeof newPasswordSchema>;
+
+/** The address a reset link is sent to (ATS-51). */
+export const passwordResetSchema = z.object({
+  email: z.string().trim().max(MAX_EMAIL_LENGTH, "too_long").refine(isEmail, "email_invalid"),
+});
+
+export type PasswordResetInput = z.infer<typeof passwordResetSchema>;

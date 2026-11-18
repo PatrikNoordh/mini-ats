@@ -35,6 +35,14 @@
     "acceptInvite": {
       "title": "Tacka ja till din inbjudan — Mini-ATS",
       "description": "Välj ett lösenord för ditt nya konto i Mini-ATS."
+    },
+    "forgotPassword": {
+      "title": "Återställ ditt lösenord — Mini-ATS",
+      "description": "Få en länk för att välja ett nytt lösenord till ditt konto i Mini-ATS."
+    },
+    "resetPassword": {
+      "title": "Välj ett nytt lösenord — Mini-ATS",
+      "description": "Välj ett nytt lösenord för ditt konto i Mini-ATS."
     }
   },
   "common": {
@@ -106,6 +114,7 @@
     "invite_invalid": "Den här inbjudningslänken har gått ut, har redan använts eller har ersatts av en nyare inbjudan. Be din administratör skicka en ny.",
     "invite_accepted": "Kontot har redan tackat ja till sin inbjudan eller har ett lösenord. Sätt ett nytt lösenord för det i stället.",
     "invite_not_sent": "Inbjudan kunde inte skickas. Vänta en stund och försök igen.",
+    "reset_link_invalid": "Den här länken har gått ut, har redan använts eller har ersatts av en nyare. Begär en ny länk.",
     "cv_not_pdf": "CV:t måste vara en PDF-fil.",
     "cv_too_large": "CV:t får vara högst {{maxCvMegabytes}} MB.",
     "cv_not_found": "CV-filen hittades inte. Ladda upp den igen.",
@@ -180,7 +189,8 @@
     "emailPlaceholder": "namn@foretag.se",
     "password": "Lösenord",
     "submit": "Logga in",
-    "submitting": "Loggar in…"
+    "submitting": "Loggar in…",
+    "forgotPassword": "Glömt lösenord?"
   },
   "acceptInvite": {
     "title": "Tacka ja till din inbjudan",
@@ -191,8 +201,31 @@
     "submit": "Spara lösenord och logga in",
     "submitting": "Sparar…",
     "done": "Ditt lösenord är sparat. Välkommen till Mini-ATS!",
-    "toLogin": "Gå till inloggningen",
+    "restart": "Gå till inloggningen",
     "signedInAs": "Du är inloggad som {{email}} i den här webbläsaren. Logga ut först för att tacka ja till inbjudan.",
+    "signOut": "Logga ut"
+  },
+  "forgotPassword": {
+    "title": "Återställ ditt lösenord",
+    "subtitle": "Ange e-postadressen för ditt konto så skickar vi en länk där du väljer ett nytt lösenord.",
+    "email": "E-post",
+    "submit": "Skicka länk",
+    "submitting": "Skickar…",
+    "sent": "Om {{email}} har ett konto är en länk för att välja nytt lösenord på väg. Titta i inkorgen, och i skräpposten också.",
+    "toLogin": "Tillbaka till inloggningen"
+  },
+  "resetPassword": {
+    "title": "Välj ett nytt lösenord",
+    "subtitle": "Välj ett nytt lösenord för ditt konto. Dina andra enheter loggas ut.",
+    "password": "Nytt lösenord",
+    "passwordHint": "Minst {{min}} tecken.",
+    "confirmPassword": "Upprepa lösenordet",
+    "submit": "Spara lösenord och logga in",
+    "submitting": "Sparar…",
+    "done": "Ditt lösenord är ändrat.",
+    "doneOthersKept": "Ditt lösenord är ändrat, men dina andra enheter kunde inte loggas ut.",
+    "restart": "Begär en ny länk",
+    "signedInAs": "Du är inloggad som {{email}} i den här webbläsaren. Logga ut först för att återställa lösenordet.",
     "signOut": "Logga ut"
   },
   "pipeline": {
