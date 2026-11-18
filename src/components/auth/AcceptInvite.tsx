@@ -22,10 +22,10 @@ const empty: NewPasswordInput = { new_password: "", confirm_password: "" };
 
 /**
  * Where an invited user chooses their own password (ATS-50), with the token from the invite's link,
- * or null when the link holds none. Opening the page does nothing with
- * the invite: only submitting the form verifies it, so an email scanner that opens the link does
- * not use it up. A failed password save after the invite is verified is retried without verifying
- * again, since the link works only once.
+ * or null when the link holds none. Opening the page does nothing with the invite: only submitting
+ * the form verifies it, so an email scanner that opens the link does not use it up. A failed
+ * password save after the invite is verified is retried without verifying again, since the link
+ * works only once.
  */
 export function AcceptInvite({ tokenHash }: { tokenHash: string | null }) {
   const { t } = useTranslation();
