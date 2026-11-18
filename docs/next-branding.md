@@ -1,6 +1,6 @@
 # Next: a customer's own theme
 
-A design sketch for epic 12. Nothing here is built yet.
+A design sketch for epic 12. The database part is built (ATS-52); the rest is not built yet.
 
 ## The idea
 
@@ -24,18 +24,23 @@ The risk is a messy or unreadable app. Every rule below exists to keep the text 
 
 ## Design
 
-### Database (ATS-52)
+### Database (ATS-52, built)
 
-1. **A `customer_branding` table**, one row per customer:
-   - `customer_id` is the primary key and references `profiles`.
-   - `accent_colour` is a hex colour, with a format check.
-   - `logo_path` and `background_path` are nullable paths in the `branding` bucket.
-   - `background_dim` is one of `light`, `medium` or `strong`.
-   - `updated_at`.
+`supabase/migrations/20261119120000_customer_branding.sql`.
 
-   RLS and explicit grants work like the other tables: a customer's own row while the account is active, or an admin.
-2. **A private `branding` bucket**, with a folder per customer, using the same policies as `cvs`. The server-side limits allow PNG, JPEG and WebP only (no SVG, which can carry scripts), with a size limit per file. The limits live in `src/lib/constants.ts` too.
-3. **RLS tests:** customer B cannot read or change A's row or files.
+1. **A `customer_branding` table**, one row per company:
+   - `customer_id` is the primary key and references `companies`, on delete cascade. The sketch said `profiles`, from before ATS-44 made every `customer_id` a company id.
+   - `accent_colour` is a lowercase `#rrggbb` hex colour, with a format check, or null for the Mini-ATS accent, so a company can have a logo without its own colour.
+   - `logo_path` and `background_path` are nullable paths in the `branding` bucket. A check keeps each inside the company's own folder.
+   - `background_dim` is one of `light`, `medium` or `strong`, `medium` by default.
+   - `updated_at`, set by the database.
+
+   RLS and explicit grants work like the other tables: a member of the company while the member and the company are active, or an admin. `authenticated` may select, insert, update and delete, so the settings page saves with one upsert and resets with a delete. The row's owner never changes (`keep_customer_id()`, as for jobs and candidates).
+2. **A private `branding` bucket**, with a folder per company, using the same four policies as `cvs`. Storage allows PNG, JPEG and WebP only (no SVG, which can carry scripts), at most 2 MB per file. `BRANDING_IMAGE_MIME_TYPES` and `MAX_BRANDING_IMAGE_BYTES` in `src/lib/constants.ts` are the same, and a unit test keeps the two in step.
+3. **Deleting a company for good** removes its branding folder right after its CV folder (`_shared/company-purge.ts`), so no file outlives the row that named it.
+4. **RLS tests:** checks 67 and 68. Customer B cannot read or change A's row or files.
+
+The contrast rule below is checked in the app, not in the database: it needs the theme's tokens. A colour that skips it only changes how that company's own app looks.
 
 ### Applying the theme (ATS-53)
 
