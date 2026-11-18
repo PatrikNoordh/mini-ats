@@ -12,7 +12,8 @@ function fake(members: string[], failAt?: string) {
     return name === failAt ? Promise.reject(new Error(`${name} failed`)) : Promise.resolve();
   };
   const deps: CompanyPurgeDeps = {
-    removeCvFolder: (id) => step(`folder ${id}`).then(() => 2),
+    removeCvFolder: (id) => step(`cvs ${id}`).then(() => 2),
+    removeBrandingFolder: (id) => step(`branding ${id}`).then(() => 1),
     listMembers: () => Promise.resolve(members),
     deleteUser: (id) => step(`user ${id}`),
     deleteCompany: (id) => step(`company ${id}`),
@@ -20,22 +21,33 @@ function fake(members: string[], failAt?: string) {
   return { deps, ran };
 }
 
-Deno.test("removes the CV folder, then every member's login, then the company", async () => {
-  const { deps, ran } = fake(["u1", "u2"]);
-  await purgeCompany(deps, COMPANY);
-  assertEquals(ran, [`folder ${COMPANY}`, "user u1", "user u2", `company ${COMPANY}`]);
-});
+const FOLDERS = [`cvs ${COMPANY}`, `branding ${COMPANY}`];
 
-Deno.test("a company without members loses only its folder and its data", async () => {
+Deno.test(
+  "removes the CV and branding folders, then every member's login, then the company",
+  async () => {
+    const { deps, ran } = fake(["u1", "u2"]);
+    await purgeCompany(deps, COMPANY);
+    assertEquals(ran, [...FOLDERS, "user u1", "user u2", `company ${COMPANY}`]);
+  },
+);
+
+Deno.test("a company without members loses only its folders and its data", async () => {
   const { deps, ran } = fake([]);
   await purgeCompany(deps, COMPANY);
-  assertEquals(ran, [`folder ${COMPANY}`, `company ${COMPANY}`]);
+  assertEquals(ran, [...FOLDERS, `company ${COMPANY}`]);
 });
 
-Deno.test("keeps the logins and the data when the folder cannot be removed", async () => {
-  const { deps, ran } = fake(["u1"], `folder ${COMPANY}`);
+Deno.test("keeps everything else when the CV folder cannot be removed", async () => {
+  const { deps, ran } = fake(["u1"], `cvs ${COMPANY}`);
   await assertRejects(() => purgeCompany(deps, COMPANY));
-  assertEquals(ran, [`folder ${COMPANY}`]);
+  assertEquals(ran, [`cvs ${COMPANY}`]);
+});
+
+Deno.test("keeps the logins and the data when the branding folder cannot be removed", async () => {
+  const { deps, ran } = fake(["u1"], `branding ${COMPANY}`);
+  await assertRejects(() => purgeCompany(deps, COMPANY));
+  assertEquals(ran, FOLDERS);
 });
 
 Deno.test(
@@ -43,6 +55,6 @@ Deno.test(
   async () => {
     const { deps, ran } = fake(["u1", "u2"], "user u1");
     await assertRejects(() => purgeCompany(deps, COMPANY));
-    assertEquals(ran, [`folder ${COMPANY}`, "user u1"]);
+    assertEquals(ran, [...FOLDERS, "user u1"]);
   },
 );
