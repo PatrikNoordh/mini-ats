@@ -164,6 +164,14 @@ export const accountInputSchema = accountFormFields.superRefine(companyRule(fals
 
 export type AccountInput = z.infer<typeof accountFormFields>;
 
+/**
+ * Inviting an account by email (ATS-50): the same form without a password, which the user
+ * chooses when they accept the invite.
+ */
+export const accountInviteSchema = accountFormFields
+  .extend({ password: z.literal("") })
+  .superRefine(companyRule(false));
+
 /** Editing an account: the same rules as admin-manage-account, and an empty password keeps it. */
 export const accountUpdateSchema = accountFormFields
   .extend({ password: z.union([z.literal(""), passwordSchema]) })
@@ -209,3 +217,17 @@ export const passwordChangeSchema = z
   });
 
 export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;
+
+/**
+ * Choosing a password when accepting an invite (ATS-50): the same rules as a password an admin
+ * sets, typed twice.
+ */
+export const newPasswordSchema = z
+  .object({ new_password: passwordSchema, confirm_password: z.string() })
+  .superRefine((value, ctx) => {
+    if (value.confirm_password !== value.new_password) {
+      ctx.addIssue({ code: "custom", path: ["confirm_password"], message: "password_mismatch" });
+    }
+  });
+
+export type NewPasswordInput = z.infer<typeof newPasswordSchema>;
