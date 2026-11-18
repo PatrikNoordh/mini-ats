@@ -6,3 +6,6 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+# Auth email templates (ATS-49): Prettier would break a Go template action like {{ .NewEmail }}
+# across lines.
+supabase/templates/

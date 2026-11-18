@@ -16,6 +16,7 @@ const stack = localStack();
 process.env["E2E_SUPABASE_URL"] = stack.url;
 process.env["E2E_ANON_KEY"] = stack.anonKey;
 process.env["E2E_SERVICE_ROLE_KEY"] = stack.serviceRoleKey;
+process.env["E2E_MAILPIT_URL"] = stack.mailpitUrl;
 
 export default defineConfig({
   testDir: "e2e",

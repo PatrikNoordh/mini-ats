@@ -35,6 +35,43 @@ enable_signup = false
 # its deprecated name (ATS-59).
 enabled = true
 enable_confirmations = false
+# Secure email change: both the old and the new address must confirm a change (ATS-49). The
+# project has the same setting on, under Authentication → Sign In / Providers → Email.
+double_confirm_changes = true
+
+# Every email Auth can send has its own template, in Swedish and English, so no Supabase default
+# ever goes out (ATS-49). The files in supabase/templates/ are the source for the project too:
+# docs/auth-email.md says how they and these subjects reach its dashboard when email is switched on
+# there (it is off in production). Locally the emails land in Mailpit (MAILPIT_URL in `npx supabase
+# status`), never in a real inbox.
+[auth.email.template.invite]
+subject = "Du är inbjuden till Mini-ATS · You are invited to Mini-ATS"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.recovery]
+subject = "Återställ ditt lösenord · Reset your password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.magic_link]
+subject = "Logga in på Mini-ATS · Sign in to Mini-ATS"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.confirmation]
+subject = "Bekräfta din e-postadress · Confirm your email address"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.email_change]
+subject = "Bekräfta byte av e-postadress · Confirm your email change"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.reauthentication]
+subject = "Din bekräftelsekod · Your confirmation code"
+content_path = "./supabase/templates/reauthentication.html"
+
+[auth.rate_limit]
+# Emails Auth may send per hour on the local stack. The CLI default, 2, would stop the
+# end-to-end tests after their first run; the project's own limit is set in its dashboard.
+email_sent = 100
 
 [storage]
 # The cvs bucket and its limits come from the migrations; this is only Storage's upper bound.

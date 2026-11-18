@@ -179,6 +179,7 @@ mini-ats/
 │   ├── migrations/          # schema, RLS, triggers, database functions
 │   ├── functions/           # admin-create-user, admin-manage-account (+ Deno tests)
 │   ├── tests/               # rls_test.sql, the concurrency test
+│   ├── templates/           # Auth emails in Swedish and English
 │   └── config.toml          # the local stack for the end-to-end tests
 ├── e2e/                     # Playwright tests
 ├── scripts/                 # the demo seed and the end-to-end test seed
@@ -336,6 +337,19 @@ npm run dev     # http://localhost:8080
 
 The repository is connected to Vercel: every push to `main` deploys the live app and every pull request gets a preview. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for Production and Preview. Nitro builds for Vercel without extra configuration.
 
+### Email in production
+
+**Invites and password reset are not live in production.** Production uses Supabase's built-in email, which only reaches the project's own team, so no customer would get the email. Email is prepared and proven on the local stack instead: every Auth email has a Swedish and English template in `supabase/templates/`, and the end-to-end tests send the invite and the reset email, read them from the local stack's inbox and follow their links, in CI too. Until email is switched on, the invite and **Forgot password?** flows stay hidden behind `VITE_EMAIL_ENABLED` (`false` in production), and admins create accounts with a password as before.
+
+Switching it on changes no code:
+
+1. A sender address made only for the app. The documented choice is Brevo with a free address; without a domain of its own, emails may land in spam, so a real deployment would verify a domain (SPF, DKIM, DMARC).
+2. The SMTP settings in the Supabase dashboard. The key never goes in the repo.
+3. The templates from `supabase/templates/` pasted into the dashboard.
+4. `VITE_EMAIL_ENABLED=true` for Production in Vercel.
+
+The steps in full: [`docs/auth-email.md`](docs/auth-email.md).
+
 ---
 
 ## Scripts
@@ -421,6 +435,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 | **A job with candidates can't be deleted** | Nobody empties a board by mistake | Two steps to remove a job with candidates |
 | **Error codes instead of messages** | Translated in both languages; no internal details leak | Every new error needs a code, a translation and a doc line |
 | **Saves fail fast when offline** | A clear error instead of a spinner that never stops | No offline queue |
+| **Email prepared, not switched on in production** | Setting up and running a provider is not worth it for a portfolio project; the local stack proves the emails end to end | Invites and password reset are not live in production; switching on is dashboard settings and a flag, no code |
 
 ---
 
