@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +29,7 @@ import {
   useCreateProfile,
   useDeleteProfile,
   useProfiles,
+  useResendInvite,
   useUpdateProfile,
 } from "@/hooks/useProfiles";
 import { isActive, purgeDate } from "@/lib/accounts";
@@ -37,10 +40,12 @@ import {
   MIN_PASSWORD_LENGTH,
 } from "@/lib/constants";
 import { errorCode } from "@/lib/errors";
+import { EMAIL_ENABLED } from "@/lib/features";
 import { useFormat } from "@/lib/format";
 import {
   accountFormFields,
   accountInputSchema,
+  accountInviteSchema,
   accountUpdateSchema,
   fieldErrors,
   NEW_COMPANY,
@@ -52,6 +57,11 @@ import {
 import type { Profile, Role } from "@/types";
 
 const empty = { full_name: "", email: "", password: "", company: "", company_name: "" };
+
+/** How a new user gets in: an invite by email, or a temporary password the admin hands over. */
+type Access = "invite" | "password";
+/** Invites first when email works here (ATS-50); otherwise a password, as before. */
+const DEFAULT_ACCESS: Access = EMAIL_ENABLED ? "invite" : "password";
 
 /**
  * Creates an account, or edits and deletes `account` when it is given. A customer belongs to a
@@ -82,8 +92,10 @@ export function AccountDialog({
   const create = useCreateProfile();
   const update = useUpdateProfile();
   const remove = useDeleteProfile();
+  const resend = useResendInvite();
   const errorToast = useErrorToast();
   const [role, setRole] = useState<Role>("customer");
+  const [access, setAccess] = useState<Access>(DEFAULT_ACCESS);
   const [form, setForm] = useState(empty);
   const [errors, setErrors] = useState<FormErrors<AccountInput>>({});
   const [confirming, setConfirming] = useState(false);
@@ -91,12 +103,14 @@ export function AccountDialog({
   const isSelf = !!account && account.id === me?.id;
   const tied = !account && companyId !== null;
   const tiedCompany = tied ? companies.data?.find((c) => c.id === companyId) : undefined;
-  const busy = create.isPending || update.isPending || remove.isPending;
+  const busy = create.isPending || update.isPending || remove.isPending || resend.isPending;
+  const inviting = !account && access === "invite";
 
   useEffect(() => {
     if (!open) return;
     setErrors({});
     setRole(account?.role ?? "customer");
+    setAccess(DEFAULT_ACCESS);
     setForm(
       account
         ? {
@@ -126,7 +140,11 @@ export function AccountDialog({
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const schema = account ? accountUpdateSchema : accountInputSchema;
+    const schema = account
+      ? accountUpdateSchema
+      : inviting
+        ? accountInviteSchema
+        : accountInputSchema;
     const parsed = schema.safeParse({ ...form, role });
     setErrors(parsed.success ? {} : fieldErrors(accountFormFields, parsed.error));
     if (!parsed.success) return;
@@ -154,13 +172,29 @@ export function AccountDialog({
           : company === NEW_COMPANY
             ? { company_name }
             : { company_id: company };
-        await create.mutateAsync({ ...details, password, ...placement });
-        toast.success(t("accountDialog.created"));
+        if (inviting) {
+          await create.mutateAsync({ ...details, invite: true, ...placement });
+          toast.success(t("accountDialog.invited", { email: details.email }));
+        } else {
+          await create.mutateAsync({ ...details, password, ...placement });
+          toast.success(t("accountDialog.created"));
+        }
       }
       onOpenChange(false);
     } catch (err) {
       if (errorCode(err) === "email_exists") return showEmailTaken();
       errorToast(t(account ? "accountDialog.updateFailed" : "accountDialog.createFailed"), err);
+    }
+  };
+
+  /** Emails a new invite; the function refuses an account that already has a password. */
+  const onResend = async () => {
+    if (!account) return;
+    try {
+      await resend.mutateAsync(account.id);
+      toast.success(t("accountDialog.resent", { email: account.email }));
+    } catch (err) {
+      errorToast(t("accountDialog.resendFailed"), err);
     }
   };
 
@@ -294,28 +328,75 @@ export function AccountDialog({
               />
             )}
           </Field>
-          <Field
-            id="a-pw"
-            label={account ? t("accountDialog.newPassword") : t("accountDialog.password")}
-            hint={
-              account
-                ? t("accountDialog.newPasswordHint", { min: MIN_PASSWORD_LENGTH })
-                : t("accountDialog.passwordHint", { min: MIN_PASSWORD_LENGTH })
-            }
-            error={errors.password}
-          >
-            {(control) => (
-              <Input
-                {...control}
-                type="text"
-                autoComplete="off"
-                // Characters, so never stricter than the byte limit the schema checks.
-                maxLength={MAX_PASSWORD_BYTES}
-                value={form.password}
-                onChange={set("password")}
-              />
-            )}
-          </Field>
+          {!account && EMAIL_ENABLED && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">{t("accountDialog.access")}</legend>
+              <RadioGroup
+                value={access}
+                onValueChange={(value) => setAccess(value === "password" ? "password" : "invite")}
+              >
+                <div className="flex items-start gap-2">
+                  <RadioGroupItem
+                    id="a-access-invite"
+                    value="invite"
+                    aria-describedby="a-access-invite-hint"
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <Label htmlFor="a-access-invite">{t("accountDialog.accessInvite")}</Label>
+                    <p id="a-access-invite-hint" className="text-xs text-muted-foreground">
+                      {t("accountDialog.accessInviteHint")}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem id="a-access-password" value="password" />
+                  <Label htmlFor="a-access-password">{t("accountDialog.accessPassword")}</Label>
+                </div>
+              </RadioGroup>
+            </fieldset>
+          )}
+          {!inviting && (
+            <Field
+              id="a-pw"
+              label={account ? t("accountDialog.newPassword") : t("accountDialog.password")}
+              hint={
+                account
+                  ? t("accountDialog.newPasswordHint", { min: MIN_PASSWORD_LENGTH })
+                  : t("accountDialog.passwordHint", { min: MIN_PASSWORD_LENGTH })
+              }
+              error={errors.password}
+            >
+              {(control) => (
+                <Input
+                  {...control}
+                  type="text"
+                  autoComplete="off"
+                  // Characters, so never stricter than the byte limit the schema checks.
+                  maxLength={MAX_PASSWORD_BYTES}
+                  value={form.password}
+                  onChange={set("password")}
+                />
+              )}
+            </Field>
+          )}
+          {account && !isSelf && EMAIL_ENABLED && (
+            <div className="space-y-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                aria-describedby="a-resend-hint"
+                onClick={() => void onResend()}
+              >
+                {resend.isPending ? t("accountDialog.sending") : t("accountDialog.resendInvite")}
+              </Button>
+              <p id="a-resend-hint" className="text-xs text-muted-foreground">
+                {t("accountDialog.resendHint")}
+              </p>
+            </div>
+          )}
           <DialogFooter>
             {account && !isSelf && (
               <Button
@@ -337,8 +418,12 @@ export function AccountDialog({
                   ? t("common.saving")
                   : t("common.save")
                 : create.isPending
-                  ? t("accountDialog.submitting")
-                  : t("accountDialog.submit")}
+                  ? inviting
+                    ? t("accountDialog.sending")
+                    : t("accountDialog.submitting")
+                  : inviting
+                    ? t("accountDialog.submitInvite")
+                    : t("accountDialog.submit")}
             </Button>
           </DialogFooter>
         </form>

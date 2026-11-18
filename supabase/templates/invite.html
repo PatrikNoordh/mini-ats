@@ -1,7 +1,9 @@
 {{/* Mini-ATS Auth email: invite (ATS-49). This file is the source: the local stack reads it through
 supabase/config.toml, and docs/auth-email.md says how it reaches the project when email is switched
 on there. Swedish first, then English, since Auth does not know the user's language. Email clients
-do not read the app's theme, so the colours are its tokens written out as hex. */}}
+do not read the app's theme, so the colours are its tokens written out as hex. The link opens the
+app's accept-invite page, which verifies the token only when the user submits it, so an email
+scanner that opens the link does not use it up (ATS-50). */}}
 <!doctype html>
 <html lang="sv">
   <head>
@@ -37,7 +39,7 @@ do not read the app's theme, so the colours are its tokens written out as hex. *
         </p>
         <p style="margin: 0 0 24px">
           <a
-            href="{{ .ConfirmationURL }}"
+            href="{{ .SiteURL }}/accept-invite?token_hash={{ .TokenHash }}&amp;type=invite"
             style="
               display: inline-block;
               padding: 12px 24px;
@@ -53,9 +55,9 @@ do not read the app's theme, so the colours are its tokens written out as hex. *
         </p>
         <p style="margin: 0 0 24px; font-size: 14px; color: #5b656a">
           Fungerar inte knappen? Öppna den här länken:<br /><a
-            href="{{ .ConfirmationURL }}"
+            href="{{ .SiteURL }}/accept-invite?token_hash={{ .TokenHash }}&amp;type=invite"
             style="color: #19838d; word-break: break-all"
-            >{{ .ConfirmationURL }}</a
+            >{{ .SiteURL }}/accept-invite?token_hash={{ .TokenHash }}&amp;type=invite</a
           >
         </p>
         <p style="margin: 0; font-size: 14px; color: #5b656a">
@@ -71,7 +73,7 @@ do not read the app's theme, so the colours are its tokens written out as hex. *
         </p>
         <p style="margin: 0 0 24px">
           <a
-            href="{{ .ConfirmationURL }}"
+            href="{{ .SiteURL }}/accept-invite?token_hash={{ .TokenHash }}&amp;type=invite"
             style="
               display: inline-block;
               padding: 12px 24px;
@@ -87,9 +89,9 @@ do not read the app's theme, so the colours are its tokens written out as hex. *
         </p>
         <p style="margin: 0 0 24px; font-size: 14px; color: #5b656a">
           Button not working? Open this link:<br /><a
-            href="{{ .ConfirmationURL }}"
+            href="{{ .SiteURL }}/accept-invite?token_hash={{ .TokenHash }}&amp;type=invite"
             style="color: #19838d; word-break: break-all"
-            >{{ .ConfirmationURL }}</a
+            >{{ .SiteURL }}/accept-invite?token_hash={{ .TokenHash }}&amp;type=invite</a
           >
         </p>
         <p style="margin: 0; font-size: 14px; color: #5b656a">

@@ -20,6 +20,11 @@ export const MIN_PASSWORD_LENGTH = 8;
  * count as two. Same as admin-create-user.
  */
 export const MAX_PASSWORD_BYTES = 72;
+/**
+ * The longest token the accept-invite page reads from its link (ATS-50). Auth's token hashes are
+ * 56 characters; anything far longer is no invite.
+ */
+export const MAX_TOKEN_HASH_LENGTH = 256;
 /** The longest email address SMTP allows. Same as admin-create-user and the database check. */
 export const MAX_EMAIL_LENGTH = 254;
 /**
