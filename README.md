@@ -88,7 +88,7 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
   - **AI assessment of the CV** for each job the candidate is linked to: a score from 1 to 10, a summary, strengths and gaps, labelled as an AI suggestion, never a decision
 
 **For the admin (runs the platform)**
-- **Accounts** (`Konton`): create admin and customer accounts; edit name, company, email, role and password
+- **Accounts** (`Konton`): create admin and customer accounts; edit name, company, email, role and password. Where email is on, invite a user by email instead, who chooses their own password, and send the invite again (ATS-50)
 - **Delete with 30 days to undo**: a deleted account is hidden, can't sign in and gets no data, but keeps everything. **Borttagna konton** lists it with **Återställ** and **Radera för gott**, and a daily job deletes it for good after 30 days, CV files included
 - **Act as a customer**: choose a customer and use every customer screen on their behalf, with a banner saying who you work as. The choice survives a reload
 
@@ -306,7 +306,7 @@ VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
 VITE_SUPABASE_ANON_KEY=<the anon / publishable key>
 ```
 
-Both come from **Project Settings → API**. The service role key never goes in this file.
+Both come from **Project Settings → API**. The service role key never goes in this file. `VITE_EMAIL_ENABLED` stays unset unless Auth can send real email (see [Email in production](#email-in-production)).
 
 ### 5. Create the first admin
 
@@ -339,7 +339,7 @@ The repository is connected to Vercel: every push to `main` deploys the live app
 
 ### Email in production
 
-**Invites and password reset are not live in production.** Production uses Supabase's built-in email, which only reaches the project's own team, so no customer would get the email. Email is prepared and proven on the local stack instead: every Auth email has a Swedish and English template in `supabase/templates/`, and the end-to-end tests send the invite and the reset email, read them from the local stack's inbox and follow their links, in CI too. The invite and **Forgot password?** flows, which come with ATS-50 and ATS-51, will only show when `VITE_EMAIL_ENABLED` is `true` (`false` in production). Until then, admins create accounts with a password as before.
+**Invites and password reset are not live in production.** Production uses Supabase's built-in email, which only reaches the project's own team, so no customer would get the email. Email is prepared and proven on the local stack instead: every Auth email has a Swedish and English template in `supabase/templates/`, and the end-to-end tests send the invite and the reset email, read them from the local stack's inbox and follow their links, in CI too. The invite (ATS-50) and **Forgot password?** (ATS-51) flows only show when `VITE_EMAIL_ENABLED` is `true`, which it is in the end-to-end tests and not in production, so admins there create accounts with a password as before.
 
 Switching it on changes no code:
 
@@ -443,7 +443,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 
 - A customer is a **company with one shared login**, as in the brief.
 - Customers are **Swedish companies**, so Swedish is the default language, with English for everyone else.
-- **Admins create every account**, and give the customer their login in person. There are no email invites.
+- **Admins create every account**, and give the customer their login in person. Invites by email exist, but are off in production (see [Email in production](#email-in-production)).
 - A candidate belongs to **one customer**, and can be in several of that customer's jobs.
 - The AI assessment of a CV is **a suggestion for the recruiter**, never a decision.
 - The product is called **Mini-ATS**, as in the brief. The name lives in one translation key (`app.name`), so it can change in one place when the product gets a real name. Each customer sees their own company name in the header, taken from their account.
@@ -454,6 +454,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 
 - Several users per company, and roles inside a company
 - Email: invites, password reset, notifications to candidates
+- Companies inviting their own members: it would need an owner role inside a company, and live email
 - A careers page or a public way for candidates to apply
 - Interview scheduling, calendars and offer letters
 - Reporting, an audit log, and GDPR tools such as exports and retention rules for candidates
