@@ -91,6 +91,14 @@ export const CV_MIME_TYPE = "application/pdf";
  * supabase/migrations/20261023180000_cv_bucket_limits.sql: change both.
  */
 export const MAX_CV_BYTES = 5 * 1024 * 1024;
+/**
+ * The only file types a logo or background image may have: no SVG, which can carry scripts. The
+ * branding bucket allows only these too, in
+ * supabase/migrations/20261119120000_customer_branding.sql: change both.
+ */
+export const BRANDING_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
+/** Largest logo or background image, 2 MB. The branding bucket has the same limit: change both. */
+export const MAX_BRANDING_IMAGE_BYTES = 2 * 1024 * 1024;
 /** How long a link to open a CV works. Short, so a copied link soon stops working. */
 export const CV_SIGNED_URL_SECONDS = 5 * 60;
 /** A new link is fetched this long before the old one stops working. */
