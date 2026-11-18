@@ -41,8 +41,9 @@ double_confirm_changes = true
 
 # Every email Auth can send has its own template, in Swedish and English, so no Supabase default
 # ever goes out (ATS-49). The files in supabase/templates/ are the source for the project too:
-# docs/auth-email.md says how they and these subjects are copied into its dashboard. Locally the
-# emails land in Mailpit (MAILPIT_URL in `npx supabase status`), never in a real inbox.
+# docs/auth-email.md says how they and these subjects reach its dashboard when email is switched on
+# there (it is off in production). Locally the emails land in Mailpit (MAILPIT_URL in `npx supabase
+# status`), never in a real inbox.
 [auth.email.template.invite]
 subject = "Du är inbjuden till Mini-ATS · You are invited to Mini-ATS"
 content_path = "./supabase/templates/invite.html"

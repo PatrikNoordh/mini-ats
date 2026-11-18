@@ -337,9 +337,18 @@ npm run dev     # http://localhost:8080
 
 The repository is connected to Vercel: every push to `main` deploys the live app and every pull request gets a preview. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for Production and Preview. Nitro builds for Vercel without extra configuration.
 
-### Email
+### Email in production
 
-Supabase Auth sends its emails (invites, password resets) through **Brevo** as custom SMTP, from a free address made for the app, **without a domain of its own**. Emails may therefore land in spam. A real deployment would verify a domain it owns with the provider (SPF, DKIM and DMARC) and send from it; switching changes only the SMTP settings in the Supabase dashboard, not the code. The SMTP key and the sender live only in the dashboard. The templates, in Swedish and English, are in `supabase/templates/`. Setup and checks: [`docs/auth-email.md`](docs/auth-email.md).
+**Invites and password reset are not live in production.** Production uses Supabase's built-in email, which only reaches the project's own team, so no customer would get the email. Email is prepared and proven on the local stack instead: every Auth email has a Swedish and English template in `supabase/templates/`, and the end-to-end tests send the invite and the reset email, read them from the local stack's inbox and follow their links, in CI too. Until email is switched on, the invite and **Forgot password?** flows stay hidden behind `VITE_EMAIL_ENABLED` (`false` in production), and admins create accounts with a password as before.
+
+Switching it on changes no code:
+
+1. A sender address made only for the app. The documented choice is Brevo with a free address; without a domain of its own, emails may land in spam, so a real deployment would verify a domain (SPF, DKIM, DMARC).
+2. The SMTP settings in the Supabase dashboard. The key never goes in the repo.
+3. The templates from `supabase/templates/` pasted into the dashboard.
+4. `VITE_EMAIL_ENABLED=true` for Production in Vercel.
+
+The steps in full: [`docs/auth-email.md`](docs/auth-email.md).
 
 ---
 
@@ -426,7 +435,7 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 | **A job with candidates can't be deleted** | Nobody empties a board by mistake | Two steps to remove a job with candidates |
 | **Error codes instead of messages** | Translated in both languages; no internal details leak | Every new error needs a code, a translation and a doc line |
 | **Saves fail fast when offline** | A clear error instead of a spinner that never stops | No offline queue |
-| **Auth email through Brevo from a free address** | A real provider without buying a domain for a portfolio project | Emails may land in spam until a domain is verified; switching is a dashboard setting |
+| **Email prepared, not switched on in production** | Setting up and running a provider is not worth it for a portfolio project; the local stack proves the emails end to end | Invites and password reset are not live in production; switching on is dashboard settings and a flag, no code |
 
 ---
 

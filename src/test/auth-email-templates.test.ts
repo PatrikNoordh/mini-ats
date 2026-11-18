@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 // Every email Supabase Auth can send has our own template, in Swedish and English, so no Supabase
 // default ever goes out (ATS-49). supabase/config.toml points the local stack at the files, and
-// docs/auth-email.md copies the same files into the project.
+// docs/auth-email.md says how they reach the project when email is switched on there.
 const CONFIG = readFileSync("supabase/config.toml", "utf8");
 
 /** Each Auth email type, and what its template must carry for the email to work. */
