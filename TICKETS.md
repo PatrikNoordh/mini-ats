@@ -629,10 +629,6 @@ Tracked in #88.
 
 Tracked in #131. Done first in epic 11, like ATS-61 in epic 10.
 
-### ATS-64 · chore · Migrate to zod 4
-
-Tracked in #132. From the epic 10 close-out.
-
 ### ATS-49 · chore · Send Auth emails through our own SMTP provider
 
 Tracked in #89.
@@ -670,6 +666,14 @@ Tracked in #91.
 ## Epic 12 — A customer's own theme
 
 A customer can choose to make Mini-ATS feel like their own app, with their colour, logo and background image. Design and decisions: `docs/next-branding.md`.
+
+### ATS-65 · chore · Small hygiene fixes from epic 11
+
+Tracked in #139. Done first in epic 12, like ATS-63 in epic 11.
+
+### ATS-64 · chore · Migrate to zod 4
+
+Tracked in #132. From the epic 10 close-out. Moved from epic 11 by the developer, to be done last in epic 12.
 
 ### ATS-52 · feat · Branding per customer in the database
 
@@ -720,8 +724,6 @@ Tracked in #95.
 Small problems and improvements noticed while working on a ticket but outside its scope. Add one line per finding as soon as it is found, with the ticket where it was found. At each epic checkpoint the list is triaged and emptied: a finding becomes an extra AC on the open ticket that touches the same code, or goes into one hygiene ticket for the epic, or is dropped. The AC says where it came from, for example "(found while building ATS-2)". `/ats-epic-close` does the triage and records where each line went in `docs/review-epic-<N>.md`.
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
-
-- [ ] The README's out-of-scope list still names several users per company and an audit log, both built in epics 9 and 10, and its Assumptions still say a company has one shared login — `README.md` § Out of scope, § Assumptions (found in ATS-50)
 
 ## Found while reviewing PRs
 
