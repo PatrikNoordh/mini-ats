@@ -458,7 +458,7 @@ end $$;
 -- The grants are exactly what the app uses. A change here is a deliberate change to this list.
 do $$ declare actual text; expected text :=
   'applications:DELETE,INSERT,SELECT,UPDATE audit_events:SELECT candidates:DELETE,INSERT,SELECT,UPDATE companies:SELECT '
-  'company_members:SELECT cv_assessments:DELETE,SELECT jobs:DELETE,INSERT,SELECT,UPDATE '
+  'company_members:SELECT customer_branding:DELETE,SELECT cv_assessments:DELETE,SELECT jobs:DELETE,INSERT,SELECT,UPDATE '
   'pipeline_stages:DELETE,SELECT profiles:SELECT';
 begin
   select string_agg(table_name || ':' || privileges, ' ' order by table_name) into actual
@@ -2203,6 +2203,193 @@ begin
   update public.companies set deleted_at = null where id = c;
   assert not has_function_privilege('anon', 'public.audit_actor_names(uuid[])', 'execute'), 'anon may look up names';
   raise notice 'OK 66: the actors'' names come only for the caller''s own company''s events, an admin only as an admin';
+end $$;
+
+
+-- ---------------------------------------------------------------- branding (ATS-52)
+-- Companies G and H, each with a second member who signs in for it.
+reset role;
+select pg_temp.add_customer('00000000-0000-0000-0000-0000000052a1', 'brand-g-52@test.local');
+select pg_temp.add_customer('00000000-0000-0000-0000-0000000052b1', 'brand-h-52@test.local');
+select pg_temp.add_member('00000000-0000-0000-0000-0000000052a1', '00000000-0000-0000-0000-0000000052a2', 'brand-g2-52@test.local');
+select pg_temp.add_member('00000000-0000-0000-0000-0000000052b1', '00000000-0000-0000-0000-0000000052b2', 'brand-h2-52@test.local');
+
+-- 67. A member saves, reads and resets its own company's theme, with one upsert and a delete, and
+-- never reads or changes another company's. The row's owner never changes, every value is
+-- checked, and a path points only into the company's own folder. An admin reads and writes every
+-- company's; a member of a deleted company and anon see nothing. The row goes with its company.
+do $$ declare
+  g uuid := '00000000-0000-0000-0000-0000000052a1';
+  h uuid := '00000000-0000-0000-0000-0000000052b1';
+  g2 uuid := '00000000-0000-0000-0000-0000000052a2';
+  h2 uuid := '00000000-0000-0000-0000-0000000052b2';
+  admin uuid := '00000000-0000-0000-0000-0000000000ad';
+  saved_at timestamptz;
+  n integer;
+begin
+  insert into public.customer_branding (customer_id, accent_colour) values (h, '#123456');
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', g2), true);
+  insert into public.customer_branding (customer_id, accent_colour, logo_path)
+  values (g, '#0f766e', g || '/logo.png')
+  on conflict (customer_id) do update
+    set customer_id = excluded.customer_id, accent_colour = excluded.accent_colour, logo_path = excluded.logo_path;
+  assert (select count(*) from public.customer_branding) = 1
+         and (select background_dim from public.customer_branding where customer_id = g) = 'medium',
+         'a member does not see only its own company''s theme, or the dim level has no default';
+  select updated_at into saved_at from public.customer_branding where customer_id = g;
+  -- The same upsert again, as the settings page saves: the row is updated, not refused.
+  insert into public.customer_branding (customer_id, accent_colour, background_path, background_dim)
+  values (g, '#1d4ed8', g || '/background.webp', 'strong')
+  on conflict (customer_id) do update
+    set customer_id = excluded.customer_id, accent_colour = excluded.accent_colour,
+        background_path = excluded.background_path, background_dim = excluded.background_dim;
+  assert (select accent_colour = '#1d4ed8' and background_dim = 'strong' and logo_path = g || '/logo.png'
+          from public.customer_branding where customer_id = g), 'a member could not save its company''s theme';
+  assert (select updated_at from public.customer_branding where customer_id = g) >= saved_at, 'updated_at is not set';
+
+  assert pg_temp.error_of(format('insert into public.customer_branding (customer_id) values (%L)', h)) = '42501',
+         'a member wrote another company''s theme';
+  update public.customer_branding set accent_colour = '#000000' where customer_id = h;
+  get diagnostics n = row_count;
+  assert n = 0, 'a member changed another company''s theme';
+  delete from public.customer_branding where customer_id = h;
+  get diagnostics n = row_count;
+  assert n = 0, 'a member reset another company''s theme';
+  assert pg_temp.error_of(format('update public.customer_branding set customer_id = %L where customer_id = %L', h, g))
+         = '42501', 'a member moved its theme to another company';
+  assert pg_temp.error_of(format('update public.customer_branding set logo_path = %L where customer_id = %L', h || '/logo.png', g))
+         = '23514', 'a theme points at another company''s file';
+  assert pg_temp.error_of(format('update public.customer_branding set background_path = %L where customer_id = %L', g || '/' || repeat('x', 200), g))
+         = '23514', 'a path has no length limit';
+  assert pg_temp.error_of(format('update public.customer_branding set accent_colour = %L where customer_id = %L', 'red', g))
+         = '23514', 'an accent that is not #rrggbb was saved';
+  assert pg_temp.error_of(format('update public.customer_branding set accent_colour = %L where customer_id = %L', '#ABCDEF', g))
+         = '23514', 'an accent in upper case was saved';
+  assert pg_temp.error_of(format('update public.customer_branding set background_dim = %L where customer_id = %L', 'none', g))
+         = '23514', 'an unknown dim level was saved';
+  assert pg_temp.error_of(format('update public.customer_branding set updated_at = now() - interval ''1 day'' where customer_id = %L', g))
+         = '42501', 'a client wrote updated_at';
+
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', h2), true);
+  assert (select count(*) from public.customer_branding) = 1
+         and exists (select 1 from public.customer_branding where customer_id = h and accent_colour = '#123456'),
+         'another member changed H''s theme, or H sees G''s';
+
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', admin), true);
+  assert (select count(*) from public.customer_branding where customer_id in (g, h)) = 2, 'the admin does not see every theme';
+  update public.customer_branding set accent_colour = '#7c3aed' where customer_id = h;
+  get diagnostics n = row_count;
+  assert n = 1, 'the admin could not change a company''s theme';
+  -- RLS lets the admin reach both rows, so only the lock stops the move. H has a row already, so
+  -- the move goes to a new company id: the error is the lock's, not the primary key's.
+  begin
+    update public.customer_branding set customer_id = '00000000-0000-0000-0000-0000000052d1' where customer_id = h;
+    raise exception 'FAIL 67: the admin moved a theme to another company';
+  exception when insufficient_privilege then
+    if sqlerrm <> 'owner_change_not_allowed' then raise; end if;
+  end;
+
+  reset role;
+  update public.companies set deleted_at = now() where id = g;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', g2), true);
+  assert not exists (select 1 from public.customer_branding), 'a member of a deleted company sees its theme';
+  delete from public.customer_branding where customer_id = g;
+  get diagnostics n = row_count;
+  assert n = 0, 'a member of a deleted company reset its theme';
+
+  reset role;
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  assert not has_table_privilege('anon', 'public.customer_branding', 'select'), 'anon may read a theme';
+  assert not has_column_privilege('authenticated', 'public.customer_branding', 'updated_at', 'update'), 'a client may write updated_at';
+  delete from public.companies where id = g;
+  assert not exists (select 1 from public.customer_branding where customer_id = g), 'a deleted company''s theme stayed';
+  assert exists (select 1 from public.customer_branding where customer_id = h), 'deleting G removed H''s theme';
+  raise notice 'OK 67: a company''s theme is read and changed only by its active members or an admin, with checked values, and goes with the company';
+end $$;
+
+-- 68. The branding bucket takes PNG, JPEG and WebP up to 2 MB, is private, and has a folder per
+-- company: each active member, or an admin, opens, uploads, replaces and removes the company's
+-- files, and nobody else's.
+reset role;
+do $$ declare
+  h uuid := '00000000-0000-0000-0000-0000000052b1';
+  i uuid := '00000000-0000-0000-0000-0000000052c1';
+  h2 uuid := '00000000-0000-0000-0000-0000000052b2';
+  admin uuid := '00000000-0000-0000-0000-0000000000ad';
+  n integer; blocked boolean := false;
+begin
+  assert (select not public and file_size_limit = 2 * 1024 * 1024
+          and allowed_mime_types = array['image/png', 'image/jpeg', 'image/webp']
+          from storage.buckets where id = 'branding'), 'the branding bucket is public, or its limits are wrong';
+  perform pg_temp.add_customer(i, 'brand-i-52@test.local');
+  insert into storage.objects (bucket_id, name) values
+    ('branding', h || '/logo.png'), ('branding', i || '/logo.png'), ('cvs', h || '/cv.pdf');
+
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', h2), true);
+  assert (select count(*) from storage.objects where bucket_id = 'branding') = 1
+         and exists (select 1 from storage.objects where bucket_id = 'branding' and name = h || '/logo.png'),
+         'a member sees another company''s branding files, or not its own';
+  insert into storage.objects (bucket_id, name) values ('branding', h || '/background.webp');
+  update storage.objects set name = name where bucket_id = 'branding' and name = h || '/logo.png';
+  get diagnostics n = row_count;
+  assert n = 1, 'a member could not replace its company''s logo';
+  perform set_config('storage.allow_delete_query', 'true', true);
+  delete from storage.objects where bucket_id = 'branding' and name = h || '/background.webp';
+  get diagnostics n = row_count;
+  assert n = 1, 'a member could not remove its company''s background';
+  update storage.objects set name = name where bucket_id = 'branding' and name = i || '/logo.png';
+  get diagnostics n = row_count;
+  assert n = 0, 'a member replaced another company''s logo';
+  delete from storage.objects where bucket_id = 'branding' and name = i || '/logo.png';
+  get diagnostics n = row_count;
+  assert n = 0, 'a member removed another company''s logo';
+  begin
+    insert into storage.objects (bucket_id, name) values ('branding', i || '/logo.png');
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL 68: a member uploaded into another company''s branding folder'; end if;
+  blocked := false;
+  begin
+    update storage.objects set name = i || '/moved.png' where bucket_id = 'branding' and name = h || '/logo.png';
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL 68: a member moved its logo into another company''s folder'; end if;
+  blocked := false;
+  begin
+    insert into storage.objects (bucket_id, name) values ('branding', h2 || '/logo.png');
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL 68: a member uploaded into a folder named after its own user id'; end if;
+
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', admin), true);
+  assert (select count(*) from storage.objects where bucket_id = 'branding' and name in (h || '/logo.png', i || '/logo.png')) = 2,
+         'the admin does not see every company''s branding files';
+  update storage.objects set name = name where bucket_id = 'branding' and name = i || '/logo.png';
+  get diagnostics n = row_count;
+  assert n = 1, 'the admin could not replace a company''s logo';
+
+  reset role;
+  update public.companies set deleted_at = now() where id = h;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', h2), true);
+  assert not exists (select 1 from storage.objects where bucket_id = 'branding'), 'a member of a deleted company sees its branding files';
+  blocked := false;
+  begin
+    insert into storage.objects (bucket_id, name) values ('branding', h || '/late.png');
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL 68: a member of a deleted company uploaded a branding file'; end if;
+
+  reset role;
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  set local role anon;
+  assert not exists (select 1 from storage.objects where bucket_id = 'branding'), 'anon sees branding files';
+  reset role;
+  raise notice 'OK 68: the branding bucket takes PNG, JPEG and WebP up to 2 MB, and only the company''s active members or an admin reach its folder';
 end $$;
 
 rollback;
