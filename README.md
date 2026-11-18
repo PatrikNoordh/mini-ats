@@ -339,7 +339,7 @@ The repository is connected to Vercel: every push to `main` deploys the live app
 
 ### Email in production
 
-**Invites and password reset are not live in production.** Production uses Supabase's built-in email, which only reaches the project's own team, so no customer would get the email. Email is prepared and proven on the local stack instead: every Auth email has a Swedish and English template in `supabase/templates/`, and the end-to-end tests send the invite and the reset email, read them from the local stack's inbox and follow their links, in CI too. Until email is switched on, the invite and **Forgot password?** flows stay hidden behind `VITE_EMAIL_ENABLED` (`false` in production), and admins create accounts with a password as before.
+**Invites and password reset are not live in production.** Production uses Supabase's built-in email, which only reaches the project's own team, so no customer would get the email. Email is prepared and proven on the local stack instead: every Auth email has a Swedish and English template in `supabase/templates/`, and the end-to-end tests send the invite and the reset email, read them from the local stack's inbox and follow their links, in CI too. The invite and **Forgot password?** flows, which come with ATS-50 and ATS-51, will only show when `VITE_EMAIL_ENABLED` is `true` (`false` in production). Until then, admins create accounts with a password as before.
 
 Switching it on changes no code:
 
