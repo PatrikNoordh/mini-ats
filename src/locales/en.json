@@ -111,6 +111,7 @@
     "company_not_found": "The company does not exist.",
     "company_deleted": "The company has been deleted. Restore it first.",
     "company_not_deleted": "The company is not deleted.",
+    "saved_not_moved": "The changes were saved, but the company was deleted in the meantime, so the account was not moved.",
     "invite_invalid": "This invite link has expired, has already been used or has been replaced by a newer invite. Ask your administrator to send a new one.",
     "invite_accepted": "This account has already accepted its invite or has a password. Set a new password for it instead.",
     "invite_not_sent": "The invite email could not be sent. Wait a moment and try again.",

@@ -183,9 +183,12 @@ export function createHandler(deps: Deps) {
           if (result) return refused(result.error);
           // After the role: the database refuses a membership for an admin, and a promotion has
           // already removed it (ATS-44).
+          // The details are saved by then, so a company deleted since the check above is reported
+          // as a move refused after the save, not as a failed update (ATS-63 AC1). Writing the
+          // membership first is no way round it: a demotion must leave admin before it may join.
           if (request.role === "customer" && request.company_id !== undefined) {
             const moved = await deps.setCompany(request.id, request.company_id);
-            if (moved) return json({ error: moved }, 409);
+            if (moved) return json({ error: "saved_not_moved" }, 409);
           }
           break;
         }

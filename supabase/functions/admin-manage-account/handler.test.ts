@@ -182,15 +182,33 @@ Deno.test("never adds a user to a company that does not exist or is deleted", as
   }
 });
 
-Deno.test("returns company_deleted when the company was deleted since it was read", async () => {
-  const { handler, ran } = setup({ moveRefusal: "company_deleted" });
-  const res = await call(handler, post({ ...update, company_id: COMPANY_ID }));
-  assertEquals([res.status, res.body.error], [409, "company_deleted"]);
-  assertEquals(ran, [
-    `update ${CUSTOMER_ID} kund@exempelbygg.test -`,
-    `company ${CUSTOMER_ID} ${COMPANY_ID}`,
-  ]);
-});
+Deno.test(
+  "says the details were saved when the company was deleted since it was read",
+  async () => {
+    const { handler, ran } = setup({ moveRefusal: "company_deleted" });
+    const res = await call(handler, post({ ...update, company_id: COMPANY_ID }));
+    // Not company_deleted: the name, email and role are saved, only the move is not (ATS-63 AC1).
+    assertEquals([res.status, res.body.error], [409, "saved_not_moved"]);
+    assertEquals(ran, [
+      `update ${CUSTOMER_ID} kund@exempelbygg.test -`,
+      `company ${CUSTOMER_ID} ${COMPANY_ID}`,
+    ]);
+  },
+);
+
+Deno.test(
+  "a demotion into a company deleted meanwhile keeps the demotion and joins nothing",
+  async () => {
+    const { handler, ran } = setup({ moveRefusal: "company_deleted" });
+    const body = { ...update, id: OTHER_ADMIN_ID, role: "customer", company_id: COMPANY_ID };
+    const res = await call(handler, post(body));
+    assertEquals([res.status, res.body.error], [409, "saved_not_moved"]);
+    assertEquals(ran, [
+      `update ${OTHER_ADMIN_ID} kund@exempelbygg.test - demote`,
+      `company ${OTHER_ADMIN_ID} ${COMPANY_ID}`,
+    ]);
+  },
+);
 
 Deno.test("demotes an admin by adding them to a company, after the last-admin check", async () => {
   const { handler, ran } = setup();

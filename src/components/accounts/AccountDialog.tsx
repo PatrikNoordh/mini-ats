@@ -183,6 +183,11 @@ export function AccountDialog({
       onOpenChange(false);
     } catch (err) {
       if (errorCode(err) === "email_exists") return showEmailTaken();
+      // The changes are saved; only the move to a company deleted meanwhile was not (ATS-63 AC1).
+      if (errorCode(err) === "saved_not_moved") {
+        toast.warning(t("errors.saved_not_moved"));
+        return onOpenChange(false);
+      }
       errorToast(t(account ? "accountDialog.updateFailed" : "accountDialog.createFailed"), err);
     }
   };
