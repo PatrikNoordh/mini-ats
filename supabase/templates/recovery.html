@@ -1,7 +1,9 @@
 {{/* Mini-ATS Auth email: reset password (ATS-49). This file is the source: the local stack reads it
 through supabase/config.toml, and docs/auth-email.md says how it reaches the project when email is
 switched on there. Swedish first, then English, since Auth does not know the user's language. Email
-clients do not read the app's theme, so the colours are its tokens written out as hex. */}}
+clients do not read the app's theme, so the colours are its tokens written out as hex. The link
+opens the app's reset-password page, which verifies the token only when the user submits it, so an
+email scanner that opens the link does not use it up (ATS-51). */}}
 <!doctype html>
 <html lang="sv">
   <head>
@@ -38,7 +40,7 @@ clients do not read the app's theme, so the colours are its tokens written out a
         </p>
         <p style="margin: 0 0 24px">
           <a
-            href="{{ .ConfirmationURL }}"
+            href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&amp;type=recovery"
             style="
               display: inline-block;
               padding: 12px 24px;
@@ -54,9 +56,9 @@ clients do not read the app's theme, so the colours are its tokens written out a
         </p>
         <p style="margin: 0 0 24px; font-size: 14px; color: #5b656a">
           Fungerar inte knappen? Öppna den här länken:<br /><a
-            href="{{ .ConfirmationURL }}"
+            href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&amp;type=recovery"
             style="color: #19838d; word-break: break-all"
-            >{{ .ConfirmationURL }}</a
+            >{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&amp;type=recovery</a
           >
         </p>
         <p style="margin: 0; font-size: 14px; color: #5b656a">
@@ -72,7 +74,7 @@ clients do not read the app's theme, so the colours are its tokens written out a
         </p>
         <p style="margin: 0 0 24px">
           <a
-            href="{{ .ConfirmationURL }}"
+            href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&amp;type=recovery"
             style="
               display: inline-block;
               padding: 12px 24px;
@@ -88,9 +90,9 @@ clients do not read the app's theme, so the colours are its tokens written out a
         </p>
         <p style="margin: 0 0 24px; font-size: 14px; color: #5b656a">
           Button not working? Open this link:<br /><a
-            href="{{ .ConfirmationURL }}"
+            href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&amp;type=recovery"
             style="color: #19838d; word-break: break-all"
-            >{{ .ConfirmationURL }}</a
+            >{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&amp;type=recovery</a
           >
         </p>
         <p style="margin: 0; font-size: 14px; color: #5b656a">

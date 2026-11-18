@@ -94,6 +94,7 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
 
 **Everywhere**
 - **Change your own password** from the user menu, after typing the current one. Only you know it then, and your other devices are signed out
+- **Forgot password?** on the sign-in page, where email is on: a link by email to choose a new one, with the same answer whether the address has an account or not, and none for a deleted account (ATS-51)
 - **Swedish and English**, Swedish by default
 - Every list and the board have **loading, empty and error** states. Errors say what failed and why, for example no internet connection
 - Works from a **390 px** phone to a wide desktop

@@ -4,7 +4,8 @@ import { localStack } from "../scripts/local-stack.ts";
 import { buttonLink, emailTo, expect, serviceClient, test, type Email } from "./fixtures.ts";
 
 // Auth's own emails (ATS-49): each is sent with the template in supabase/templates/ and lands in
-// the local stack's Mailpit inbox. The whole invite, accepted in the app, is in invite.spec.ts.
+// the local stack's Mailpit inbox. The whole invite, accepted in the app, is in invite.spec.ts, and
+// the whole reset in reset-password.spec.ts.
 
 function expectBothLanguages(email: Email) {
   expect(email.html).toContain('<html lang="sv">');
@@ -33,8 +34,7 @@ test("the invite email uses our template and links to the app's accept-invite pa
   expect(link.searchParams.get("token_hash")).toMatch(/^\w+$/);
 });
 
-test("the recovery email uses our template and its link signs the user in", async ({
-  request,
+test("the recovery email uses our template and links to the app's reset-password page", async ({
   baseURL,
   makeCustomer,
 }) => {
@@ -50,14 +50,10 @@ test("the recovery email uses our template and its link signs the user in", asyn
   expect(email.subject).toBe("Återställ ditt lösenord · Reset your password");
   expectBothLanguages(email);
 
-  // Auth checks the one-time token and sends the browser on to the app with a session.
-  const response = await request.get(buttonLink(email.html), { maxRedirects: 0 });
-  expect(response.status()).toBe(303);
-  const target = new URL(response.headers()["location"] ?? "");
-  expect(target.origin).toBe(new URL(baseURL ?? "").origin);
-  const session = new URLSearchParams(target.hash.slice(1));
-  expect(session.get("type")).toBe("recovery");
-
-  const signedIn = await serviceClient().auth.getUser(session.get("access_token") ?? "");
-  expect(signedIn.data.user?.email).toBe(address);
+  // The app's own page with the token, not Auth's one-time link (ATS-51).
+  const link = new URL(buttonLink(email.html));
+  expect(link.origin).toBe(new URL(baseURL ?? "").origin);
+  expect(link.pathname).toBe("/reset-password");
+  expect(link.searchParams.get("type")).toBe("recovery");
+  expect(link.searchParams.get("token_hash")).toMatch(/^\w+$/);
 });

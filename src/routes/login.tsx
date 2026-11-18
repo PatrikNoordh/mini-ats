@@ -1,14 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AuthCard } from "@/components/auth/AuthCard";
 import { useAuth } from "@/contexts/AuthContext";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { Logo } from "@/components/layout/Logo";
 import { errorCode } from "@/lib/errors";
+import { EMAIL_ENABLED } from "@/lib/features";
 import { pageHead } from "@/lib/i18n";
 import { safeRedirect } from "@/lib/redirect";
 import { isEmail } from "@/lib/validation";
@@ -65,48 +65,50 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-sm md:p-8">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-          <Logo />
-          <LanguageSwitcher />
+    <AuthCard title={t("login.title")}>
+      <p className="mt-1 text-sm text-muted-foreground">{t("login.subtitle")}</p>
+      <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
+        <div className="space-y-1.5">
+          <Label htmlFor="email">{t("login.email")}</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder={t("login.emailPlaceholder")}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("login.title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("login.subtitle")}</p>
-        <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
-          <div className="space-y-1.5">
-            <Label htmlFor="email">{t("login.email")}</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder={t("login.emailPlaceholder")}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">{t("login.password")}</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          {error && (
-            <p role="alert" className="text-sm text-destructive">
-              {error.kind === "validation"
-                ? t(`validation.${error.key}`)
-                : t(`errors.${error.code}`)}
-            </p>
+        <div className="space-y-1.5">
+          <Label htmlFor="password">{t("login.password")}</Label>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {/* Only where the reset email can arrive (ATS-51 AC4). */}
+          {EMAIL_ENABLED && (
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-primary underline-offset-4 hover:underline"
+              >
+                {t("login.forgotPassword")}
+              </Link>
+            </div>
           )}
-          <Button type="submit" className="w-full" size="lg" disabled={busy}>
-            {busy ? t("login.submitting") : t("login.submit")}
-          </Button>
-        </form>
-      </div>
-    </div>
+        </div>
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error.kind === "validation" ? t(`validation.${error.key}`) : t(`errors.${error.code}`)}
+          </p>
+        )}
+        <Button type="submit" className="w-full" size="lg" disabled={busy}>
+          {busy ? t("login.submitting") : t("login.submit")}
+        </Button>
+      </form>
+    </AuthCard>
   );
 }

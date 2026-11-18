@@ -103,6 +103,7 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 | `invite_invalid`                  | auth (`verifyInvite`: `otp_expired`)                                | Invite link expired, used or replaced (ATS-50)             |
 | `invite_accepted`                 | `admin-manage-account` (`resend_invite`)                            | No new invite: the account is confirmed (ATS-50)           |
 | `invite_not_sent`                 | `admin-create-user`, `admin-manage-account`                         | Invite email not sent; a new account is undone (ATS-50)    |
+| `reset_link_invalid`              | auth (`verifyRecovery`: `otp_expired`)                              | Reset link expired, used or replaced (ATS-51)              |
 | `cannot_change_self`              | `admin-manage-account`                                              | An admin tried to delete or demote its own account         |
 | `last_admin`                      | `admin-manage-account`                                              | The change would leave no active admin                     |
 | `cv_not_pdf`                      | CV upload (`cvs` bucket)                                            | The chosen file is not a PDF                               |

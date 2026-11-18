@@ -8,9 +8,9 @@ const CONFIG = readFileSync("supabase/config.toml", "utf8");
 
 /** Each Auth email type, and what its template must carry for the email to work. */
 const TEMPLATES = {
-  // The app's own page, which verifies the token only when the user submits it (ATS-50).
+  // The app's own pages, which verify the token only when the user submits them (ATS-50, ATS-51).
   invite: "/accept-invite?token_hash={{ .TokenHash }}&amp;type=invite",
-  recovery: "{{ .ConfirmationURL }}",
+  recovery: "/reset-password?token_hash={{ .TokenHash }}&amp;type=recovery",
   magic_link: "{{ .ConfirmationURL }}",
   confirmation: "{{ .ConfirmationURL }}",
   email_change: "{{ .ConfirmationURL }}",

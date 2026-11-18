@@ -33,27 +33,64 @@ function toAuthUser(user: { id: string; email?: string | undefined }): AuthUser 
 }
 
 /**
- * Accepts an invite with the token from its email (ATS-50), and signs the invited user in. Only
- * called when the user submits the accept-invite page, never when it loads, so an email scanner
- * that opens the link does not use it up. Auth answers otp_expired for a link that has expired, has
- * been used or was replaced by a newer invite.
+ * Uses the token from a link in one of Auth's emails, and signs its user in. Only called when the
+ * user submits the link's page, never when it loads, so an email scanner that opens the link does
+ * not use it up. Auth answers otp_expired for a link that has expired, has been used or was
+ * replaced by a newer email, and user_banned for a deleted account or company.
  */
-export async function verifyInvite(tokenHash: string): Promise<AuthUser> {
-  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "invite" });
-  if (error) {
-    throw error.code === "otp_expired" ? new AppError("invite_invalid") : toAppError(error);
-  }
-  if (!data.user) throw new AppError("invite_invalid");
+async function verifyEmailLink(
+  tokenHash: string,
+  type: "invite" | "recovery",
+  invalid: ErrorCode,
+): Promise<AuthUser> {
+  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+  if (error) throw error.code === "otp_expired" ? new AppError(invalid) : toAppError(error);
+  if (!data.user) throw new AppError(invalid);
   return toAuthUser(data.user);
+}
+
+/** Accepts an invite with the token from its email (ATS-50). */
+export function verifyInvite(tokenHash: string): Promise<AuthUser> {
+  return verifyEmailLink(tokenHash, "invite", "invite_invalid");
+}
+
+/** Signs in with the token from a reset email, to choose a new password (ATS-51). */
+export function verifyRecovery(tokenHash: string): Promise<AuthUser> {
+  return verifyEmailLink(tokenHash, "recovery", "reset_link_invalid");
+}
+
+/**
+ * Sends a link to choose a new password, if the address has an account (ATS-51). Auth answers the
+ * same for an address without one, and sends nothing. It also refuses a second request for the
+ * same account within a short time, which it can only do for an address that has one, so that
+ * refusal counts as sent too: the page says the same whatever address is entered. A deleted
+ * account gets the email, but Auth refuses its link (user_banned).
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+  if (!error || error.code === "over_email_send_rate_limit") return;
+  throw toAppError(error);
 }
 
 /**
  * Sets the signed-in user's password without asking for the current one. Only for a user who has
- * just accepted an invite and has none yet; changing a password goes through changePassword.
+ * just accepted an invite and has none yet; changing a password goes through changePassword, and
+ * a reset through resetOwnPassword.
  */
 export async function setOwnPassword(password: string): Promise<void> {
   const { error } = await supabase.auth.updateUser({ password });
   if (error) throw toAppError(error);
+}
+
+/**
+ * Sets a new password for a user signed in by a reset link (ATS-51), who does not know the old
+ * one, then signs out their other devices, as a password change does (ATS-34): whoever reset it
+ * may be shutting someone else out.
+ */
+export async function resetOwnPassword(password: string): Promise<PasswordChange> {
+  await setOwnPassword(password);
+  const others = await supabase.auth.signOut({ scope: "others" });
+  return { otherSessionsSignedOut: !others.error };
 }
 
 export async function signInWithPassword(email: string, password: string): Promise<AuthUser> {
