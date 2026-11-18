@@ -6,6 +6,7 @@ import {
   type Caller,
   type Company,
   type Deps,
+  type InviteRefusal,
   type RemovalRefusal,
   updateSchema,
 } from "./handler.ts";
@@ -22,9 +23,9 @@ const companies: Record<string, Company> = {
 };
 
 const accounts: Record<string, Account> = {
-  [ADMIN_ID]: { id: ADMIN_ID, role: "admin", deleted: false },
-  [CUSTOMER_ID]: { id: CUSTOMER_ID, role: "customer", deleted: false },
-  [OTHER_ADMIN_ID]: { id: OTHER_ADMIN_ID, role: "admin", deleted: false },
+  [ADMIN_ID]: { id: ADMIN_ID, role: "admin", email: "admin@x.test", deleted: false },
+  [CUSTOMER_ID]: { id: CUSTOMER_ID, role: "customer", email: "kund@x.test", deleted: false },
+  [OTHER_ADMIN_ID]: { id: OTHER_ADMIN_ID, role: "admin", email: "admin2@x.test", deleted: false },
 };
 
 const update = {
@@ -45,6 +46,8 @@ function setup(
     updateResult?: { error: "email_exists" } | null;
     /** What the database answers to a membership, for a company deleted since it was read. */
     moveRefusal?: "company_deleted";
+    /** What sending the invite again answers (ATS-50). */
+    inviteRefusal?: InviteRefusal;
   } = {},
 ) {
   const ran: string[] = [];
@@ -65,6 +68,10 @@ function setup(
     softDelete: (id) => (ran.push(`delete ${id}`), Promise.resolve(options.removal ?? null)),
     restore: (id) => (ran.push(`restore ${id}`), Promise.resolve()),
     deleteNow: (id) => (ran.push(`delete_now ${id}`), Promise.resolve()),
+    resendInvite: (email) => (
+      ran.push(`invite ${email}`),
+      Promise.resolve(options.inviteRefusal ?? null)
+    ),
   };
   return { handler: createHandler(deps), ran };
 }
@@ -326,6 +333,7 @@ Deno.test("hides unexpected errors behind the unknown code", async () => {
     softDelete: () => Promise.resolve(null),
     restore: () => Promise.resolve(),
     deleteNow: () => Promise.resolve(),
+    resendInvite: () => Promise.resolve(null),
   });
   const originalError = console.error;
   console.error = () => {};
@@ -335,4 +343,39 @@ Deno.test("hides unexpected errors behind the unknown code", async () => {
   } finally {
     console.error = originalError;
   }
+});
+
+Deno.test("sends a new invite to the account's own address (ATS-50)", async () => {
+  const { handler, ran } = setup();
+  const res = await call(handler, post({ action: "resend_invite", id: CUSTOMER_ID }));
+  assertEquals([res.status, res.body], [200, { id: CUSTOMER_ID }]);
+  assertEquals(ran, ["invite kund@x.test"]);
+});
+
+Deno.test("says why a new invite was not sent", async () => {
+  const cases: [InviteRefusal, number][] = [
+    ["invite_accepted", 409],
+    ["invite_not_sent", 502],
+  ];
+  for (const [inviteRefusal, status] of cases) {
+    const { handler } = setup({ inviteRefusal });
+    const res = await call(handler, post({ action: "resend_invite", id: CUSTOMER_ID }));
+    assertEquals([res.status, res.body.error], [status, inviteRefusal]);
+  }
+});
+
+Deno.test("sends no invite to a deleted or unknown account", async () => {
+  const gone = setup({ accounts: { [CUSTOMER_ID]: deleted(accounts[CUSTOMER_ID]!) } });
+  const res = await call(gone.handler, post({ action: "resend_invite", id: CUSTOMER_ID }));
+  assertEquals([res.status, res.body.error, gone.ran], [409, "account_deleted", []]);
+
+  const unknown = setup({ accounts: {} });
+  const missing = await call(unknown.handler, post({ action: "resend_invite", id: CUSTOMER_ID }));
+  assertEquals([missing.status, missing.body.error, unknown.ran], [404, "account_not_found", []]);
+});
+
+Deno.test("a customer cannot send invites, before the body is read", async () => {
+  const { handler, ran } = setup({ caller: { kind: "not_admin" } });
+  const res = await call(handler, post("not json"));
+  assertEquals([res.status, res.body.error, ran], [403, "forbidden", []]);
 });

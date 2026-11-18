@@ -1,107 +1,63 @@
 import { createClient } from "@supabase/supabase-js";
-import { z } from "zod";
 
 import { localStack } from "../scripts/local-stack.ts";
-import { expect, serviceClient, test } from "./fixtures.ts";
+import { buttonLink, emailTo, expect, serviceClient, test, type Email } from "./fixtures.ts";
 
-// Auth's own emails (ATS-49): each is sent with the template in supabase/templates/, lands in the
-// local stack's Mailpit inbox, and its link signs the user in through the app's own URL.
-
-/** How long Auth may take to hand an email to Mailpit. */
-const MAIL_TIMEOUT_MS = 10_000;
-
-interface Email {
-  subject: string;
-  html: string;
-}
-
-// The parts of Mailpit's API the tests read.
-const searchSchema = z.object({
-  messages: z.array(z.object({ ID: z.string(), Subject: z.string() })),
-});
-const messageSchema = z.object({ HTML: z.string() });
-
-/** The newest email Mailpit holds for the address, once it has arrived. */
-async function emailTo(address: string): Promise<Email> {
-  const inbox = localStack().mailpitUrl;
-  let id = "";
-  let subject = "";
-  await expect
-    .poll(
-      async () => {
-        const query = encodeURIComponent(`to:"${address}"`);
-        const response = await fetch(`${inbox}/api/v1/search?query=${query}`);
-        const found = searchSchema.parse(await response.json()).messages[0];
-        id = found?.ID ?? "";
-        subject = found?.Subject ?? "";
-        return id;
-      },
-      { timeout: MAIL_TIMEOUT_MS },
-    )
-    .not.toBe("");
-  const response = await fetch(`${inbox}/api/v1/message/${id}`);
-  return { subject, html: messageSchema.parse(await response.json()).HTML };
-}
-
-/** The address the email's button points to, with the HTML entities in it decoded. */
-function buttonLink(html: string): string {
-  const href = /<a\s+href="([^"]+)"/.exec(html)?.[1];
-  if (!href) throw new Error("The email has no link.");
-  return href.replaceAll("&amp;", "&");
-}
+// Auth's own emails (ATS-49): each is sent with the template in supabase/templates/ and lands in
+// the local stack's Mailpit inbox. The whole invite, accepted in the app, is in invite.spec.ts.
 
 function expectBothLanguages(email: Email) {
   expect(email.html).toContain('<html lang="sv">');
   expect(email.html).toContain('<div lang="en">');
 }
 
-for (const flow of [
-  {
-    type: "invite",
-    subject: "Du är inbjuden till Mini-ATS · You are invited to Mini-ATS",
-    send: async (email: string, users: string[]) => {
-      const { data, error } = await serviceClient().auth.admin.inviteUserByEmail(email);
-      if (error) throw error;
-      users.push(data.user.id);
-    },
-  },
-  {
-    type: "recovery",
-    subject: "Återställ ditt lösenord · Reset your password",
-    send: async (email: string) => {
-      const stack = localStack();
-      const anon = createClient(stack.url, stack.anonKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-      const { error } = await anon.auth.resetPasswordForEmail(email);
-      if (error) throw error;
-    },
-  },
-] as const)
-  test(`the ${flow.type} email uses our template and its link signs the user in`, async ({
-    request,
-    baseURL,
-    makeCustomer,
-    tag,
-    users,
-  }) => {
-    const address =
-      flow.type === "invite" ? `invited-${tag}@e2e.test` : (await makeCustomer("Kund")).email;
+test("the invite email uses our template and links to the app's accept-invite page", async ({
+  baseURL,
+  tag,
+  users,
+}) => {
+  const address = `invited-${tag}@e2e.test`;
+  const { data, error } = await serviceClient().auth.admin.inviteUserByEmail(address);
+  if (error) throw error;
+  users.push(data.user.id);
 
-    await flow.send(address, users);
-    const email = await emailTo(address);
+  const email = await emailTo(address);
+  expect(email.subject).toBe("Du är inbjuden till Mini-ATS · You are invited to Mini-ATS");
+  expectBothLanguages(email);
 
-    expect(email.subject).toBe(flow.subject);
-    expectBothLanguages(email);
+  // The app's own page with the token, not Auth's one-time link (ATS-50).
+  const link = new URL(buttonLink(email.html));
+  expect(link.origin).toBe(new URL(baseURL ?? "").origin);
+  expect(link.pathname).toBe("/accept-invite");
+  expect(link.searchParams.get("type")).toBe("invite");
+  expect(link.searchParams.get("token_hash")).toMatch(/^\w+$/);
+});
 
-    // Auth checks the one-time token and sends the browser on to the app with a session.
-    const response = await request.get(buttonLink(email.html), { maxRedirects: 0 });
-    expect(response.status()).toBe(303);
-    const target = new URL(response.headers()["location"] ?? "");
-    expect(target.origin).toBe(new URL(baseURL ?? "").origin);
-    const session = new URLSearchParams(target.hash.slice(1));
-    expect(session.get("type")).toBe(flow.type);
-
-    const signedIn = await serviceClient().auth.getUser(session.get("access_token") ?? "");
-    expect(signedIn.data.user?.email).toBe(address);
+test("the recovery email uses our template and its link signs the user in", async ({
+  request,
+  baseURL,
+  makeCustomer,
+}) => {
+  const address = (await makeCustomer("Kund")).email;
+  const stack = localStack();
+  const anon = createClient(stack.url, stack.anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
+  const sent = await anon.auth.resetPasswordForEmail(address);
+  if (sent.error) throw sent.error;
+
+  const email = await emailTo(address);
+  expect(email.subject).toBe("Återställ ditt lösenord · Reset your password");
+  expectBothLanguages(email);
+
+  // Auth checks the one-time token and sends the browser on to the app with a session.
+  const response = await request.get(buttonLink(email.html), { maxRedirects: 0 });
+  expect(response.status()).toBe(303);
+  const target = new URL(response.headers()["location"] ?? "");
+  expect(target.origin).toBe(new URL(baseURL ?? "").origin);
+  const session = new URLSearchParams(target.hash.slice(1));
+  expect(session.get("type")).toBe("recovery");
+
+  const signedIn = await serviceClient().auth.getUser(session.get("access_token") ?? "");
+  expect(signedIn.data.user?.email).toBe(address);
+});

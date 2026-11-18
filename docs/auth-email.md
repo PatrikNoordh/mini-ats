@@ -11,7 +11,7 @@ How Supabase Auth's emails (invites in ATS-50, password resets in ATS-51 and the
 
 Email is prepared and proven on the local stack, but not switched on in production. Mini-ATS is a portfolio project, and setting up and running a provider is not worth it for it. Admins keep creating accounts with a password, as before.
 
-So that production never offers a flow whose email cannot arrive, the invite and **Forgot password?** flows only show when `VITE_EMAIL_ENABLED` is `true`. The flag comes with ATS-50 and ATS-51: `false` by default and in production, `true` on the local stack and in CI. The epic 11 checkpoint runs on the local stack.
+So that production never offers a flow whose email cannot arrive, the invite and **Forgot password?** flows only show when `VITE_EMAIL_ENABLED` is `true`. The flag (`src/lib/features.ts`, ATS-50) is off by default and in production, and only the exact text `true` turns it on. The end-to-end build sets it (`playwright.config.ts`), so it is on in the tests on the local stack and in CI. ATS-51 uses the same flag. The epic 11 checkpoint runs on the local stack.
 
 ## The provider, when it is switched on
 
@@ -47,7 +47,9 @@ Every email Auth can send has its own template, so no Supabase default (English 
 
 Auth does not know which language a user picked: the app keeps it in the browser. So each email has Swedish first and then English, with `lang` set on each part for screen readers. Email clients do not read the app's theme, so the templates write out its colour tokens as hex: `--primary`, `--foreground`, `--muted-foreground` and `--border` from `src/styles.css`.
 
-On the local stack, `e2e/auth-email.spec.ts` sends an invite and a reset, reads each from Mailpit, checks the subject and both languages, and follows the link to check that it signs the user in through the app's own URL. CI runs it with the other end-to-end tests.
+The invite's link opens the app's own page, `/accept-invite?token_hash={{ .TokenHash }}&type=invite`, instead of Auth's one-time `{{ .ConfirmationURL }}`. The page verifies the token only when the user sends the form with their new password, so an email scanner that opens the link does not use it up (ATS-50). The link works once, and **Resend invite** in the account dialog replaces it with a new one.
+
+On the local stack, `e2e/auth-email.spec.ts` checks the invite and reset emails in Mailpit: the subject, both languages and the link. `e2e/invite.spec.ts` runs the whole invite: an admin invites from a company's card, the user opens the link, chooses a password and lands on the board, and a used or replaced link says so. CI runs them with the other end-to-end tests.
 
 ### Why they are pasted, not pushed
 

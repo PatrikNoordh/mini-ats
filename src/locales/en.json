@@ -31,6 +31,10 @@
     "history": {
       "title": "History — Mini-ATS",
       "description": "What an account has done, newest first."
+    },
+    "acceptInvite": {
+      "title": "Accept your invite — Mini-ATS",
+      "description": "Choose a password for your new Mini-ATS account."
     }
   },
   "common": {
@@ -99,6 +103,9 @@
     "company_not_found": "The company does not exist.",
     "company_deleted": "The company has been deleted. Restore it first.",
     "company_not_deleted": "The company is not deleted.",
+    "invite_invalid": "This invite link has expired, has already been used or has been replaced by a newer invite. Ask your administrator to send a new one.",
+    "invite_accepted": "This account has already accepted its invite or has a password. Set a new password for it instead.",
+    "invite_not_sent": "The invite email could not be sent. Wait a moment and try again.",
     "cv_not_pdf": "The CV must be a PDF file.",
     "cv_too_large": "The CV can be at most {{maxCvMegabytes}} MB.",
     "cv_not_found": "The CV file could not be found. Upload it again.",
@@ -174,6 +181,19 @@
     "password": "Password",
     "submit": "Sign in",
     "submitting": "Signing in…"
+  },
+  "acceptInvite": {
+    "title": "Accept your invite",
+    "subtitle": "Choose a password to finish setting up your account.",
+    "password": "New password",
+    "passwordHint": "At least {{min}} characters.",
+    "confirmPassword": "Repeat the password",
+    "submit": "Set password and sign in",
+    "submitting": "Saving…",
+    "done": "Your password is set. Welcome to Mini-ATS!",
+    "toLogin": "Go to sign in",
+    "signedInAs": "You are signed in as {{email}} in this browser. Sign out first to accept the invite.",
+    "signOut": "Sign out"
   },
   "pipeline": {
     "title": "Pipeline",
@@ -431,7 +451,18 @@
     "newCompany": "+ New company",
     "newCompanyName": "The new company's name",
     "noCompany": "No company",
-    "deletedCompany": "{{name}} (deleted)"
+    "deletedCompany": "{{name}} (deleted)",
+    "access": "How the user gets in",
+    "accessInvite": "Send an invite by email",
+    "accessInviteHint": "The user gets an email and chooses their own password.",
+    "accessPassword": "Set a temporary password",
+    "submitInvite": "Send invite",
+    "invited": "The invite has been sent to {{email}}.",
+    "resendInvite": "Resend invite",
+    "resendHint": "For an account that has not accepted its invite yet. The link in the earlier invite stops working.",
+    "resent": "A new invite has been sent to {{email}}.",
+    "resendFailed": "Could not send the invite.",
+    "sending": "Sending…"
   },
   "companyDialog": {
     "titleNew": "New company",

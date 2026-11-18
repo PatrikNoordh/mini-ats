@@ -5,6 +5,7 @@ import {
   deleteProfile,
   deleteProfileNow,
   listProfiles,
+  resendInvite,
   restoreProfile,
   updateProfile,
   type CreateProfileInput,
@@ -58,3 +59,8 @@ export const useUpdateProfile = () =>
 export const useDeleteProfile = () => useAccountMutation((id: string) => deleteProfile(id));
 export const useRestoreProfile = () => useAccountMutation((id: string) => restoreProfile(id));
 export const useDeleteProfileNow = () => useAccountMutation((id: string) => deleteProfileNow(id));
+
+/** Sends an invite again. Nothing in the lists changes, so nothing is fetched again (ATS-50). */
+export function useResendInvite() {
+  return useMutation({ mutationFn: (id: string) => resendInvite(id) });
+}

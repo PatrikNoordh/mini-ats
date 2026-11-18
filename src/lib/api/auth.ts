@@ -32,6 +32,30 @@ function toAuthUser(user: { id: string; email?: string | undefined }): AuthUser 
   return { id: user.id, email: user.email ?? "" };
 }
 
+/**
+ * Accepts an invite with the token from its email (ATS-50), and signs the invited user in. Only
+ * called when the user submits the accept-invite page, never when it loads, so an email scanner
+ * that opens the link does not use it up. Auth answers otp_expired for a link that has expired, has
+ * been used or was replaced by a newer invite.
+ */
+export async function verifyInvite(tokenHash: string): Promise<AuthUser> {
+  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "invite" });
+  if (error) {
+    throw error.code === "otp_expired" ? new AppError("invite_invalid") : toAppError(error);
+  }
+  if (!data.user) throw new AppError("invite_invalid");
+  return toAuthUser(data.user);
+}
+
+/**
+ * Sets the signed-in user's password without asking for the current one. Only for a user who has
+ * just accepted an invite and has none yet; changing a password goes through changePassword.
+ */
+export async function setOwnPassword(password: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw toAppError(error);
+}
+
 export async function signInWithPassword(email: string, password: string): Promise<AuthUser> {
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   if (error) throw toAppError(error);

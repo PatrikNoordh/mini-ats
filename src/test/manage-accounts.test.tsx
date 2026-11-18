@@ -31,6 +31,7 @@ vi.mock("@/hooks/useProfiles", () => ({
   useDeleteProfile: () => mutation(m.remove),
   useRestoreProfile: () => ({ ...mutation(m.restore), variables: undefined }),
   useDeleteProfileNow: () => mutation(m.deleteNow),
+  useResendInvite: () => mutation(vi.fn()),
 }));
 vi.mock("@/hooks/useCompanies", () => ({ useCompanies: () => ({ data: m.companies }) }));
 vi.mock("@tanstack/react-router", () => ({
@@ -233,6 +234,26 @@ describe("a new account", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
     expect(await screen.findByText("Choose a company.")).toBeInTheDocument();
     expect(m.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("with email off, as in production (ATS-50)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    m.profiles = [customer];
+    m.companies = [lumen];
+  });
+
+  it("offers no invite: a new account gets a password, as before", () => {
+    inEnglish(<AccountDialog open onOpenChange={onOpenChange} companyId="co1" />);
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Temporary password")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create account" })).toBeInTheDocument();
+  });
+
+  it("offers no Resend invite on an account", () => {
+    inEnglish(<AccountDialog open onOpenChange={onOpenChange} account={customer} />);
+    expect(screen.queryByRole("button", { name: "Resend invite" })).not.toBeInTheDocument();
   });
 });
 

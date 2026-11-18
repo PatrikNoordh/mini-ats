@@ -31,6 +31,10 @@
     "history": {
       "title": "Historik — Mini-ATS",
       "description": "Vad ett konto har gjort, nyast först."
+    },
+    "acceptInvite": {
+      "title": "Tacka ja till din inbjudan — Mini-ATS",
+      "description": "Välj ett lösenord för ditt nya konto i Mini-ATS."
     }
   },
   "common": {
@@ -99,6 +103,9 @@
     "company_not_found": "Företaget finns inte.",
     "company_deleted": "Företaget är borttaget. Återställ det först.",
     "company_not_deleted": "Företaget är inte borttaget.",
+    "invite_invalid": "Den här inbjudningslänken har gått ut, har redan använts eller har ersatts av en nyare inbjudan. Be din administratör skicka en ny.",
+    "invite_accepted": "Kontot har redan tackat ja till sin inbjudan eller har ett lösenord. Sätt ett nytt lösenord för det i stället.",
+    "invite_not_sent": "Inbjudan kunde inte skickas. Vänta en stund och försök igen.",
     "cv_not_pdf": "CV:t måste vara en PDF-fil.",
     "cv_too_large": "CV:t får vara högst {{maxCvMegabytes}} MB.",
     "cv_not_found": "CV-filen hittades inte. Ladda upp den igen.",
@@ -174,6 +181,19 @@
     "password": "Lösenord",
     "submit": "Logga in",
     "submitting": "Loggar in…"
+  },
+  "acceptInvite": {
+    "title": "Tacka ja till din inbjudan",
+    "subtitle": "Välj ett lösenord för att bli klar med ditt konto.",
+    "password": "Nytt lösenord",
+    "passwordHint": "Minst {{min}} tecken.",
+    "confirmPassword": "Upprepa lösenordet",
+    "submit": "Spara lösenord och logga in",
+    "submitting": "Sparar…",
+    "done": "Ditt lösenord är sparat. Välkommen till Mini-ATS!",
+    "toLogin": "Gå till inloggningen",
+    "signedInAs": "Du är inloggad som {{email}} i den här webbläsaren. Logga ut först för att tacka ja till inbjudan.",
+    "signOut": "Logga ut"
   },
   "pipeline": {
     "title": "Pipeline",
@@ -431,7 +451,18 @@
     "newCompany": "+ Nytt företag",
     "newCompanyName": "Det nya företagets namn",
     "noCompany": "Inget företag",
-    "deletedCompany": "{{name}} (borttaget)"
+    "deletedCompany": "{{name}} (borttaget)",
+    "access": "Så kommer användaren in",
+    "accessInvite": "Skicka en inbjudan via e-post",
+    "accessInviteHint": "Användaren får ett mejl och väljer sitt eget lösenord.",
+    "accessPassword": "Sätt ett tillfälligt lösenord",
+    "submitInvite": "Skicka inbjudan",
+    "invited": "Inbjudan har skickats till {{email}}.",
+    "resendInvite": "Skicka inbjudan igen",
+    "resendHint": "För ett konto som inte har tackat ja till sin inbjudan än. Länken i den tidigare inbjudan slutar fungera.",
+    "resent": "En ny inbjudan har skickats till {{email}}.",
+    "resendFailed": "Kunde inte skicka inbjudan.",
+    "sending": "Skickar…"
   },
   "companyDialog": {
     "titleNew": "Nytt företag",

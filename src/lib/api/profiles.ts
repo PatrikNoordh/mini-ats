@@ -90,16 +90,16 @@ export async function getProfile(id: string): Promise<Profile | null> {
 
 /**
  * A new account. A customer joins an existing company (`company_id`) or a new one
- * (`company_name`); an admin has neither (ATS-46).
+ * (`company_name`); an admin has neither (ATS-46). The user gets in with a temporary `password`
+ * the admin hands over, or by an `invite` by email, where they choose their own (ATS-50).
  */
-export interface CreateProfileInput {
+export type CreateProfileInput = {
   role: Role;
   full_name: string;
   email: string;
-  password: string;
   company_id?: string;
   company_name?: string;
-}
+} & ({ password: string; invite?: never } | { invite: true; password?: never });
 
 const createdSchema = z.object({ id: z.string() });
 
@@ -138,6 +138,14 @@ export async function updateProfile({ password, ...input }: UpdateProfileInput):
 /** Hides the account and blocks its login. Its data is kept, and it can be restored. */
 export async function deleteProfile(id: string): Promise<void> {
   await invokeFunction("admin-manage-account", { action: "delete", id });
+}
+
+/**
+ * Emails a new invite to an account that has not accepted one (ATS-50). The earlier link stops
+ * working. `invite_accepted` when the account has accepted one or was made with a password.
+ */
+export async function resendInvite(id: string): Promise<void> {
+  await invokeFunction("admin-manage-account", { action: "resend_invite", id });
 }
 
 export async function restoreProfile(id: string): Promise<void> {

@@ -38,6 +38,8 @@ export const requestSchema = z
     z.object({ action: z.literal("delete"), id }),
     z.object({ action: z.literal("restore"), id }),
     z.object({ action: z.literal("delete_now"), id }),
+    /** Emails a new invite to an account that has not accepted one yet (ATS-50). */
+    z.object({ action: z.literal("resend_invite"), id }),
   ])
   .superRefine((request, ctx) => {
     // An admin belongs to no company: promoting a user removes their membership (ATS-44).
@@ -62,8 +64,15 @@ export interface Company {
 export interface Account {
   id: string;
   role: "admin" | "customer";
+  email: string;
   deleted: boolean;
 }
+
+/**
+ * Why a new invite was not sent: the account has accepted one or has a password, so Auth refuses
+ * to invite it, or the email could not be sent.
+ */
+export type InviteRefusal = "invite_accepted" | "invite_not_sent";
 
 /**
  * Why soft_delete_or_demote_account refused. It checks the account again, under the lock that
@@ -94,6 +103,8 @@ export interface Deps {
   /** Unmarks the account. Its login opens again unless its company is deleted. */
   restore: (id: string) => Promise<void>;
   deleteNow: (id: string) => Promise<void>;
+  /** Sends the invite again. The link in an earlier invite stops working. */
+  resendInvite: (email: string) => Promise<InviteRefusal | null>;
 }
 
 type Refusal = "account_deleted" | "account_not_deleted" | "cannot_change_self";
@@ -110,7 +121,11 @@ function refusal(
   request: z.infer<typeof requestSchema>,
   removesAdmin: boolean,
 ): Refusal | null {
-  if (request.action === "update" || request.action === "delete") {
+  if (
+    request.action === "update" ||
+    request.action === "delete" ||
+    request.action === "resend_invite"
+  ) {
     if (account.deleted) return "account_deleted";
   } else if (!account.deleted) {
     return "account_not_deleted";
@@ -185,6 +200,11 @@ export function createHandler(deps: Deps) {
         case "delete_now":
           await deps.deleteNow(request.id);
           break;
+        case "resend_invite": {
+          const result = await deps.resendInvite(account.email);
+          if (result) return json({ error: result }, result === "invite_not_sent" ? 502 : 409);
+          break;
+        }
       }
       return json({ id: request.id }, 200);
     } catch (error) {
