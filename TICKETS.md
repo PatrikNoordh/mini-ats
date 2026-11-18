@@ -730,3 +730,5 @@ Format: `- [ ] <What is wrong or could be better> — <file or page> (found in A
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
 
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
+
+- [ ] The `cvs` and `branding` storage policies check only the first folder, so a client can upload to `<company>/<sub>/<file>`, which `removeCompanyFolder` never lists, and the file outlives a purged company. Limit both buckets to one level (`array_length(storage.foldername(name), 1) = 1` in the insert and update checks, the same on the `logo_path` and `background_path` checks), with an RLS check, and drop "neither bucket has subfolders" from `_shared/cvs.ts` once it is enforced — `supabase/migrations/20261119120000_customer_branding.sql`, `supabase/functions/_shared/cvs.ts` (PR #141, ATS-52)

@@ -3,15 +3,19 @@
 // in the order that leaves the least behind if one fails, and a new run finishes what is left:
 //   1. the CV folder, named after the company id: if a later step fails, only files of a company
 //      already deleted are gone, and its cv_path values point at nothing until the next run;
-//   2. the members' logins: the cascades remove each profile and membership, never company data;
-//   3. the company: the cascades remove its jobs, candidates, cards, assessments and columns.
+//   2. the branding folder, named the same way (ATS-52): the same, for its theme's paths;
+//   3. the members' logins: the cascades remove each profile and membership, never company data;
+//   4. the company: the cascades remove its jobs, candidates, cards, assessments, columns, events
+//      and theme.
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.118.0";
 
-import { CV_BUCKET, removeCvFolder } from "./cvs.ts";
+import { BRANDING_BUCKET } from "./branding.ts";
+import { CV_BUCKET, removeCompanyFolder } from "./cvs.ts";
 
 /** The Supabase actions, passed in so the order can be tested without a project. */
 export interface CompanyPurgeDeps {
   removeCvFolder: (companyId: string) => Promise<number>;
+  removeBrandingFolder: (companyId: string) => Promise<number>;
   listMembers: (companyId: string) => Promise<string[]>;
   deleteUser: (userId: string) => Promise<void>;
   deleteCompany: (companyId: string) => Promise<void>;
@@ -20,6 +24,7 @@ export interface CompanyPurgeDeps {
 /** Deletes the company for good, with its files, its members' logins and all its data. */
 export async function purgeCompany(deps: CompanyPurgeDeps, companyId: string): Promise<void> {
   await deps.removeCvFolder(companyId);
+  await deps.removeBrandingFolder(companyId);
   for (const userId of await deps.listMembers(companyId)) await deps.deleteUser(userId);
   await deps.deleteCompany(companyId);
 }
@@ -27,7 +32,9 @@ export async function purgeCompany(deps: CompanyPurgeDeps, companyId: string): P
 /** The actions with the service role: deleting a company is what these functions exist for. */
 export function companyPurgeDeps(service: SupabaseClient): CompanyPurgeDeps {
   return {
-    removeCvFolder: (companyId) => removeCvFolder(service.storage.from(CV_BUCKET), companyId),
+    removeCvFolder: (companyId) => removeCompanyFolder(service.storage.from(CV_BUCKET), companyId),
+    removeBrandingFolder: (companyId) =>
+      removeCompanyFolder(service.storage.from(BRANDING_BUCKET), companyId),
     listMembers: async (companyId) => {
       const { data, error } = await service
         .from("company_members")

@@ -252,6 +252,41 @@ export type Database = {
           },
         ];
       };
+      customer_branding: {
+        Row: {
+          accent_colour: string | null;
+          background_dim: string;
+          background_path: string | null;
+          customer_id: string;
+          logo_path: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          accent_colour?: string | null;
+          background_dim?: string;
+          background_path?: string | null;
+          customer_id: string;
+          logo_path?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          accent_colour?: string | null;
+          background_dim?: string;
+          background_path?: string | null;
+          customer_id?: string;
+          logo_path?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customer_branding_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: true;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       cv_assessments: {
         Row: {
           application_id: string;

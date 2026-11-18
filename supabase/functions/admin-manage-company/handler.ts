@@ -39,7 +39,7 @@ export interface Deps {
   softDelete: (id: string) => Promise<void>;
   /** Lifts the bans of its members who are not deleted themselves, then unmarks the company. */
   restore: (id: string) => Promise<void>;
-  /** The CV folder, the members' logins, then the company and all its data (company-purge.ts). */
+  /** The CV and branding folders, the members' logins, then the company and its data. */
   deleteNow: (id: string) => Promise<void>;
 }
 

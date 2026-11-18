@@ -1,7 +1,7 @@
 // purge-deleted-accounts: deletes for good the companies and the accounts deleted more than 30 days
 // ago (ATS-27, ATS-46). Called once a night by pg_cron through pg_net, never by the app:
-// supabase/migrations/20261023200000_purge_with_cv_files.sql. A company goes with its CV folder,
-// its members' logins and all its data; an account only with its login (ATS-44).
+// supabase/migrations/20261023200000_purge_with_cv_files.sql. A company goes with its CV and
+// branding folders, its members' logins and all its data; an account only with its login (ATS-44).
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 
 import { companyPurgeDeps, purgeCompany } from "../_shared/company-purge.ts";

@@ -8,9 +8,10 @@ export const CRON_SECRET_HEADER = "x-cron-secret";
  * here, only the cron job, so everything runs with the service role: the purge is the
  * privileged action this function exists for (CLAUDE.md, security rule 2).
  *
- * A user's data is their company's, and the CV folder is named after the company (ATS-44), so
- * purging a user removes only their login. Purging a company removes its CV folder, its members'
- * logins, then the company with all its data (ATS-46, ../_shared/company-purge.ts).
+ * A user's data is their company's, and the CV and branding folders are named after the company
+ * (ATS-44, ATS-52), so purging a user removes only their login. Purging a company removes its
+ * folders, its members' logins, then the company with all its data (ATS-46,
+ * ../_shared/company-purge.ts).
  */
 export interface Deps {
   /** The ids of companies deleted more than 30 days ago (companies_due_for_purge()). */
