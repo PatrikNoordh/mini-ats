@@ -146,3 +146,31 @@ test("Resend invite replaces the link, also after an edit, and an account that a
   await resend();
   await expect(page.getByText(sv.errors.invite_accepted)).toBeVisible();
 });
+
+test("an admin changes the email of an account with a password, and the user signs in with the new one", async ({
+  page,
+  browser,
+  makeCustomer,
+  tag,
+}) => {
+  // admin-manage-account no longer confirms on every edit, only with a new password (ATS-50), so
+  // a confirmed account must still take a new address at once. This path runs in production.
+  const customer = await makeCustomer("Kund");
+  const email = `ny-adress-${tag}@e2e.test`;
+  await signIn(page, E2E_ADMIN.email);
+  await page.getByRole("link", { name: sv.nav.accounts }).click();
+  await companyCard(page, customer.company)
+    .getByRole("button", { name: text(sv.accounts.edit, { name: customer.fullName }) })
+    .click();
+  const edit = page.getByRole("dialog", { name: sv.accountDialog.titleEdit });
+  await edit.getByLabel(sv.accountDialog.email, { exact: true }).fill(email);
+  await edit.getByRole("button", { name: sv.common.save }).click();
+  await expect(edit).toBeHidden();
+
+  const [context, user] = await otherPage(browser);
+  try {
+    await signIn(user, email);
+  } finally {
+    await context.close();
+  }
+});
