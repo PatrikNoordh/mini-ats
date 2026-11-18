@@ -94,6 +94,8 @@ test("an admin creates a company, adds a user to it, moves the user and removes 
   const dialog = page.getByRole("dialog", { name: sv.accountDialog.title });
   await dialog.getByLabel(sv.accountDialog.name, { exact: true }).fill(userName);
   await dialog.getByLabel(sv.accountDialog.email, { exact: true }).fill(email);
+  // Email is on in the end-to-end tests, so the dialog invites by default (ATS-50).
+  await dialog.getByRole("radio", { name: sv.accountDialog.accessPassword }).check();
   await dialog.getByLabel(sv.accountDialog.password, { exact: true }).fill(E2E_PASSWORD);
   await dialog.getByRole("button", { name: sv.accountDialog.submit }).click();
   await expect(dialog).toBeHidden();

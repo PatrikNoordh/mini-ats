@@ -6,6 +6,7 @@
 import { randomBytes } from "node:crypto";
 import { expect, test as base, type Locator, type Page } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
 import type { DemoAccount, DemoCandidate, DemoCustomer, DemoJob } from "../scripts/demo-data.ts";
 import { E2E_PASSWORD } from "../scripts/e2e-data.ts";
@@ -289,4 +290,55 @@ export async function jobCount(companyId: string): Promise<number> {
     .eq("customer_id", companyId);
   if (error) throw error;
   return count ?? 0;
+}
+
+/** How long Auth may take to hand an email to Mailpit, the local stack's inbox (ATS-49). */
+const MAIL_TIMEOUT_MS = 10_000;
+
+export interface Email {
+  subject: string;
+  html: string;
+}
+
+// The parts of Mailpit's API the tests read.
+const mailSearchSchema = z.object({
+  messages: z.array(z.object({ ID: z.string(), Subject: z.string() })),
+});
+const mailMessageSchema = z.object({ HTML: z.string() });
+
+/** The emails Mailpit holds for the address, newest first, once at least `count` have arrived. */
+export async function emailsTo(address: string, count = 1): Promise<Email[]> {
+  const inbox = localStack().mailpitUrl;
+  let found: z.infer<typeof mailSearchSchema>["messages"] = [];
+  await expect
+    .poll(
+      async () => {
+        const query = encodeURIComponent(`to:"${address}"`);
+        const response = await fetch(`${inbox}/api/v1/search?query=${query}`);
+        found = mailSearchSchema.parse(await response.json()).messages;
+        return found.length;
+      },
+      { timeout: MAIL_TIMEOUT_MS },
+    )
+    .toBeGreaterThanOrEqual(count);
+  return Promise.all(
+    found.map(async ({ ID, Subject }) => {
+      const response = await fetch(`${inbox}/api/v1/message/${ID}`);
+      return { subject: Subject, html: mailMessageSchema.parse(await response.json()).HTML };
+    }),
+  );
+}
+
+/** The newest email Mailpit holds for the address, once it has arrived. */
+export async function emailTo(address: string): Promise<Email> {
+  const [newest] = await emailsTo(address);
+  if (!newest) throw new Error(`No email to ${address}.`);
+  return newest;
+}
+
+/** The address the email's button points to, with the HTML entities in it decoded. */
+export function buttonLink(html: string): string {
+  const href = /<a\s+href="([^"]+)"/.exec(html)?.[1];
+  if (!href) throw new Error("The email has no link.");
+  return href.replaceAll("&amp;", "&");
 }

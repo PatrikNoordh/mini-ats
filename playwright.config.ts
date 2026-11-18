@@ -45,6 +45,8 @@ export default defineConfig({
       PORT: String(PORT),
       VITE_SUPABASE_URL: stack.url,
       VITE_SUPABASE_ANON_KEY: stack.anonKey,
+      // Invites and password reset are on here: Mailpit catches their emails (ATS-50).
+      VITE_EMAIL_ENABLED: "true",
     },
   },
 });
