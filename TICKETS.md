@@ -725,6 +725,7 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] The Mini-ATS accent is just below WCAG AA for text: white text on it reaches 4.35:1 and the accent as link text 4.17:1 on the background, under the 4.5:1 that customers' accents must reach. A slightly darker `--mini-ats-primary` would fix both — `src/styles.css` (found in ATS-53)
 - [ ] The README's accounts screenshot is from before epic 9: a flat account table with **+ New account**, not the company cards with **+ New company** and **+ Add user**. The other screenshots may need a look too — `docs/screenshots/accounts.png`, `README.md` § Screenshots (found in ATS-65)
 
 ## Found while reviewing PRs

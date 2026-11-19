@@ -1,6 +1,6 @@
 # Next: a customer's own theme
 
-A design sketch for epic 12. The database part is built (ATS-52); the rest is not built yet.
+A design sketch for epic 12. The database part (ATS-52) and applying the theme (ATS-53) are built; the rest is not built yet.
 
 ## The idea
 
@@ -42,13 +42,15 @@ The risk is a messy or unreadable app. Every rule below exists to keep the text 
 
 The contrast rule below is checked in the app, not in the database: it needs the theme's tokens. A colour that skips it only changes how that company's own app looks.
 
-### Applying the theme (ATS-53)
+### Applying the theme (ATS-53, built)
 
-- A hook reads the row with the query key `["branding", customerId]`.
-- The app shell sets `--primary`, `--ring` and `--sidebar-primary` as inline CSS variables from `accent_colour`. That is a runtime value from user data, which `CLAUDE.md` allows, and no component changes.
-- `--primary-foreground` is chosen by a small pure function: white or the dark foreground, whichever has the higher WCAG contrast. It is unit-tested.
-- A colour is accepted only if the foreground on it reaches 4.5:1 and the colour itself reaches 3:1 against `--background`. The same function checks it in the form and in the zod schema.
-- The acting banner and the sign-in page keep the default tokens.
+- `useBranding` reads the row with the query key `["branding", customerId]`, and `useCustomerTheme` in the app shell applies it. The tokens come from `themeTokens()` in `src/lib/theme.ts`, a pure function.
+- **On `<html>`, not on the shell.** Dialogs, menus and the mobile sidebar render in portals outside the shell, so the variables are set on `<html>` while the shell is mounted and removed when it unmounts. The sign-in page and the other pages outside the shell keep the Mini-ATS theme. The values are runtime values from user data, which `CLAUDE.md` allows.
+- **The tokens:** the accent sets `--primary`, `--ring`, `--sidebar-primary` and `--sidebar-ring`. `--primary-foreground` and `--sidebar-primary-foreground` are white or the dark foreground, whichever has the higher WCAG contrast (`textOnAccent()`). `--accent` and `--sidebar-accent`, the hover and active-item backgrounds, become a 12% tint of the accent, with the dark foreground as their text.
+- **The accent as text** (ATS-53, decided while building): links and the active sidebar item used `text-primary`, so a light accent that passes the 3:1 rule for buttons would have been text below 4.5:1. They now use a token of their own, `--primary-text`, which is the Mini-ATS accent without a theme. With a theme it is the accent, darkened toward the foreground in 5% steps until it reaches 4.5:1 on the background, the cards and both tints. A test sweeps 4,096 accents and checks every text the theme sets.
+- **A colour is used only if** the text on it reaches 4.5:1 and the colour itself reaches 3:1 against `--background` (`isReadableAccent()`, for the form and the zod schema in ATS-54). The database cannot check contrast, so a colour that fails is ignored when the theme is applied, and the app keeps the Mini-ATS accent.
+- **The acting banner** has the class `.theme-mini-ats`, which puts every themed token back to the Mini-ATS value. Each themed token is a `--mini-ats-*` default on `:root`, and a test checks that `.theme-mini-ats` and `THEMED_TOKENS` list the same tokens.
+- While the theme loads, and if it fails to load, the app shows the Mini-ATS accent. It is decoration, so a failure shows no error.
 
 ### Settings page (ATS-54)
 
