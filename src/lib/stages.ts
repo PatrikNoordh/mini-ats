@@ -270,4 +270,6 @@ export const queryKeys = {
     ["candidateHistory", customerId, candidateId] as const,
   /** What one account did, in every company. Admin only, so it holds no customer's id (ATS-48). */
   accountHistory: (accountId: string) => ["accountHistory", accountId] as const,
+  /** The company's own theme, or null for the Mini-ATS theme (ATS-53). */
+  branding: (customerId: string | null) => ["branding", customerId] as const,
 };

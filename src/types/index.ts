@@ -138,3 +138,20 @@ export interface AuditActor {
   full_name: string | null;
   is_admin: boolean;
 }
+
+/** How much a background image is dimmed behind the content (ATS-55). */
+export type BackgroundDim = "light" | "medium" | "strong";
+
+/**
+ * A company's own theme (ATS-52). A company without one sees the Mini-ATS theme. The paths are in
+ * the private branding bucket, in the company's folder.
+ */
+export interface CustomerBranding {
+  customer_id: string;
+  /** A #rrggbb colour, or null for the Mini-ATS accent. */
+  accent_colour: string | null;
+  logo_path: string | null;
+  background_path: string | null;
+  background_dim: BackgroundDim;
+  updated_at: string;
+}
