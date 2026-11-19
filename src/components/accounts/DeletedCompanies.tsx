@@ -61,12 +61,14 @@ export function DeletedCompanies({
 
   return (
     <section aria-labelledby="deleted-companies" className="mt-6">
-      <h2 id="deleted-companies" className="text-lg font-bold">
-        {t("accounts.deletedCompaniesTitle")}
-      </h2>
-      <p className="mb-3 text-sm text-muted-foreground">
-        {t("accounts.deletedCompaniesHint", { days: ACCOUNT_DELETE_GRACE_DAYS })}
-      </p>
+      <div className="surface-on-image mb-3">
+        <h2 id="deleted-companies" className="text-lg font-bold">
+          {t("accounts.deletedCompaniesTitle")}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {t("accounts.deletedCompaniesHint", { days: ACCOUNT_DELETE_GRACE_DAYS })}
+        </p>
+      </div>
       <div className="rounded-lg border bg-card">
         {companies.length === 0 ? (
           <div className="p-4">
