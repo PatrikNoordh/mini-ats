@@ -46,6 +46,8 @@ export const ERROR_CODES = [
   "saved_not_moved",
   "invite_invalid",
   "invite_accepted",
+  "branding_image_type",
+  "branding_image_too_large",
   "invite_not_sent",
   "reset_link_invalid",
   "cv_not_pdf",

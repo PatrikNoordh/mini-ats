@@ -2,8 +2,12 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { contrastRatio, hexToLinearRgb, isHexColour, oklchToLinearRgb } from "@/lib/contrast";
+import en from "@/locales/en.json";
+import sv from "@/locales/sv.json";
 import {
   accentAsText,
+  accentProblem,
+  PRESET_ACCENTS,
   isReadableAccent,
   textOnAccent,
   THEME_COLOURS,
@@ -178,5 +182,38 @@ describe("the accent as text", () => {
   it("is the dark foreground at worst", () => {
     const text = accentAsText(hexToLinearRgb("#ffffff"), [WHITE]);
     expect(contrastRatio(text, WHITE)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("the preset accents", () => {
+  it("are all readable, all different, and each has a name in both languages", () => {
+    const accents = PRESET_ACCENTS.map((preset) => preset.accent);
+    expect(new Set(accents).size).toBe(accents.length);
+    for (const { name, accent } of PRESET_ACCENTS) {
+      expect(accentProblem(accent)).toBeNull();
+      expect(accent).toBe(accent.toLowerCase());
+      expect(sv.appearance.presets[name]).toBeTruthy();
+      expect(en.appearance.presets[name]).toBeTruthy();
+    }
+  });
+});
+
+describe("why an accent cannot be used", () => {
+  it("is the format first, then the text on it, then the background", () => {
+    expect(accentProblem("blue")).toBe("accent_format");
+    expect(accentProblem("#777777")).toBe("accent_text_contrast");
+    expect(accentProblem("#facc15")).toBe("accent_background_contrast");
+    expect(accentProblem("#1d4ed8")).toBeNull();
+  });
+
+  it("has a message in both languages for every reason", () => {
+    for (const problem of [
+      "accent_format",
+      "accent_text_contrast",
+      "accent_background_contrast",
+    ] as const) {
+      expect(sv.validation[problem]).toBeTruthy();
+      expect(en.validation[problem]).toBeTruthy();
+    }
   });
 });

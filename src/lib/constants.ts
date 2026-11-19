@@ -113,6 +113,12 @@ export const ACCENT_TINT_PERCENT = 12;
  * light to be text: links and the active sidebar item use the first step that is readable.
  */
 export const ACCENT_TEXT_DARKEN_STEP_PERCENT = 5;
+/**
+ * How long a link to a company's logo works (ATS-54). The logo is shown on every page, so the
+ * link lives longer than a CV's, and a new one is fetched BRANDING_SIGNED_URL_MARGIN_SECONDS early.
+ */
+export const BRANDING_SIGNED_URL_SECONDS = 60 * 60;
+export const BRANDING_SIGNED_URL_MARGIN_SECONDS = 5 * 60;
 /** How long a link to open a CV works. Short, so a copied link soon stops working. */
 export const CV_SIGNED_URL_SECONDS = 5 * 60;
 /** A new link is fetched this long before the old one stops working. */

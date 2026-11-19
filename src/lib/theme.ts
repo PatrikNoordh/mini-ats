@@ -74,9 +74,7 @@ export function textOnAccent(accent: string): { token: string; contrast: number 
  * accent is text itself, accentAsText darkens it as far as it needs.
  */
 export function isReadableAccent(accent: string): boolean {
-  if (!isHexColour(accent)) return false;
-  const againstBackground = contrastRatio(hexToLinearRgb(accent), colour("background"));
-  return textOnAccent(accent).contrast >= MIN_TEXT_CONTRAST && againstBackground >= MIN_UI_CONTRAST;
+  return accentProblem(accent) === null;
 }
 
 /** A colour as the #rrggbb it is set as, so a check measures exactly what the page shows. */
@@ -132,4 +130,37 @@ export function themeTokens(accent: string | null): Record<ThemedToken, string> 
     "--sidebar-accent": linearRgbToHex(sidebarTint),
     "--sidebar-accent-foreground": "var(--sidebar-foreground)",
   };
+}
+
+/**
+ * The six accents the settings page offers first (ATS-54), each readable by isReadableAccent and
+ * named by `appearance.presets.<name>` in the locale files. src/test/theme.test.ts checks both.
+ */
+export const PRESET_ACCENTS = [
+  { name: "blue", accent: "#1d4ed8" },
+  { name: "violet", accent: "#6d28d9" },
+  { name: "green", accent: "#15803d" },
+  { name: "red", accent: "#b91c1c" },
+  { name: "orange", accent: "#c2410c" },
+  { name: "slate", accent: "#334155" },
+] as const;
+
+/** Why an accent cannot be used, or null when it can: the form says which rule it breaks. */
+export type AccentProblem = "accent_format" | "accent_text_contrast" | "accent_background_contrast";
+
+/** The contrast an accent reaches: its text on it, and it against the page background. */
+export function accentContrast(accent: string): { text: number; background: number } {
+  return {
+    text: textOnAccent(accent).contrast,
+    background: contrastRatio(hexToLinearRgb(accent), colour("background")),
+  };
+}
+
+/** The first rule the accent breaks, in the order the form explains them, or null. */
+export function accentProblem(accent: string): AccentProblem | null {
+  if (!isHexColour(accent)) return "accent_format";
+  const { text, background } = accentContrast(accent);
+  if (text < MIN_TEXT_CONTRAST) return "accent_text_contrast";
+  if (background < MIN_UI_CONTRAST) return "accent_background_contrast";
+  return null;
 }

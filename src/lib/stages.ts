@@ -272,4 +272,9 @@ export const queryKeys = {
   accountHistory: (accountId: string) => ["accountHistory", accountId] as const,
   /** The company's own theme, or null for the Mini-ATS theme (ATS-53). */
   branding: (customerId: string | null) => ["branding", customerId] as const,
+  /** Every link to one of the company's branding images, to refresh them all after a change. */
+  brandingUrls: (customerId: string | null) => ["brandingUrl", customerId] as const,
+  /** A link to show one branding image, such as the logo (ATS-54). */
+  brandingUrl: (customerId: string | null, path: string | null) =>
+    ["brandingUrl", customerId, path] as const,
 };

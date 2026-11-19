@@ -43,6 +43,10 @@
     "resetPassword": {
       "title": "Choose a new password — Mini-ATS",
       "description": "Choose a new password for your Mini-ATS account."
+    },
+    "settings": {
+      "title": "Settings — Mini-ATS",
+      "description": "Choose your company's colour and logo."
     }
   },
   "common": {
@@ -130,7 +134,9 @@
     "assessment_unavailable": "The AI assessment is not available right now. Try again in a while.",
     "wrong_current_password": "The current password is not correct.",
     "same_password": "The new password must be different from the current one.",
-    "weak_password": "The password is too weak. Choose a longer one."
+    "weak_password": "The password is too weak. Choose a longer one.",
+    "branding_image_type": "The logo must be a PNG, JPEG or WebP image.",
+    "branding_image_too_large": "The logo can be at most {{maxBrandingImageMegabytes}} MB."
   },
   "validation": {
     "name_required": "Enter a name.",
@@ -152,7 +158,13 @@
     "cv_empty": "The file is empty.",
     "current_password_required": "Enter your current password.",
     "password_mismatch": "The passwords do not match.",
-    "password_same": "The new password must be different from the current one."
+    "password_same": "The new password must be different from the current one.",
+    "accent_format": "Enter a colour as # and six hex digits, for example #1d4ed8.",
+    "accent_text_contrast": "Text on this colour is hard to read. Choose a darker or a lighter colour.",
+    "accent_background_contrast": "This colour is too close to the page background. Choose a darker colour.",
+    "branding_image_type": "The logo must be a PNG, JPEG or WebP image.",
+    "branding_image_too_large": "The logo can be at most {{maxBrandingImageMegabytes}} MB.",
+    "branding_image_empty": "The file is empty."
   },
   "shell": {
     "toggleSidebar": "Show or hide the menu",
@@ -171,7 +183,8 @@
     "pipeline": "Pipeline",
     "jobs": "Jobs",
     "candidates": "Candidates",
-    "accounts": "Accounts"
+    "accounts": "Accounts",
+    "settings": "Settings"
   },
   "gate": {
     "title": "Choose a customer to work as",
@@ -655,5 +668,48 @@
       "location": "location",
       "status": "status"
     }
+  },
+  "settings": {
+    "title": "Settings"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "hint": "Your colour and logo, for everyone in {{company}}, and for an admin who works as you. The sign-in page keeps the Mini-ATS look.",
+    "colour": "Colour",
+    "colourHint": "Used on buttons, links and the menu. Every colour offered here is easy to read.",
+    "default": "Mini-ATS",
+    "presets": {
+      "blue": "Blue",
+      "violet": "Violet",
+      "green": "Green",
+      "red": "Red",
+      "orange": "Orange",
+      "slate": "Slate"
+    },
+    "custom": "Your own colour",
+    "customCode": "Colour code",
+    "customPicker": "Pick a colour",
+    "contrast": "Text on the colour {{text}}:1 (at least {{minText}}:1). The colour on the page {{background}}:1 (at least {{minBackground}}:1).",
+    "logo": "Logo",
+    "logoHint": "PNG, JPEG or WebP, at most {{maxBrandingImageMegabytes}} MB. Shown in the menu instead of the Mini-ATS mark.",
+    "logoNone": "No logo: the menu shows the Mini-ATS mark.",
+    "logoCurrent": "Your logo is shown in the menu.",
+    "logoChoose": "Upload logo",
+    "logoReplace": "Replace logo",
+    "logoRemove": "Remove logo",
+    "logoChosen": "Chosen: {{name}}",
+    "logoUndo": "Undo",
+    "logoRemovedOnSave": "The logo is removed when you save.",
+    "logoLoadFailed": "Could not show the logo.",
+    "preview": "Preview",
+    "previewHint": "How the app looks with your choices. Nothing changes until you save.",
+    "previewLink": "A link",
+    "saved": "The appearance is saved.",
+    "saveFailed": "Could not save the appearance.",
+    "reset": "Reset to Mini-ATS",
+    "resetHint": "Removes your colour and logo, for everyone in the company.",
+    "resetDone": "The Mini-ATS look is back.",
+    "resetFailed": "Could not reset the appearance.",
+    "loadFailed": "Could not fetch the appearance."
   }
 }
