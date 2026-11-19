@@ -27,6 +27,14 @@ function block(selector: string): Map<string, string> {
   );
 }
 
+/** The text on the sidebar's tint, which a theme leaves at its value on :root. */
+const SIDEBAR_FOREGROUND = (() => {
+  const value = block(":root").get("--sidebar-foreground") ?? "";
+  const match = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/.exec(value);
+  if (!match) throw new Error(`--sidebar-foreground is not an oklch colour: ${value}`);
+  return oklchToLinearRgb({ l: Number(match[1]), c: Number(match[2]), h: Number(match[3]) });
+})();
+
 describe("the theme colours the check measures against", () => {
   it("are the tokens on :root in src/styles.css", () => {
     const root = block(":root");
@@ -149,6 +157,9 @@ describe("the theme's tokens", () => {
             expect(contrastRatio(rgb("--primary-text"), surface)).toBeGreaterThanOrEqual(4.5);
             expect(contrastRatio(FOREGROUND, surface)).toBeGreaterThanOrEqual(4.5);
           }
+          expect(contrastRatio(SIDEBAR_FOREGROUND, rgb("--sidebar-accent"))).toBeGreaterThanOrEqual(
+            4.5,
+          );
           expect(textOnAccent(accent).contrast).toBeGreaterThanOrEqual(4.5);
           expect(contrastRatio(hexToLinearRgb(accent), BACKGROUND)).toBeGreaterThanOrEqual(3);
         }
