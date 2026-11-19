@@ -7,7 +7,7 @@
 
 <p align="center">
   A small applicant tracking system for companies that recruit.<br>
-  Jobs, candidates and a compact kanban pipeline, with one login per company and an admin who can act for any customer.
+  Jobs, candidates and a compact kanban pipeline, shared by everyone in a company, with a history of who changed what and an admin who can act for any customer.
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ The version submitted for the code test is kept as the tag and release [`v1.0-su
 - [Key decisions and tradeoffs](#key-decisions-and-tradeoffs)
 - [Assumptions](#assumptions)
 - [Out of scope](#out-of-scope)
-- [What I would do next](#what-i-would-do-next)
+- [After the code test](#after-the-code-test)
 - [Credits and attribution](#credits-and-attribution)
 
 ---
@@ -86,10 +86,13 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
   - **Filters** for the job and the name, kept in the URL (`?job=&q=`) so a reload or a shared link shows the same board
   - A side panel with the candidate's details and jobs, where a job can be added or removed, and a CV (PDF) uploaded, opened, replaced or removed
   - **AI assessment of the CV** for each job the candidate is linked to: a score from 1 to 10, a summary, strengths and gaps, labelled as an AI suggestion, never a decision
+  - **History**: a tab in the side panel with who added, changed, moved or removed the candidate and their cards, and when. It names the fields that changed, never their old or new values
+- **A team per company**: a company can have several users, who all see and change the same jobs, candidates and board
 
 **For the admin (runs the platform)**
-- **Accounts** (`Konton`): create admin and customer accounts; edit name, company, email, role and password. Where email is on, invite a user by email instead, who chooses their own password, and send the invite again (ATS-50)
-- **Delete with 30 days to undo**: a deleted account is hidden, can't sign in and gets no data, but keeps everything. **Borttagna konton** lists it with **Återställ** and **Radera för gott**, and a daily job deletes it for good after 30 days, CV files included
+- **Accounts**: every company with its users. **+ New company** creates a company and **+ Add user** a user in it; a company can be renamed. Create admin accounts too, and edit a user's name, company, email, role and password. Where email is on, invite a user by email instead, who chooses their own password, and **Resend invite** (ATS-50)
+- **Delete with 30 days to undo**: a deleted account can't sign in, while its company keeps all its data. A deleted company is hidden from all its users, who can't sign in. **Deleted accounts** and **Deleted companies** list them with **Restore** and **Delete for good**, and a nightly job deletes them for good after 30 days: an account's login, or a company with all its data, CV files and users
+- **History of an account**: what one user has done, in every company, newest first
 - **Act as a customer**: choose a customer and use every customer screen on their behalf, with a banner saying who you work as. The choice survives a reload
 
 **Everywhere**
@@ -130,7 +133,8 @@ flowchart LR
     API -- "anon key + user JWT" --> PG[(Postgres<br/>RLS)]
     API -- "user JWT" --> EF["Edge Functions<br/>supabase/functions"]
     EF -- "caller's JWT: reads" --> PG
-    EF -- "service role: only the account writes" --> Auth[(Supabase Auth)]
+    EF -- "service role: account writes" --> Auth[(Supabase Auth)]
+    EF -- "service role: company, membership and assessment writes" --> PG
 ```
 
 | Layer | Folder | Rule |
@@ -141,7 +145,7 @@ flowchart LR
 | Data layer | `src/lib/api/` | Every Supabase call, one file per table. Errors become codes |
 | Contexts | `src/contexts/` | `AuthContext` (the user and their profile) and `ActiveCustomerContext` |
 | Database | `supabase/migrations/` | Schema, RLS policies, triggers and database functions |
-| Edge Functions | `supabase/functions/` | Accounts, the AI assessment, the nightly purge and deleting a candidate with their CV. The only code with the service role key |
+| Edge Functions | `supabase/functions/` | Accounts, companies, the AI assessment, the nightly purge and deleting a candidate with their CV. The only code with the service role key |
 
 **Rules that follow from it**
 - **Components never fetch.** A page reads data through a hook, and the hook calls `src/lib/api/`.
@@ -157,11 +161,12 @@ flowchart LR
 ```
 mini-ats/
 ├── src/
-│   ├── routes/              # login, pipeline, jobs, candidates, admin/accounts
+│   ├── routes/              # login, invite, password reset, pipeline, jobs, candidates, accounts, history
 │   ├── components/
-│   │   ├── accounts/        # AccountDialog, DeletedAccounts
-│   │   ├── auth/            # RequireAuth, RequireAdmin
+│   │   ├── accounts/        # companies and their users, AccountDialog, DeletedAccounts
+│   │   ├── auth/            # route guards, the invite and password reset forms
 │   │   ├── candidates/      # CandidateDialog
+│   │   ├── history/         # the history of a candidate or an account
 │   │   ├── jobs/            # JobDialog
 │   │   ├── layout/          # AppShell, sidebar, customer picker and chooser, acting banner
 │   │   ├── pipeline/        # Board, BoardFilters, CandidateSheet, AddToJob
@@ -178,8 +183,8 @@ mini-ats/
 │   └── test/                # Vitest
 ├── supabase/
 │   ├── migrations/          # schema, RLS, triggers, database functions
-│   ├── functions/           # admin-create-user, admin-manage-account (+ Deno tests)
-│   ├── tests/               # rls_test.sql, the concurrency test
+│   ├── functions/           # accounts, companies, AI assessment, candidate delete, purge (+ Deno tests)
+│   ├── tests/               # rls_test.sql, the concurrency tests
 │   ├── templates/           # Auth emails in Swedish and English
 │   └── config.toml          # the local stack for the end-to-end tests
 ├── e2e/                     # Playwright tests
@@ -208,12 +213,13 @@ The security lives in the database, not in the frontend. Hiding a button is UX; 
 - **Explicit table grants**: `anon` has no privileges at all, and `authenticated` only the operations the app uses.
 - Triggers set `customer_id` on applications and assessments, and check that a job and a candidate belong to the same customer. Text has length limits in the database too.
 - CVs (for the AI feature) go in a private bucket, in a folder per company, with the same rules.
+- **The audit log is written only by the database.** Triggers on jobs, candidates and cards record who did what; no client, admin or Edge Function can write, change or delete an event, and an event never copies a candidate's values.
 
 ### Why the service role key only lives in Edge Functions
 
 The service role key bypasses RLS. Anything in the browser can be read by anyone, so the key never reaches `src/` or the bundle; the frontend only has the public anon key, and RLS limits what it can do.
 
-Three things need more power than a user has: creating accounts, changing or deleting them in Auth, and saving an AI assessment of a CV, which clients may only read and delete. Each is an Edge Function that:
+Three things need more power than a user has: creating accounts and companies, changing or deleting them (in Auth too), and saving an AI assessment of a CV, which clients may only read and delete. Each is an Edge Function that:
 1. **checks the caller first**: `is_admin()` for the account functions, a valid session for `assess-cv`, run with the caller's own JWT,
 2. **reads with the caller's JWT**, so RLS still applies: `assess-cv` reads the application and downloads the CV as the caller,
 3. uses the **service role only for the write** it exists for,
@@ -227,13 +233,14 @@ The demo seed script also uses the key. It runs only on my machine and reads the
 
 ### How it was tested
 
-- [`supabase/tests/rls_test.sql`](supabase/tests/rls_test.sql) signs in as customer A, customer B, an admin and a signed-out user, and checks **31 rules**. Some examples:
-  - B can't read, change, delete or create A's rows
+- [`supabase/tests/rls_test.sql`](supabase/tests/rls_test.sql) signs in as members of different companies, an admin and a signed-out user, and runs **68 numbered checks**. Some examples:
+  - B can't read, change, delete or create A's rows, CVs or history
+  - every member of a company sees the same rows, and a member of a deleted company sees none
   - a customer can't make itself admin
   - an application always gets its job's customer
   - `anon` can't read any table
   - a deleted account gets no rows
-- A **concurrency test** moves cards in parallel and checks that no positions collide.
+- Four **concurrency tests** run writes in parallel: card moves never get the same position, the last admin is never removed, columns never deadlock, and a membership never slips past a company delete.
 - Both run in **CI on every pull request**, against a plain Postgres 17 with a small Supabase stand-in. A schema change is also run in the Supabase SQL Editor against the real project before its PR merges.
 - The Edge Functions have **Deno tests** for the caller check, validation and every refusal.
 
@@ -376,14 +383,14 @@ The steps in full: [`docs/auth-email.md`](docs/auth-email.md).
 
 1. **App**: `npm ci` → lint → `tsc --noEmit` → `npm test` → `npm run build`
 2. **Edge Functions**: `deno check` on every function and `deno test` on all of `supabase/functions`
-3. **RLS**: Postgres 17 → the Supabase stand-in → every migration → `rls_test.sql` → the two concurrency tests
+3. **RLS**: Postgres 17 → the Supabase stand-in → every migration → `rls_test.sql` → the four concurrency tests
 4. **End-to-end**: `npx supabase start` runs a fresh local Supabase in Docker and applies every migration → a test seed with an admin and two customers → a production build against that stack → Playwright in Chromium. A failed run uploads its trace
 
-A pull request merges only when all four are green and the Vercel preview works. Over **320 Vitest tests** cover the logic and components: validation, the URL filters, days in stage, card moves and rollback, error codes, the customer switch, offline saves, the account dialogs, CVs and the AI assessment. A test also checks that `sv.json` and `en.json` have the same keys and placeholders. The Edge Functions have their own Deno tests, which run with every outside call passed in, so they need no project.
+A pull request merges only when all four are green and the Vercel preview works. Close to **900 Vitest tests** cover the logic and components: validation, the URL filters, days in stage, card moves and rollback, error codes, the customer switch, offline saves, the account and company dialogs, CVs, the AI assessment, the history and the invite and reset pages. A test also checks that `sv.json` and `en.json` have the same keys and placeholders. The Edge Functions have their own Deno tests, which run with every outside call passed in, so they need no project.
 
 The end-to-end tests run the real app in a browser against a real Supabase: Auth, the database with its RLS, Storage and the Edge Functions. They never touch the project. [`supabase/config.toml`](supabase/config.toml) describes the local stack, with public sign-up disabled as in the project. [`scripts/seed-e2e.ts`](scripts/seed-e2e.ts) writes the admin account, apart from the demo data, and refuses any host that is not local.
 
-The tests in [`e2e/`](e2e) cover the daily flows: a customer creates a job and a candidate and sees the card in New, moves cards by mouse and by keyboard, and keeps the job and name filters in the URL across a reload; an admin acts for one customer and switches to another without anything of the first left on screen, and deletes and restores an account; and one customer never sees another's jobs, candidates or cards. Each test makes its own customers, named with a tag unique to the attempt, and removes them afterwards, so the tests run in any order and a retry never meets data an earlier attempt changed.
+The tests in [`e2e/`](e2e) cover the daily flows: a customer creates a job and a candidate and sees the card in New, moves cards by mouse and by keyboard, and keeps the job and name filters in the URL across a reload; a customer renames, adds, reorders and resets columns; two users of one company see each other's changes; an admin acts for one customer and switches to another without anything of the first left on screen, deletes and restores an account and a company, deletes a company for good, and reads what an account did; a candidate's history shows a teammate's move at once; an invite, a password reset and their emails, read from the local mail catcher; and one customer never sees another's jobs, candidates or cards. Each test makes its own customers, named with a tag unique to the attempt, and removes them afterwards, so the tests run in any order and a retry never meets data an earlier attempt changed.
 
 To run them yourself, with Docker running:
 
@@ -417,7 +424,7 @@ One convention worth knowing: a `beforeEach` or `beforeAll` callback has a block
 4. The PR review includes a data-safety check ([`docs/data-safety.md`](docs/data-safety.md), ATS-60): for each change that touches data, it asks whether anything can be lost or left half done, or seen or changed by another customer, and names the guard and the test that stop it. It reads only the parts of the map the change reaches.
 5. I test it, and it merges once CI is green.
 
-After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [`docs/review-epic-4.md`](docs/review-epic-4.md)) checks the epic as a whole. Problems found along the way are listed in `TICKETS.md` and triaged into tickets at the next checkpoint, so they never get lost and never bloat a ticket. The checkpoint also runs the data-safety check over the whole app and rebuilds the map.
+After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [`docs/review-epic-11.md`](docs/review-epic-11.md)) checks the epic as a whole. Problems found along the way are listed in `TICKETS.md` and triaged into tickets at the next checkpoint, so they never get lost and never bloat a ticket. The checkpoint also runs the data-safety check over the whole app and rebuilds the map.
 
 ---
 
@@ -428,10 +435,11 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 | **Kept Lovable's TanStack Start** instead of the React Router the spec named | It worked, and a rewrite would cost days for no user value | Server rendering is barely used: the server only renders the shell |
 | **Auth and data in the browser** | Supabase's RLS is the security either way, and it keeps the server stateless | Protected pages show a loading state before the session is read |
 | **RLS as the only access control** | One place to get right, tested in CI | Every table and policy needs a matching SQL test |
-| **One login per company** | Matches the brief, and keeps `customer_id = auth.uid()` simple | Several users per company needs a new table (see next) |
+| **Several users per company, through a membership table** (epic 9) | The brief had one login per company; real companies recruit as a team. `customer_id` became a company id, and RLS asks `current_company_id()` | Every policy, the Storage folders and the admin functions moved to companies at once, behind a migration that checked the data first |
 | **Card moves through a database function** (`move_application`) | Stage, position and `stage_changed_at` in one locked call; no two cards get the same position | More SQL than an `update` from the client |
 | **Optimistic card moves** | The board feels instant | A failed save rolls the card back with a toast |
-| **Edge Functions only for Auth writes** | Least privilege: the service role key does one thing per function | Account changes need a function deploy, not just a migration |
+| **Edge Functions only for privileged writes** | Least privilege: the service role key does one thing per function | Account changes need a function deploy, not just a migration |
+| **An audit log written only by triggers** (epic 10) | Nothing can skip it, and no client can change it. It stores field names, not values, so deleting a candidate's data really deletes it | The history can't show what a field was before |
 | **Soft delete for accounts, 30 days** | A deleted company can be restored with all its data | A login ban in Auth and a database flag that must agree |
 | **A job with candidates can't be deleted** | Nobody empties a board by mistake | Two steps to remove a job with candidates |
 | **Error codes instead of messages** | Translated in both languages; no internal details leak | Every new error needs a code, a translation and a doc line |
@@ -442,39 +450,40 @@ After each epic, a review ([`docs/review-epic-0.md`](docs/review-epic-0.md) to [
 
 ## Assumptions
 
-- A customer is a **company with one shared login**, as in the brief.
+- A customer is a **company with one or more users**, who all see the same jobs, candidates and board. The brief had one shared login per company; epic 9 made it a team.
 - Customers are **Swedish companies**, so Swedish is the default language, with English for everyone else.
 - **Admins create every account**, and give the customer their login in person. Invites by email exist, but are off in production (see [Email in production](#email-in-production)).
 - A candidate belongs to **one customer**, and can be in several of that customer's jobs.
 - The AI assessment of a CV is **a suggestion for the recruiter**, never a decision.
-- The product is called **Mini-ATS**, as in the brief. The name lives in one translation key (`app.name`), so it can change in one place when the product gets a real name. Each customer sees their own company name in the header, taken from their account.
+- The product is called **Mini-ATS**, as in the brief. The name lives in one translation key (`app.name`), so it can change in one place when the product gets a real name. Each customer sees their own company name in the header, taken from their company.
 
 ---
 
 ## Out of scope
 
-- Several users per company, and roles inside a company
-- Email: invites, password reset, notifications to candidates
+- Roles inside a company, such as an owner who manages its users
+- Live email in production: invites and password reset are built and tested on the local stack, but off in production ([`docs/auth-email.md`](docs/auth-email.md))
+- Email to candidates
 - Companies inviting their own members: it would need an owner role inside a company, and live email
 - A careers page or a public way for candidates to apply
 - Interview scheduling, calendars and offer letters
-- Reporting, an audit log, and GDPR tools such as exports and retention rules for candidates
+- Reporting, and GDPR tools such as exports and retention rules for candidates
 - Billing and plans
 
 ---
 
-## What I would do next
+## After the code test
 
-The work after the code test, in order, as epics 7–12 in [`TICKETS.md`](TICKETS.md) and milestones on GitHub:
+The work since the code test, in order, as epics 7–12 in [`TICKETS.md`](TICKETS.md) and milestones on GitHub. Each epic ends with a review in `docs/review-epic-<N>.md`.
 
-| Epic | |
-|---|---|
-| **7. End-to-end tests** | Playwright runs of sign-in, the board and acting for a customer, against a local Supabase started in CI. They come first, as a safety net for the rewrites after them |
-| **8. Own pipeline stages** | Let a customer rename, add (up to 10), remove, reorder and reset the board's columns, Trello-style. Design and decisions in [docs/next-custom-stages.md](docs/next-custom-stages.md) |
-| **9. Teams** | Several users per company with a members table, which changes `customer_id = auth.uid()` to a membership check in RLS |
-| **10. Audit log** | Who moved, changed or deleted what, and when |
-| **11. Email** | Invites and password reset through Supabase Auth, once accounts aren't handed out in person |
-| **12. A customer's own theme** | A customer's accent colour, logo and background image, always readable. Design and decisions in [docs/next-branding.md](docs/next-branding.md) |
+| Epic | | Status |
+|---|---|---|
+| **7. End-to-end tests** | Playwright runs of the main flows against a local Supabase started in CI, as a safety net for the rewrites after them | Done |
+| **8. Own pipeline stages** | A customer renames, adds (up to 10), removes, reorders and resets the board's columns. Design in [docs/next-custom-stages.md](docs/next-custom-stages.md) | Done |
+| **9. Teams** | Several users per company with a membership table: `customer_id` became a company id, and RLS a membership check. Design in [docs/next-teams.md](docs/next-teams.md) | Done |
+| **10. Audit log** | Who created, changed, moved or deleted what, and when, with a history per candidate and per account | Done |
+| **11. Email** | Invites and password reset through Supabase Auth. Built and tested on the local stack, off in production until a sender is set up ([docs/auth-email.md](docs/auth-email.md)) | Done |
+| **12. A customer's own theme** | A customer's accent colour, logo and background image, always readable. Design in [docs/next-branding.md](docs/next-branding.md) | In progress |
 
 ---
 

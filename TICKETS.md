@@ -725,6 +725,8 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] The README's accounts screenshot is from before epic 9: a flat account table with **+ New account**, not the company cards with **+ New company** and **+ Add user**. The other screenshots may need a look too — `docs/screenshots/accounts.png`, `README.md` § Screenshots (found in ATS-65)
+
 ## Found while reviewing PRs
 
 Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch before the merge; they do not go here. Small things (🟢 suggestions, and 🟡 warnings that are not quick to fix) get one line each, so they are not forgotten. They are triaged at the epic checkpoint like the list above, with ACs that say "(found in the PR review of ATS-3, PR #21)".
