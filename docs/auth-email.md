@@ -13,6 +13,17 @@ Email is prepared and proven on the local stack, but not switched on in producti
 
 So that production never offers a flow whose email cannot arrive, the invite and **Forgot password?** flows only show when `VITE_EMAIL_ENABLED` is `true`. The flag (`src/lib/features.ts`, ATS-50) is off by default and in production, and only the exact text `true` turns it on. The end-to-end build sets it (`playwright.config.ts`), so it is on in the tests on the local stack and in CI. ATS-51 uses the same flag. The epic 11 checkpoint runs on the local stack.
 
+## A half-accepted invite
+
+The accept-invite page (`/accept-invite`, `SetPasswordFromLink.tsx`) uses the link only when the form is submitted, so an email scanner that opens the link does not use it up. Submitting does two things in order: `verifyOtp` uses the link, which confirms the account and signs the user in, then the password is saved. A failed save is retried from the same page without the link, which works only once.
+
+If the save fails and the user leaves the page before a retry works, the account is **confirmed but has no password**. The user cannot sign in, and **Resend invite** answers `invite_accepted` ("This account has already accepted its invite or has a password. Set a new password for it instead."), because Auth refuses to invite a confirmed address. The way back:
+
+- **The admin** opens the account under **Accounts**, types a **New password** in the account dialog and saves, then gives it to the user, as for any account made with a temporary password. The user can change it from the user menu.
+- **The user**, where email is on, uses **Forgot password?** on the sign-in page. The reset link works for a confirmed account, with or without a password.
+
+**Resend invite** does not handle this case itself. Telling a confirmed account that has never set a password apart from one that has would mean reading `auth.users.encrypted_password`, which Auth's admin API does not return, so it would take a new database function with access to the `auth` schema. For a rare case with two ways back, that is not worth it (ATS-65).
+
 ## The provider, when it is switched on
 
 The documented choice is **Brevo**, as custom SMTP in Supabase Auth, from a separate free sender address made only for the app, never anyone's personal one.
