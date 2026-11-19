@@ -92,7 +92,7 @@ export function CandidateSheet({
                     </dt>
                     <dd>
                       <a
-                        className="text-primary hover:underline"
+                        className="text-primary-text hover:underline"
                         href={`mailto:${candidate.email}`}
                       >
                         {candidate.email}
@@ -112,7 +112,7 @@ export function CandidateSheet({
                     <dd>
                       {candidate.linkedin_url ? (
                         <a
-                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                          className="inline-flex items-center gap-1 text-primary-text hover:underline"
                           href={candidate.linkedin_url}
                           target="_blank"
                           rel="noopener noreferrer"

@@ -38,7 +38,7 @@ export function AppSidebar() {
                 asChild
                 isActive={path.startsWith(n.to)}
                 size="lg"
-                className="data-[active=true]:text-primary"
+                className="data-[active=true]:text-primary-text"
               >
                 <Link to={n.to} onClick={() => setOpenMobile(false)}>
                   <n.icon className="h-4 w-4" />

@@ -82,7 +82,7 @@ function Candidates({ customerId }: { customerId: string }) {
                 <TableRow key={c.id}>
                   <TableCell className="wrap-anywhere">
                     <button
-                      className="font-semibold text-primary hover:underline"
+                      className="font-semibold text-primary-text hover:underline"
                       onClick={() => {
                         setEditing(c);
                         setOpen(true);
@@ -99,7 +99,7 @@ function Candidates({ customerId }: { customerId: string }) {
                         href={c.linkedin_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                        className="inline-flex items-center gap-1 text-primary-text hover:underline"
                       >
                         {t("candidates.profile")} <ExternalLink className="h-3.5 w-3.5" />
                       </a>

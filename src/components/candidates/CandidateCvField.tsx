@@ -72,7 +72,7 @@ export function CandidateCvField({
                 </span>
               ) : url.data ? (
                 <a
-                  className="text-primary hover:underline"
+                  className="text-primary-text hover:underline"
                   href={url.data}
                   target="_blank"
                   rel="noopener noreferrer"
