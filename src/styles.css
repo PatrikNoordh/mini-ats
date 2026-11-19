@@ -13,6 +13,8 @@
   /* The account tables' fixed columns, the same in every table on the accounts page (ATS-62). */
   --width-account-role: 7rem;
   --width-account-created: 9rem;
+  /* The widest a company's logo may be in the sidebar, next to the product's name (ATS-54). */
+  --max-width-logo: 8rem;
   --max-height-dialog: 90vh;
   --text-nav: 15px;
 }
@@ -33,6 +35,7 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-text: var(--primary-text);
+  --color-mini-ats-primary: var(--mini-ats-primary);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);

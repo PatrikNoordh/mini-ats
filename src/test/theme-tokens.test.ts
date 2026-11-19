@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const KINDS = {
   width: { prefix: "w", fallback: "w-full" },
   "max-height": { prefix: "max-h", fallback: "max-h-screen" },
+  "max-width": { prefix: "max-w", fallback: "max-w-full" },
   text: { prefix: "text", fallback: "text-sm" },
 } as const;
 

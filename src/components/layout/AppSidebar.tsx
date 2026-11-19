@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Briefcase, KanbanSquare, User, Users } from "lucide-react";
+import { Briefcase, KanbanSquare, Settings, User, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Sidebar,
@@ -12,11 +12,13 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/layout/Logo";
+import { useCompanyLogo } from "@/hooks/useCompanyLogo";
 
 const NAV = [
   { key: "pipeline", to: "/pipeline", icon: KanbanSquare, admin: false },
   { key: "jobs", to: "/jobs", icon: Briefcase, admin: false },
   { key: "candidates", to: "/candidates", icon: User, admin: false },
+  { key: "settings", to: "/settings", icon: Settings, admin: false },
   { key: "accounts", to: "/admin/accounts", icon: Users, admin: true },
 ] as const;
 
@@ -25,10 +27,11 @@ export function AppSidebar() {
   const { role } = useAuth();
   const { setOpenMobile } = useSidebar();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const logo = useCompanyLogo();
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader>
-        <Logo className="px-2 py-1.5" />
+        <Logo className="px-2 py-1.5" image={logo} />
       </SidebarHeader>
       <SidebarContent className="px-2 pt-2">
         <SidebarMenu>
