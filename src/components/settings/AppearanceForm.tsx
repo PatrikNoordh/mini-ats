@@ -71,6 +71,8 @@ export function AppearanceForm({
         ? choice.accent
         : customCode.trim().toLowerCase();
   const accentProblem = choice.kind === "custom" ? accentError(customCode) : null;
+  // An empty code keeps Save disabled, but is not an error until something is typed.
+  const shownAccentProblem = customCode.trim() ? accentProblem : null;
   const changed = accent !== saved || logo.kind !== "keep";
   const busy = save.isPending || reset.isPending;
 
@@ -120,7 +122,7 @@ export function AppearanceForm({
         <AccentPicker
           choice={choice}
           customCode={customCode}
-          error={accentProblem}
+          error={shownAccentProblem}
           onChoose={setChoice}
           onCustomCode={setCustomCode}
         />

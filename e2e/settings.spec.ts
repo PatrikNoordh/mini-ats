@@ -100,6 +100,10 @@ test("a colour that is hard to read and an SVG logo are refused before saving", 
   await page.getByRole("radio", { name: sv.appearance.custom }).check({ force: true });
   const code = page.getByLabel(sv.appearance.customCode, { exact: true });
   const save = page.getByRole("button", { name: sv.common.save });
+  // An empty code is no error yet, but cannot be saved.
+  await expect(code).toHaveValue("");
+  await expect(page.getByText(sv.validation.accent_format)).toHaveCount(0);
+  await expect(save).toBeDisabled();
 
   await code.fill("#facc15");
   await expect(page.getByText(sv.validation.accent_background_contrast)).toBeVisible();
