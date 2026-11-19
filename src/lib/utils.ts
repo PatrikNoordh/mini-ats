@@ -22,6 +22,7 @@ const twMerge = extendTailwindMerge({
         },
       ],
       "max-h": [{ "max-h": ["dialog"] }],
+      "max-w": [{ "max-w": ["logo"] }],
       "font-size": [{ text: ["nav"] }],
     },
   },

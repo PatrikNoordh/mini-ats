@@ -43,6 +43,10 @@
     "resetPassword": {
       "title": "Välj ett nytt lösenord — Mini-ATS",
       "description": "Välj ett nytt lösenord för ditt konto i Mini-ATS."
+    },
+    "settings": {
+      "title": "Inställningar — Mini-ATS",
+      "description": "Välj ert företags färg och logotyp."
     }
   },
   "common": {
@@ -130,7 +134,9 @@
     "assessment_unavailable": "AI-bedömningen är inte tillgänglig just nu. Försök igen om en stund.",
     "wrong_current_password": "Det nuvarande lösenordet stämmer inte.",
     "same_password": "Det nya lösenordet måste skilja sig från det nuvarande.",
-    "weak_password": "Lösenordet är för svagt. Välj ett längre lösenord."
+    "weak_password": "Lösenordet är för svagt. Välj ett längre lösenord.",
+    "branding_image_type": "Logotypen måste vara en PNG-, JPEG- eller WebP-bild.",
+    "branding_image_too_large": "Logotypen får vara högst {{maxBrandingImageMegabytes}} MB."
   },
   "validation": {
     "name_required": "Ange namn.",
@@ -152,7 +158,13 @@
     "cv_empty": "Filen är tom.",
     "current_password_required": "Ange ditt nuvarande lösenord.",
     "password_mismatch": "Lösenorden stämmer inte överens.",
-    "password_same": "Det nya lösenordet måste skilja sig från det nuvarande."
+    "password_same": "Det nya lösenordet måste skilja sig från det nuvarande.",
+    "accent_format": "Ange en färg som # och sex hexadecimala tecken, till exempel #1d4ed8.",
+    "accent_text_contrast": "Text på den här färgen blir svår att läsa. Välj en mörkare eller ljusare färg.",
+    "accent_background_contrast": "Färgen ligger för nära sidans bakgrund. Välj en mörkare färg.",
+    "branding_image_type": "Logotypen måste vara en PNG-, JPEG- eller WebP-bild.",
+    "branding_image_too_large": "Logotypen får vara högst {{maxBrandingImageMegabytes}} MB.",
+    "branding_image_empty": "Filen är tom."
   },
   "shell": {
     "toggleSidebar": "Visa eller dölj menyn",
@@ -171,7 +183,8 @@
     "pipeline": "Pipeline",
     "jobs": "Jobb",
     "candidates": "Kandidater",
-    "accounts": "Konton"
+    "accounts": "Konton",
+    "settings": "Inställningar"
   },
   "gate": {
     "title": "Välj en kund att arbeta som",
@@ -655,5 +668,48 @@
       "location": "ort",
       "status": "status"
     }
+  },
+  "settings": {
+    "title": "Inställningar"
+  },
+  "appearance": {
+    "title": "Utseende",
+    "hint": "Er färg och logotyp, för alla i {{company}} och för en administratör som arbetar som er. Inloggningssidan behåller Mini-ATS utseende.",
+    "colour": "Färg",
+    "colourHint": "Används på knappar, länkar och i menyn. Alla färger som erbjuds här är lätta att läsa.",
+    "default": "Mini-ATS",
+    "presets": {
+      "blue": "Blå",
+      "violet": "Lila",
+      "green": "Grön",
+      "red": "Röd",
+      "orange": "Orange",
+      "slate": "Skiffer"
+    },
+    "custom": "Egen färg",
+    "customCode": "Färgkod",
+    "customPicker": "Välj en färg",
+    "contrast": "Text på färgen {{text}}:1 (minst {{minText}}:1). Färgen mot sidan {{background}}:1 (minst {{minBackground}}:1).",
+    "logo": "Logotyp",
+    "logoHint": "PNG, JPEG eller WebP, högst {{maxBrandingImageMegabytes}} MB. Visas i menyn i stället för Mini-ATS-märket.",
+    "logoNone": "Ingen logotyp: menyn visar Mini-ATS-märket.",
+    "logoCurrent": "Er logotyp visas i menyn.",
+    "logoChoose": "Ladda upp logotyp",
+    "logoReplace": "Byt logotyp",
+    "logoRemove": "Ta bort logotyp",
+    "logoChosen": "Vald: {{name}}",
+    "logoUndo": "Ångra",
+    "logoRemovedOnSave": "Logotypen tas bort när du sparar.",
+    "logoLoadFailed": "Kunde inte visa logotypen.",
+    "preview": "Förhandsvisning",
+    "previewHint": "Så ser appen ut med dina val. Inget ändras förrän du sparar.",
+    "previewLink": "En länk",
+    "saved": "Utseendet är sparat.",
+    "saveFailed": "Kunde inte spara utseendet.",
+    "reset": "Återställ till Mini-ATS",
+    "resetHint": "Tar bort er färg och logotyp, för alla i företaget.",
+    "resetDone": "Mini-ATS utseende är tillbaka.",
+    "resetFailed": "Kunde inte återställa utseendet.",
+    "loadFailed": "Kunde inte hämta utseendet."
   }
 }

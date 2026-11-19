@@ -61,6 +61,8 @@ The membership trigger raises `company_deleted` since ATS-61, when a user joins 
 
 The `cvs` bucket refuses a file over its size limit or of a type it does not allow, and Storage gives its own code as a string in `statusCode`. `fromStorageError()` in `src/lib/api/cvs.ts` turns `413` into `cv_too_large`, `415` into `cv_not_pdf` and `404` into `cv_not_found` (ATS-17). The panel and the candidate form check size, type and an empty file with `cvFileError()` before anything is sent; those messages are validation keys (`validation.cv_*`), so these codes are for files that get past them.
 
+The `branding` bucket works the same way for a company's logo (ATS-54): `fromStorageError()` in `src/lib/api/brandingFiles.ts` turns `413` into `branding_image_too_large` and `415` into `branding_image_type`. The settings page checks the file first with `brandingImageError()` (`validation.branding_image_*`), and an accent colour with `accentError()` (`validation.accent_format`, `accent_text_contrast`, `accent_background_contrast`), so no app path sends a value the database or Storage refuses.
+
 ## Codes
 
 | Code                              | Where                                                               | Meaning                                                    |
@@ -109,6 +111,8 @@ The `cvs` bucket refuses a file over its size limit or of a type it does not all
 | `last_admin`                      | `admin-manage-account`                                              | The change would leave no active admin                     |
 | `cv_not_pdf`                      | CV upload (`cvs` bucket)                                            | The chosen file is not a PDF                               |
 | `cv_too_large`                    | CV upload (`cvs` bucket)                                            | The file is over 5 MB                                      |
+| `branding_image_type`             | Logo upload (`branding` bucket)                                     | The chosen file is not a PNG, JPEG or WebP image           |
+| `branding_image_too_large`        | Logo upload (`branding` bucket)                                     | The file is over 2 MB                                      |
 | `cv_upload_failed`                | candidates                                                          | The candidate was saved, but uploading its CV failed       |
 | `cv_not_found`                    | CV (`cvs` bucket), `assess-cv`                                      | The CV file is missing, so it cannot be opened or assessed |
 | `cv_missing`                      | `assess-cv`                                                         | The candidate has no CV to assess (409)                    |

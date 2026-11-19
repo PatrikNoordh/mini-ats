@@ -2,7 +2,9 @@ import { z } from "zod";
 
 import sv from "@/locales/sv.json";
 import {
+  BRANDING_IMAGE_MIME_TYPES,
   CV_MIME_TYPE,
+  MAX_BRANDING_IMAGE_BYTES,
   MAX_CV_BYTES,
   MAX_EMAIL_LENGTH,
   MAX_JOB_DESCRIPTION_LENGTH,
@@ -17,6 +19,7 @@ import {
   MIN_PASSWORD_LENGTH,
 } from "@/lib/constants";
 import { isLinkedInUrl } from "@/lib/stages";
+import { accentProblem } from "@/lib/theme";
 
 /** The roles an account can have. The same values as the check on `profiles.role`. */
 export const roleSchema = z.enum(["admin", "customer"]);
@@ -238,3 +241,46 @@ export const passwordResetSchema = z.object({
 });
 
 export type PasswordResetInput = z.infer<typeof passwordResetSchema>;
+
+/**
+ * A customer's accent colour from the settings page (ATS-54): #rrggbb in lower case, as
+ * customer_branding.accent_colour requires, and readable by the contrast rules in theme.ts. Null
+ * keeps the Mini-ATS accent.
+ */
+export const accentSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .superRefine((accent, ctx) => {
+    const problem = accentProblem(accent);
+    if (problem) ctx.addIssue({ code: "custom", message: problem });
+  })
+  .nullable();
+
+/** Why an accent cannot be saved, as a validation key, or null when it can. */
+export function accentError(accent: string): ValidationKey | null {
+  const result = accentSchema.safeParse(accent);
+  if (result.success) return null;
+  const message = result.error.issues[0]?.message ?? "";
+  return isValidationKey(message) ? message : "accent_format";
+}
+
+/**
+ * A logo the settings page may upload (ATS-54): PNG, JPEG or WebP, never SVG, and at most
+ * MAX_BRANDING_IMAGE_BYTES. The branding bucket checks the same on the server.
+ */
+const brandingImageSchema = z.object({
+  type: z.enum(BRANDING_IMAGE_MIME_TYPES, { message: "branding_image_type" }),
+  size: z
+    .number()
+    .min(1, "branding_image_empty")
+    .max(MAX_BRANDING_IMAGE_BYTES, "branding_image_too_large"),
+});
+
+/** Why a chosen file cannot be a logo, as a validation key, or null when it can. */
+export function brandingImageError(file: { type: string; size: number }): ValidationKey | null {
+  const result = brandingImageSchema.safeParse({ type: file.type, size: file.size });
+  if (result.success) return null;
+  const message = result.error.issues[0]?.message ?? "";
+  return isValidationKey(message) ? message : "branding_image_type";
+}

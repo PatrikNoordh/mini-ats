@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
+import { fromWriteError } from "@/lib/errors";
 import type { CustomerBranding } from "@/types";
 
 const BRANDING_COLUMNS =
@@ -27,4 +28,27 @@ export async function getBranding(customerId: string): Promise<CustomerBranding 
     .maybeSingle();
   if (error) throw error;
   return data ? brandingRowSchema.parse(data) : null;
+}
+
+/** What the settings page saves: the accent and the logo (ATS-54). */
+export interface BrandingInput {
+  accent_colour: string | null;
+  logo_path: string | null;
+}
+
+/**
+ * Saves the company's theme in one upsert: a new row, or the existing one changed. RLS lets the
+ * company's active members and an admin write it, and the database checks every value again.
+ */
+export async function saveBranding(customerId: string, input: BrandingInput): Promise<void> {
+  const { error } = await supabase
+    .from("customer_branding")
+    .upsert({ customer_id: customerId, ...input }, { onConflict: "customer_id" });
+  if (error) throw fromWriteError(error);
+}
+
+/** Removes the company's theme, so it sees the Mini-ATS theme again. */
+export async function deleteBranding(customerId: string): Promise<void> {
+  const { error } = await supabase.from("customer_branding").delete().eq("customer_id", customerId);
+  if (error) throw fromWriteError(error);
 }

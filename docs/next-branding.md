@@ -1,6 +1,6 @@
 # Next: a customer's own theme
 
-A design sketch for epic 12. The database part (ATS-52) and applying the theme (ATS-53) are built; the rest is not built yet.
+A design sketch for epic 12. The database part (ATS-52), applying the theme (ATS-53) and the settings page (ATS-54) are built; the background image (ATS-55) is not built yet.
 
 ## The idea
 
@@ -52,12 +52,13 @@ The contrast rule below is checked in the app, not in the database: it needs the
 - **The acting banner** has the class `.theme-mini-ats`, which puts every themed token back to the Mini-ATS value. Each themed token is a `--mini-ats-*` default on `:root`, and a test checks that `.theme-mini-ats` and `THEMED_TOKENS` list the same tokens.
 - While the theme loads, and if it fails to load, the app shows the Mini-ATS accent. It is decoration, so a failure shows no error.
 
-### Settings page (ATS-54)
+### Settings page (ATS-54, built)
 
-- **Settings → Appearance**, in the sidebar for customers and for an admin acting for one.
-- The colour picker comes first, with six preset accents that are known to pass. A custom hex field is checked live and shows the contrast result.
-- The logo upload is shown in the sidebar in place of the Mini-ATS mark, and has an alt text with the company name.
-- The preview updates before saving, and saving or resetting is one click. Reset removes the row and the files.
+- **Settings → Appearance** (`/settings`), in the sidebar for customers and for an admin acting for one. The page sits behind the customer gate like the other customer pages, so an admin acting for nobody chooses a customer first.
+- **The colour** comes first: **Mini-ATS**, six presets that pass the contrast rules (`PRESET_ACCENTS` in `src/lib/theme.ts`, checked by a test), or **Your own colour**. A colour code is checked as it is typed, with the contrast it reaches against the 4.5:1 and 3:1 limits, and the first rule it breaks (`accentProblem()`). Save stays disabled until it passes. A colour picker sits next to the code field.
+- **The logo** is a PNG, JPEG or WebP up to 2 MB, checked before upload and again by the bucket. It lives at one fixed path, `<company id>/logo`, so a new logo replaces the old file in the same call and no old logo is left behind. The sidebar shows it in place of the Mini-ATS mark, with the company's name as its alt text; an image that cannot be loaded shows the mark.
+- **The preview** is a small copy of the menu, a button and a link, with the draft's tokens set on the preview only. The page itself keeps the saved theme until **Save**.
+- **Save** and **Reset to Mini-ATS** are one click each. Reset removes every file in the company's folder first and the row after (`docs/data-safety.md` § 4).
 
 ### Background image (ATS-55)
 
