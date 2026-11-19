@@ -6,9 +6,11 @@ import { CustomerPicker } from "@/components/layout/CustomerPicker";
 import { CompanyName } from "@/components/layout/CompanyName";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { ActingBanner } from "@/components/layout/ActingBanner";
+import { useCustomerTheme } from "@/hooks/useCustomerTheme";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { role } = useAuth();
+  useCustomerTheme();
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
