@@ -42,7 +42,7 @@ export function AccountTable({
           <TableRow key={p.id}>
             <TableCell className="wrap-anywhere">
               <button
-                className="text-left font-semibold text-primary hover:underline"
+                className="text-left font-semibold text-primary-text hover:underline"
                 aria-label={t("accounts.edit", { name: p.full_name || p.email })}
                 onClick={() => onEdit(p)}
               >

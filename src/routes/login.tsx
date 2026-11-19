@@ -93,7 +93,7 @@ function LoginPage() {
             <div className="flex justify-end">
               <Link
                 to="/forgot-password"
-                className="text-sm text-primary underline-offset-4 hover:underline"
+                className="text-sm text-primary-text underline-offset-4 hover:underline"
               >
                 {t("login.forgotPassword")}
               </Link>

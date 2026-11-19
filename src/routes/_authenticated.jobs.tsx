@@ -94,7 +94,7 @@ function Jobs({ customerId }: { customerId: string }) {
                 <TableRow key={j.id}>
                   <TableCell className="wrap-anywhere">
                     <button
-                      className="font-semibold text-primary hover:underline"
+                      className="font-semibold text-primary-text hover:underline"
                       onClick={() => {
                         setEditing(j);
                         setOpen(true);

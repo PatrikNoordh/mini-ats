@@ -227,7 +227,7 @@ export function AccountDialog({
             <Link
               to="/admin/accounts/$accountId/history"
               params={{ accountId: account.id }}
-              className="w-fit text-sm text-primary hover:underline"
+              className="w-fit text-sm text-primary-text hover:underline"
             >
               {t("accounts.showHistory")}
             </Link>

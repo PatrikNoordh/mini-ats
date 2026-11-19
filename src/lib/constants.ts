@@ -99,6 +99,20 @@ export const MAX_CV_BYTES = 5 * 1024 * 1024;
 export const BRANDING_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
 /** Largest logo or background image, 2 MB. The branding bucket has the same limit: change both. */
 export const MAX_BRANDING_IMAGE_BYTES = 2 * 1024 * 1024;
+/** WCAG AA contrast for normal text, here the text on a customer's accent colour (ATS-53). */
+export const MIN_TEXT_CONTRAST = 4.5;
+/** WCAG AA contrast for a control against what is around it: the accent on the background. */
+export const MIN_UI_CONTRAST = 3;
+/**
+ * How much of a customer's accent colour goes into the light tints behind a hovered control and
+ * the active sidebar item, in percent. The rest is the surface, so dark text stays readable on it.
+ */
+export const ACCENT_TINT_PERCENT = 12;
+/**
+ * How far the accent moves toward the dark foreground per step, in percent, when the accent is too
+ * light to be text: links and the active sidebar item use the first step that is readable.
+ */
+export const ACCENT_TEXT_DARKEN_STEP_PERCENT = 5;
 /** How long a link to open a CV works. Short, so a copied link soon stops working. */
 export const CV_SIGNED_URL_SECONDS = 5 * 60;
 /** A new link is fetched this long before the old one stops working. */

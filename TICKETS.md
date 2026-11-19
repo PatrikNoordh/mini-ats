@@ -725,6 +725,7 @@ Small problems and improvements noticed while working on a ticket but outside it
 
 Format: `- [ ] <What is wrong or could be better> — <file or page> (found in ATS-<N>)`
 
+- [ ] The Mini-ATS accent is just below WCAG AA for text: white text on it reaches 4.35:1 and the accent as link text 4.17:1 on the background, under the 4.5:1 that customers' accents must reach. A slightly darker `--mini-ats-primary` would fix both — `src/styles.css` (found in ATS-53)
 - [ ] The README's accounts screenshot is from before epic 9: a flat account table with **+ New account**, not the company cards with **+ New company** and **+ Add user**. The other screenshots may need a look too — `docs/screenshots/accounts.png`, `README.md` § Screenshots (found in ATS-65)
 
 ## Found while reviewing PRs
@@ -734,3 +735,4 @@ Findings from `/ats-review-pr`. Blockers and real bugs are fixed on the branch b
 Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 
 - [ ] The `cvs` and `branding` storage policies check only the first folder, so a client can upload to `<company>/<sub>/<file>`, which `removeCompanyFolder` never lists, and the file outlives a purged company. Limit both buckets to one level (`array_length(storage.foldername(name), 1) = 1` in the insert and update checks, the same on the `logo_path` and `background_path` checks), with an RLS check, and drop "neither bucket has subfolders" from `_shared/cvs.ts` once it is enforced — `supabase/migrations/20261119120000_customer_branding.sql`, `supabase/functions/_shared/cvs.ts` (PR #141, ATS-52)
+- [ ] A branded customer sees the Mini-ATS teal for a moment on every full page load, and an admin on every customer switch, until the branding query returns. Worth a look once a logo makes the swap more visible (ATS-54, ATS-55): for example keep the last theme across a reload — `src/hooks/useCustomerTheme.ts` (PR #143, ATS-53)

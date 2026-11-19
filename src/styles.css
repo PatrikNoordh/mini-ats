@@ -32,6 +32,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -67,6 +68,15 @@
 }
 
 :root {
+  /* The Mini-ATS accent. A customer's theme replaces the tokens that point at these, as inline
+     variables on <html> (src/lib/theme.ts, ATS-53); .theme-mini-ats below puts them back. */
+  --mini-ats-primary: oklch(0.56 0.09 205);
+  --mini-ats-primary-foreground: oklch(0.99 0 0);
+  --mini-ats-accent: oklch(0.955 0.015 205);
+  --mini-ats-accent-foreground: oklch(0.3 0.04 210);
+  --mini-ats-sidebar-accent: oklch(0.95 0.02 205);
+  --mini-ats-sidebar-accent-foreground: oklch(0.4 0.08 205);
+
   --radius: 0.5rem;
   --background: oklch(0.975 0.003 220);
   --foreground: oklch(0.22 0.015 230);
@@ -74,14 +84,17 @@
   --card-foreground: oklch(0.22 0.015 230);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.015 230);
-  --primary: oklch(0.56 0.09 205);
-  --primary-foreground: oklch(0.99 0 0);
+  --primary: var(--mini-ats-primary);
+  --primary-foreground: var(--mini-ats-primary-foreground);
+  /* The accent as text: links and the active sidebar item. A customer's theme darkens it where
+     its accent is too light to read as text (ATS-53). */
+  --primary-text: var(--mini-ats-primary);
   --secondary: oklch(0.95 0.006 220);
   --secondary-foreground: oklch(0.25 0.015 230);
   --muted: oklch(0.955 0.005 220);
   --muted-foreground: oklch(0.5 0.015 230);
-  --accent: oklch(0.955 0.015 205);
-  --accent-foreground: oklch(0.3 0.04 210);
+  --accent: var(--mini-ats-accent);
+  --accent-foreground: var(--mini-ats-accent-foreground);
   --destructive: oklch(0.56 0.2 27);
   --destructive-foreground: oklch(0.99 0 0);
   --warning: oklch(0.72 0.14 70);
@@ -89,7 +102,7 @@
   --warning-muted: oklch(0.96 0.045 85);
   --border: oklch(0.91 0.006 220);
   --input: oklch(0.89 0.008 220);
-  --ring: oklch(0.56 0.09 205);
+  --ring: var(--mini-ats-primary);
   --column: oklch(0.955 0.005 220);
   /* The stage palette: the same names as the check on pipeline_stages.colour (ATS-38). The six
      defaults use grey, blue, violet, amber, green and red, the colours the fixed stages had. */
@@ -103,12 +116,28 @@
   --stage-red: oklch(0.6 0.18 25);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.3 0.015 230);
-  --sidebar-primary: oklch(0.56 0.09 205);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0.02 205);
-  --sidebar-accent-foreground: oklch(0.4 0.08 205);
+  --sidebar-primary: var(--mini-ats-primary);
+  --sidebar-primary-foreground: var(--mini-ats-primary-foreground);
+  --sidebar-accent: var(--mini-ats-sidebar-accent);
+  --sidebar-accent-foreground: var(--mini-ats-sidebar-accent-foreground);
   --sidebar-border: oklch(0.91 0.006 220);
-  --sidebar-ring: oklch(0.56 0.09 205);
+  --sidebar-ring: var(--mini-ats-primary);
+}
+
+/* The Mini-ATS accent inside a customer's theme: the acting banner keeps it (ATS-53). Every token
+   THEMED_TOKENS in src/lib/theme.ts sets is put back here; a test checks the two lists match. */
+.theme-mini-ats {
+  --primary: var(--mini-ats-primary);
+  --primary-foreground: var(--mini-ats-primary-foreground);
+  --primary-text: var(--mini-ats-primary);
+  --ring: var(--mini-ats-primary);
+  --accent: var(--mini-ats-accent);
+  --accent-foreground: var(--mini-ats-accent-foreground);
+  --sidebar-primary: var(--mini-ats-primary);
+  --sidebar-primary-foreground: var(--mini-ats-primary-foreground);
+  --sidebar-ring: var(--mini-ats-primary);
+  --sidebar-accent: var(--mini-ats-sidebar-accent);
+  --sidebar-accent-foreground: var(--mini-ats-sidebar-accent-foreground);
 }
 
 @layer base {
