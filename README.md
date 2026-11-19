@@ -88,6 +88,7 @@ Shown in English, with the demo data. The app starts in Swedish and switches lan
   - **AI assessment of the CV** for each job the candidate is linked to: a score from 1 to 10, a summary, strengths and gaps, labelled as an AI suggestion, never a decision
   - **History**: a tab in the side panel with who added, changed, moved or removed the candidate and their cards, and when. It names the fields that changed, never their old or new values
 - **A team per company**: a company can have several users, who all see and change the same jobs, candidates and board
+- **Settings → Appearance**: the company's own accent colour and logo, with a preview before saving. Six readable presets or a colour of your own, checked for contrast as you type, so text always stays readable. The acting banner and the sign-in page keep the Mini-ATS look
 
 **For the admin (runs the platform)**
 - **Accounts**: every company with its users. **+ New company** creates a company and **+ Add user** a user in it; a company can be renamed. Create admin accounts too, and edit a user's name, company, email, role and password. Where email is on, invite a user by email instead, who chooses their own password, and **Resend invite** (ATS-50)
