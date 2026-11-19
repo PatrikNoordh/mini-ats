@@ -40,6 +40,8 @@ export interface DemoCustomer {
   account: DemoAccount;
   jobs: DemoJob[];
   candidates: DemoCandidate[];
+  /** Whether the customer shows the made-up brand from demo-brand.ts (ATS-55). */
+  branded?: boolean;
 }
 
 export const DEMO_ADMIN: DemoAccount = {
@@ -167,6 +169,7 @@ export const DEMO_CUSTOMERS: DemoCustomer[] = [
       full_name: "Sara Exempel",
       company_name: "Studio Exempel",
     },
+    branded: true,
     jobs: [
       {
         key: "designer",

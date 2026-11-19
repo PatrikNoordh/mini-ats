@@ -16,10 +16,12 @@
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
+import { demoBrand } from "./demo-brand.ts";
 import { DEMO_ACCOUNTS, DEMO_CUSTOMERS } from "./demo-data.ts";
 import {
   errorMessage,
   existingUsers,
+  seedBranding,
   seedCustomer,
   upsertAccount,
   upsertCustomer,
@@ -71,10 +73,12 @@ async function main() {
     const id = ids.get(customer.account.email);
     if (!id) throw new Error(`No account for ${customer.account.email}`);
     await seedCustomer(admin, id, customer);
+    await seedBranding(admin, id, customer.branded ? demoBrand() : null);
     const cards = customer.candidates.reduce((n, c) => n + c.applications.length, 0);
     console.log(
       `  ${customer.account.company_name}: ${customer.jobs.length} jobs, ` +
-        `${customer.candidates.length} candidates, ${cards} cards`,
+        `${customer.candidates.length} candidates, ${cards} cards` +
+        (customer.branded ? ", a made-up theme" : ""),
     );
   }
   console.log("Done.");
