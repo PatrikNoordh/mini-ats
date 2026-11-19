@@ -1,7 +1,7 @@
 import { createInstance, type i18n, type TFunction } from "i18next";
 import en from "@/locales/en.json";
 import sv from "@/locales/sv.json";
-import { MAX_BRANDING_IMAGE_BYTES, MAX_CV_BYTES } from "./constants";
+import { MAX_BACKGROUND_SOURCE_BYTES, MAX_BRANDING_IMAGE_BYTES, MAX_CV_BYTES } from "./constants";
 import { formatNumber } from "./format";
 import { DEFAULT_LANGUAGE, LANGUAGES, parseLanguage, type Language } from "./language";
 
@@ -29,6 +29,7 @@ function createI18n(language: Language): i18n {
       defaultVariables: {
         maxCvMegabytes: MAX_CV_BYTES / BYTES_PER_MEGABYTE,
         maxBrandingImageMegabytes: MAX_BRANDING_IMAGE_BYTES / BYTES_PER_MEGABYTE,
+        maxBackgroundSourceMegabytes: MAX_BACKGROUND_SOURCE_BYTES / BYTES_PER_MEGABYTE,
       },
     },
     returnEmptyString: false,

@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { resetTheme, saveTheme } from "@/lib/branding";
-import { MAX_BRANDING_IMAGE_BYTES } from "@/lib/constants";
-import { accentError, brandingImageError } from "@/lib/validation";
+import type { BrandingInput } from "@/lib/api/customerBranding";
+import { resetTheme, saveTheme, type ThemeChange } from "@/lib/branding";
+import { MAX_BACKGROUND_SOURCE_BYTES, MAX_BRANDING_IMAGE_BYTES } from "@/lib/constants";
+import { fittedSize } from "@/lib/prepare-background";
+import { accentError, backgroundSourceError, brandingImageError } from "@/lib/validation";
 
 // The steps of a save and a reset, in order, with any one of them failing where told to.
 const steps = vi.hoisted(() => ({
@@ -18,15 +20,16 @@ function step(name: string) {
 
 vi.mock("@/lib/api/brandingFiles", () => ({
   logoPath: (customerId: string) => `${customerId}/logo`,
+  backgroundPath: (customerId: string) => `${customerId}/background`,
   uploadBrandingFile: (path: string) => step(`upload ${path}`),
   removeBrandingFiles: (paths: string[]) => step(`remove ${paths.join(",")}`),
   listBrandingFiles: () => step("list").then(() => steps.files),
 }));
 vi.mock("@/lib/api/customerBranding", () => ({
-  saveBranding: (
-    _customerId: string,
-    input: { accent_colour: string | null; logo_path: string | null },
-  ) => step(`save ${input.accent_colour} ${input.logo_path}`),
+  saveBranding: (_customerId: string, input: BrandingInput) =>
+    step(
+      `save ${input.accent_colour} ${input.logo_path} ${input.background_path} ${input.background_dim}`,
+    ),
   deleteBranding: () => step("delete row"),
 }));
 
@@ -39,44 +42,96 @@ beforeEach(() => {
   steps.files = [];
 });
 
+const NONE = { logo: null, background: null };
+const keep = { kind: "keep" } as const;
+const change = (overrides: Partial<ThemeChange>): ThemeChange => ({
+  accent: null,
+  logo: keep,
+  background: keep,
+  backgroundDim: "medium",
+  ...overrides,
+});
+
 describe("saving the theme", () => {
-  it("keeps the logo and saves the accent in one write", async () => {
-    await saveTheme(C, "c1/logo", { accent: "#1d4ed8", logo: { kind: "keep" } });
-    expect(steps.ran).toEqual(["save #1d4ed8 c1/logo"]);
+  it("keeps the images and saves the accent and the dim level in one write", async () => {
+    await saveTheme(
+      C,
+      { logo: "c1/logo", background: "c1/background" },
+      change({ accent: "#1d4ed8", backgroundDim: "strong" }),
+    );
+    expect(steps.ran).toEqual(["save #1d4ed8 c1/logo c1/background strong"]);
   });
 
   it("uploads a new logo to the fixed path, then saves the row", async () => {
-    await saveTheme(C, null, { accent: null, logo: { kind: "replace", file } });
-    expect(steps.ran).toEqual(["upload c1/logo", "save null c1/logo"]);
+    await saveTheme(C, NONE, change({ logo: { kind: "replace", file } }));
+    expect(steps.ran).toEqual(["upload c1/logo", "save null c1/logo null medium"]);
   });
 
-  it("removes a logo just uploaded when the row cannot be saved and there was none", async () => {
-    steps.failAt = "save null c1/logo";
+  it("uploads both images before the row when both are new", async () => {
+    await saveTheme(
+      C,
+      NONE,
+      change({ logo: { kind: "replace", file }, background: { kind: "replace", file } }),
+    );
+    expect(steps.ran).toEqual([
+      "upload c1/logo",
+      "upload c1/background",
+      "save null c1/logo c1/background medium",
+    ]);
+  });
+
+  it("removes the images just added when the row cannot be saved", async () => {
+    steps.failAt = "save null c1/logo c1/background medium";
     await expect(
-      saveTheme(C, null, { accent: null, logo: { kind: "replace", file } }),
+      saveTheme(
+        C,
+        NONE,
+        change({ logo: { kind: "replace", file }, background: { kind: "replace", file } }),
+      ),
     ).rejects.toThrow();
-    expect(steps.ran).toEqual(["upload c1/logo", "save null c1/logo", "remove c1/logo"]);
+    expect(steps.ran.at(-1)).toBe("remove c1/logo,c1/background");
   });
 
-  it("keeps the file when the company had a logo, since its path still names it", async () => {
-    steps.failAt = "save null c1/logo";
+  it("keeps a replaced image when the row cannot be saved, since its path still names it", async () => {
+    steps.failAt = "save null c1/logo c1/background medium";
     await expect(
-      saveTheme(C, "c1/logo", { accent: null, logo: { kind: "replace", file } }),
+      saveTheme(
+        C,
+        { logo: "c1/logo", background: null },
+        change({ logo: { kind: "replace", file }, background: { kind: "replace", file } }),
+      ),
     ).rejects.toThrow();
-    expect(steps.ran).toEqual(["upload c1/logo", "save null c1/logo"]);
+    expect(steps.ran.at(-1)).toBe("remove c1/background");
   });
 
-  it("saves nothing when the upload fails", async () => {
-    steps.failAt = "upload c1/logo";
+  it("saves nothing when an upload fails", async () => {
+    steps.failAt = "upload c1/background";
     await expect(
-      saveTheme(C, null, { accent: null, logo: { kind: "replace", file } }),
+      saveTheme(C, NONE, change({ background: { kind: "replace", file } })),
     ).rejects.toThrow();
-    expect(steps.ran).toEqual(["upload c1/logo"]);
+    expect(steps.ran).toEqual(["upload c1/background"]);
   });
 
-  it("removes the logo file first and the path after, so no file is left that nobody sees", async () => {
-    await saveTheme(C, "c1/logo", { accent: "#b91c1c", logo: { kind: "remove" } });
-    expect(steps.ran).toEqual(["remove c1/logo", "save #b91c1c null"]);
+  it("removes an image file first and the path after, so no file is left that nobody sees", async () => {
+    await saveTheme(
+      C,
+      { logo: "c1/logo", background: "c1/background" },
+      change({ accent: "#b91c1c", background: { kind: "remove" } }),
+    );
+    expect(steps.ran).toEqual(["remove c1/background", "save #b91c1c c1/logo null medium"]);
+  });
+
+  it("removes before it uploads, so a failed upload leaves no file without a path", async () => {
+    await saveTheme(
+      C,
+      { logo: "c1/logo", background: null },
+      change({ logo: { kind: "remove" }, background: { kind: "replace", file } }),
+    );
+    expect(steps.ran).toEqual([
+      "remove c1/logo",
+      "upload c1/background",
+      "save null null c1/background medium",
+    ]);
   });
 });
 
@@ -118,5 +173,24 @@ describe("the form's checks", () => {
     expect(brandingImageError({ type: "image/png", size: MAX_BRANDING_IMAGE_BYTES + 1 })).toBe(
       "branding_image_too_large",
     );
+  });
+});
+
+describe("a background image", () => {
+  it("takes the logo's types up to the larger limit before it is made smaller", () => {
+    expect(
+      backgroundSourceError({ type: "image/jpeg", size: MAX_BACKGROUND_SOURCE_BYTES }),
+    ).toBeNull();
+    expect(
+      backgroundSourceError({ type: "image/jpeg", size: MAX_BACKGROUND_SOURCE_BYTES + 1 }),
+    ).toBe("background_source_too_large");
+    expect(backgroundSourceError({ type: "image/svg+xml", size: 10 })).toBe("branding_image_type");
+    expect(backgroundSourceError({ type: "image/png", size: 0 })).toBe("branding_image_empty");
+  });
+
+  it("is drawn at most the longest edge given, keeping its shape, and never larger", () => {
+    expect(fittedSize(6000, 4000, 2560)).toEqual({ width: 2560, height: 1707 });
+    expect(fittedSize(1000, 3000, 2560)).toEqual({ width: 853, height: 2560 });
+    expect(fittedSize(800, 600, 2560)).toEqual({ width: 800, height: 600 });
   });
 });

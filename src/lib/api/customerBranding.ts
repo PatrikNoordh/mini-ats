@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
 import { fromWriteError } from "@/lib/errors";
-import type { CustomerBranding } from "@/types";
+import type { BackgroundDim, CustomerBranding } from "@/types";
 
 const BRANDING_COLUMNS =
   "customer_id, accent_colour, logo_path, background_path, background_dim, updated_at";
@@ -30,10 +30,12 @@ export async function getBranding(customerId: string): Promise<CustomerBranding 
   return data ? brandingRowSchema.parse(data) : null;
 }
 
-/** What the settings page saves: the accent and the logo (ATS-54). */
+/** What the settings page saves: the accent, the logo (ATS-54) and the background (ATS-55). */
 export interface BrandingInput {
   accent_colour: string | null;
   logo_path: string | null;
+  background_path: string | null;
+  background_dim: BackgroundDim;
 }
 
 /**

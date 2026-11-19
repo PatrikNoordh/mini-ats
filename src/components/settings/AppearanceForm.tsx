@@ -3,14 +3,21 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AccentPicker, type AccentChoice } from "@/components/settings/AccentPicker";
+import { BackgroundField } from "@/components/settings/BackgroundField";
 import { LogoField } from "@/components/settings/LogoField";
 import { ThemePreview } from "@/components/settings/ThemePreview";
 import { useBrandingUrl, useResetTheme, useSaveTheme } from "@/hooks/useBranding";
 import { useErrorToast } from "@/hooks/useErrorToast";
-import type { LogoChange } from "@/lib/branding";
+import type { ImageChange } from "@/lib/branding";
+import { prepareBackground } from "@/lib/prepare-background";
 import { PRESET_ACCENTS } from "@/lib/theme";
-import { accentError, brandingImageError, type ValidationKey } from "@/lib/validation";
-import type { CustomerBranding } from "@/types";
+import {
+  accentError,
+  backgroundSourceError,
+  brandingImageError,
+  type ValidationKey,
+} from "@/lib/validation";
+import type { BackgroundDim, CustomerBranding } from "@/types";
 
 /** The choice that shows a saved accent: none, one of the presets, or the customer's own. */
 function choiceFor(accent: string | null): AccentChoice {
@@ -35,8 +42,15 @@ function useObjectUrl(file: File | null): string | null {
   return url;
 }
 
+/** The image to preview for one image of the theme: the file chosen, none, or the saved one. */
+function previewUrl(change: ImageChange, chosen: string | null, saved: string | null) {
+  if (change.kind === "replace") return chosen;
+  return change.kind === "remove" ? null : saved;
+}
+
 /**
- * The appearance settings (ATS-54): the colour, the logo and a preview of both before saving.
+ * The appearance settings (ATS-54, ATS-55): the colour, the logo, the background image and how
+ * much of it shows, and a preview of them all before saving.
  * Saving and resetting are one click each. The form starts from the saved theme, and the page
  * mounts it again when the saved theme changes.
  */
@@ -53,16 +67,24 @@ export function AppearanceForm({
   const errorToast = useErrorToast();
   const saved = branding?.accent_colour ?? null;
   const savedLogo = branding?.logo_path ?? null;
+  const savedBackground = branding?.background_path ?? null;
+  const savedDim = branding?.background_dim ?? "medium";
   const [choice, setChoice] = useState<AccentChoice>(() => choiceFor(saved));
   const [customCode, setCustomCode] = useState(() =>
     choiceFor(saved).kind === "custom" ? (saved ?? "") : "",
   );
-  const [logo, setLogo] = useState<LogoChange>({ kind: "keep" });
+  const [logo, setLogo] = useState<ImageChange>({ kind: "keep" });
   const [logoError, setLogoError] = useState<ValidationKey | null>(null);
+  const [background, setBackground] = useState<ImageChange>({ kind: "keep" });
+  const [backgroundError, setBackgroundError] = useState<ValidationKey | null>(null);
+  const [dim, setDim] = useState<BackgroundDim>(savedDim);
+  const [preparing, setPreparing] = useState(false);
   const save = useSaveTheme(customerId);
   const reset = useResetTheme(customerId);
   const savedLogoUrl = useBrandingUrl(customerId, savedLogo);
   const chosenLogoUrl = useObjectUrl(logo.kind === "replace" ? logo.file : null);
+  const savedBackgroundUrl = useBrandingUrl(customerId, savedBackground);
+  const chosenBackgroundUrl = useObjectUrl(background.kind === "replace" ? background.file : null);
 
   const accent =
     choice.kind === "default"
@@ -73,16 +95,23 @@ export function AppearanceForm({
   const accentProblem = choice.kind === "custom" ? accentError(customCode) : null;
   // An empty code keeps Save disabled, but is not an error until something is typed.
   const shownAccentProblem = customCode.trim() ? accentProblem : null;
-  const changed = accent !== saved || logo.kind !== "keep";
-  const busy = save.isPending || reset.isPending;
+  const showsBackground =
+    background.kind === "replace" || (background.kind === "keep" && !!savedBackground);
+  const changed =
+    accent !== saved ||
+    logo.kind !== "keep" ||
+    background.kind !== "keep" ||
+    (showsBackground && dim !== savedDim);
+  const busy = save.isPending || reset.isPending || preparing;
 
-  const previewLogoUrl =
-    logo.kind === "replace"
-      ? chosenLogoUrl
-      : logo.kind === "remove"
-        ? null
-        : (savedLogoUrl.data ?? null);
+  const previewLogoUrl = previewUrl(logo, chosenLogoUrl, savedLogoUrl.data ?? null);
   const previewLogo = previewLogoUrl ? { src: previewLogoUrl, alt: companyName } : null;
+  const previewBackgroundUrl = previewUrl(
+    background,
+    chosenBackgroundUrl,
+    savedBackgroundUrl.data ?? null,
+  );
+  const previewBackground = previewBackgroundUrl ? { url: previewBackgroundUrl, dim } : null;
 
   const chooseLogo = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -96,11 +125,37 @@ export function AppearanceForm({
     setLogo({ kind: "replace", file });
   };
 
+  // The file is made smaller in the browser first; the input is emptied either way, so choosing
+  // the same file again still fires a change.
+  const chooseBackground = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    const problem = backgroundSourceError(file);
+    setBackgroundError(problem);
+    if (problem) {
+      input.value = "";
+      return;
+    }
+    setPreparing(true);
+    const prepared = await prepareBackground(file);
+    setPreparing(false);
+    input.value = "";
+    if (typeof prepared === "string") {
+      setBackgroundError(prepared);
+      return;
+    }
+    setBackground({ kind: "replace", file: prepared });
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (accentProblem || !changed) return;
     try {
-      await save.mutateAsync({ currentLogo: savedLogo, change: { accent, logo } });
+      await save.mutateAsync({
+        saved: { logo: savedLogo, background: savedBackground },
+        change: { accent, logo, background, backgroundDim: dim },
+      });
       toast.success(t("appearance.saved"));
     } catch (err) {
       errorToast(t("appearance.saveFailed"), err);
@@ -137,6 +192,21 @@ export function AppearanceForm({
             setLogoError(null);
           }}
         />
+        <BackgroundField
+          hasBackground={!!savedBackground}
+          showsBackground={showsBackground}
+          change={background}
+          dim={dim}
+          preparing={preparing}
+          error={backgroundError}
+          onChoose={(event) => void chooseBackground(event)}
+          onRemove={() => setBackground({ kind: "remove" })}
+          onUndo={() => {
+            setBackground({ kind: "keep" });
+            setBackgroundError(null);
+          }}
+          onDim={setDim}
+        />
         {savedLogoUrl.isError && logo.kind === "keep" && (
           <p role="alert" className="text-sm text-destructive">
             {t("appearance.logoLoadFailed")}{" "}
@@ -160,7 +230,11 @@ export function AppearanceForm({
         </div>
         {branding && <p className="text-xs text-muted-foreground">{t("appearance.resetHint")}</p>}
       </div>
-      <ThemePreview accent={accentProblem ? null : accent} logo={previewLogo} />
+      <ThemePreview
+        accent={accentProblem ? null : accent}
+        logo={previewLogo}
+        background={previewBackground}
+      />
     </form>
   );
 }

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { brandingSignedUrl } from "@/lib/api/brandingFiles";
 import { getBranding } from "@/lib/api/customerBranding";
-import { resetTheme, saveTheme, type ThemeChange } from "@/lib/branding";
+import { resetTheme, saveTheme, type SavedImages, type ThemeChange } from "@/lib/branding";
 import { BRANDING_SIGNED_URL_MARGIN_SECONDS, BRANDING_SIGNED_URL_SECONDS } from "@/lib/constants";
 import { queryKeys } from "@/lib/stages";
 
@@ -46,8 +46,8 @@ function useInvalidateBranding(customerId: string | null) {
 export function useSaveTheme(customerId: string | null) {
   const invalidate = useInvalidateBranding(customerId);
   return useMutation({
-    mutationFn: ({ currentLogo, change }: { currentLogo: string | null; change: ThemeChange }) =>
-      saveTheme(customerId!, currentLogo, change),
+    mutationFn: ({ saved, change }: { saved: SavedImages; change: ThemeChange }) =>
+      saveTheme(customerId!, saved, change),
     onSettled: invalidate,
   });
 }

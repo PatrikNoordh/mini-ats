@@ -135,8 +135,8 @@
     "wrong_current_password": "The current password is not correct.",
     "same_password": "The new password must be different from the current one.",
     "weak_password": "The password is too weak. Choose a longer one.",
-    "branding_image_type": "The logo must be a PNG, JPEG or WebP image.",
-    "branding_image_too_large": "The logo can be at most {{maxBrandingImageMegabytes}} MB."
+    "branding_image_type": "The image must be a PNG, JPEG or WebP file.",
+    "branding_image_too_large": "The image can be at most {{maxBrandingImageMegabytes}} MB."
   },
   "validation": {
     "name_required": "Enter a name.",
@@ -162,9 +162,11 @@
     "accent_format": "Enter a colour as # and six hex digits, for example #1d4ed8.",
     "accent_text_contrast": "Text on this colour is hard to read. Choose a darker or a lighter colour.",
     "accent_background_contrast": "This colour is too close to the page background. Choose a darker colour.",
-    "branding_image_type": "The logo must be a PNG, JPEG or WebP image.",
-    "branding_image_too_large": "The logo can be at most {{maxBrandingImageMegabytes}} MB.",
-    "branding_image_empty": "The file is empty."
+    "branding_image_type": "The image must be a PNG, JPEG or WebP file.",
+    "branding_image_too_large": "The image can be at most {{maxBrandingImageMegabytes}} MB.",
+    "branding_image_empty": "The file is empty.",
+    "background_source_too_large": "The image can be at most {{maxBackgroundSourceMegabytes}} MB.",
+    "image_unreadable": "The image could not be read. Choose another file."
   },
   "shell": {
     "toggleSidebar": "Show or hide the menu",
@@ -701,6 +703,21 @@
     "logoUndo": "Undo",
     "logoRemovedOnSave": "The logo is removed when you save.",
     "logoLoadFailed": "Could not show the logo.",
+    "background": "Background image",
+    "backgroundHint": "PNG, JPEG or WebP, at most {{maxBackgroundSourceMegabytes}} MB. It is made smaller before upload, and shows behind the pages. Text always stays on solid surfaces.",
+    "backgroundNone": "No background image.",
+    "backgroundCurrent": "Your background image is shown behind the pages.",
+    "backgroundChoose": "Upload image",
+    "backgroundReplace": "Replace image",
+    "backgroundRemove": "Remove image",
+    "backgroundRemovedOnSave": "The image is removed when you save.",
+    "backgroundPreparing": "Making the image smaller…",
+    "dim": "How much of the image shows",
+    "dimLevels": {
+      "light": "Much",
+      "medium": "Some",
+      "strong": "A little"
+    },
     "preview": "Preview",
     "previewHint": "How the app looks with your choices. Nothing changes until you save.",
     "previewLink": "A link",

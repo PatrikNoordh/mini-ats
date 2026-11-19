@@ -20,6 +20,11 @@ export function logoPath(customerId: string): string {
   return `${customerId}/logo`;
 }
 
+/** Where a company's background image lives (ATS-55), on the same terms as the logo. */
+export function backgroundPath(customerId: string): string {
+  return `${customerId}/background`;
+}
+
 function fromStorageError(error: Error): unknown {
   const statusCode = "statusCode" in error ? String(error.statusCode) : "";
   if (statusCode === STORAGE_TOO_LARGE) return new AppError("branding_image_too_large");
