@@ -112,6 +112,18 @@ describe("saving the theme", () => {
     expect(steps.ran).toEqual(["upload c1/background"]);
   });
 
+  it("removes an image just added when a later upload fails", async () => {
+    steps.failAt = "upload c1/background";
+    await expect(
+      saveTheme(
+        C,
+        NONE,
+        change({ logo: { kind: "replace", file }, background: { kind: "replace", file } }),
+      ),
+    ).rejects.toThrow();
+    expect(steps.ran).toEqual(["upload c1/logo", "upload c1/background", "remove c1/logo"]);
+  });
+
   it("removes an image file first and the path after, so no file is left that nobody sees", async () => {
     await saveTheme(
       C,

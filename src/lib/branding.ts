@@ -35,8 +35,8 @@ const IMAGES: Image[] = ["logo", "background"];
  * 1. An image to remove goes first, so a failure later leaves a path to a missing file, which the
  *    app shows as no image and a new save clears, never a file that nobody can see.
  * 2. A new image is uploaded to its fixed path.
- * 3. The row is saved. If that fails, an image just added where there was none is removed again;
- *    one that replaced an image stays, since the path still names it.
+ * 3. The row is saved. If that or a later upload fails, an image just added where there was none
+ *    is removed again; one that replaced an image stays, since the path still names it.
  */
 export async function saveTheme(
   customerId: string,
@@ -52,15 +52,15 @@ export async function saveTheme(
       paths[image] = null;
     }
   }
-  for (const image of IMAGES) {
-    const imageChange = change[image];
-    if (imageChange.kind !== "replace") continue;
-    const path = PATHS[image](customerId);
-    await uploadBrandingFile(path, imageChange.file);
-    if (!saved[image]) added.push(path);
-    paths[image] = path;
-  }
   try {
+    for (const image of IMAGES) {
+      const imageChange = change[image];
+      if (imageChange.kind !== "replace") continue;
+      const path = PATHS[image](customerId);
+      await uploadBrandingFile(path, imageChange.file);
+      if (!saved[image]) added.push(path);
+      paths[image] = path;
+    }
     await saveBranding(customerId, {
       accent_colour: change.accent,
       logo_path: paths.logo,
@@ -68,7 +68,7 @@ export async function saveTheme(
       background_dim: change.backgroundDim,
     });
   } catch (error) {
-    await removeBrandingFiles(added).catch(() => undefined);
+    if (added.length > 0) await removeBrandingFiles(added).catch(() => undefined);
     throw error;
   }
 }
