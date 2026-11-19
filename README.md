@@ -133,7 +133,8 @@ flowchart LR
     API -- "anon key + user JWT" --> PG[(Postgres<br/>RLS)]
     API -- "user JWT" --> EF["Edge Functions<br/>supabase/functions"]
     EF -- "caller's JWT: reads" --> PG
-    EF -- "service role: only the account and company writes" --> Auth[(Supabase Auth)]
+    EF -- "service role: account writes" --> Auth[(Supabase Auth)]
+    EF -- "service role: company, membership and assessment writes" --> PG
 ```
 
 | Layer | Folder | Rule |
@@ -144,7 +145,7 @@ flowchart LR
 | Data layer | `src/lib/api/` | Every Supabase call, one file per table. Errors become codes |
 | Contexts | `src/contexts/` | `AuthContext` (the user and their profile) and `ActiveCustomerContext` |
 | Database | `supabase/migrations/` | Schema, RLS policies, triggers and database functions |
-| Edge Functions | `supabase/functions/` | Accounts, the AI assessment, the nightly purge and deleting a candidate with their CV. The only code with the service role key |
+| Edge Functions | `supabase/functions/` | Accounts, companies, the AI assessment, the nightly purge and deleting a candidate with their CV. The only code with the service role key |
 
 **Rules that follow from it**
 - **Components never fetch.** A page reads data through a hook, and the hook calls `src/lib/api/`.
