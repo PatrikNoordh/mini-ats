@@ -717,6 +717,10 @@ Tracked in #95.
 
 **Checkpoint:** a customer with a theme and a customer without one both look right, as themselves and when an admin acts for them.
 
+### ATS-66 · feat · Frosted chips over the background image, with a visibility setting
+
+Tracked in #146.
+
 ---
 
 ## Found while building
@@ -737,3 +741,5 @@ Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 - [ ] The `cvs` and `branding` storage policies check only the first folder, so a client can upload to `<company>/<sub>/<file>`, which `removeCompanyFolder` never lists, and the file outlives a purged company. Limit both buckets to one level (`array_length(storage.foldername(name), 1) = 1` in the insert and update checks, the same on the `logo_path` and `background_path` checks), with an RLS check, and drop "neither bucket has subfolders" from `_shared/cvs.ts` once it is enforced — `supabase/migrations/20261119120000_customer_branding.sql`, `supabase/functions/_shared/cvs.ts` (PR #141, ATS-52)
 - [ ] A branded customer sees the Mini-ATS teal for a moment on every full page load, and an admin on every customer switch, until the branding query returns. Worth a look once a logo makes the swap more visible (ATS-54, ATS-55): for example keep the last theme across a reload — `src/hooks/useCustomerTheme.ts` (PR #143, ATS-53)
 - [ ] A first logo whose row cannot be saved, and whose removal then fails too (`.catch(() => undefined)` in `saveTheme`), stays in the company's branding folder with no row, and **Reset to Mini-ATS** is disabled without a row, so nothing in the app removes it until the company is purged. Enable Reset when the folder has files, or retry the removal — `src/components/settings/AppearanceForm.tsx`, `src/lib/branding.ts` (PR #144, ATS-54)
+- [ ] With a background image, `.solid-on-image` sits outside the CSS layers, so it also replaces the error state's red tint (`bg-destructive/5`) and the history back link's hover background with the plain card colour. Readable, but the tint and the hover are lost — `src/styles.css`, `src/components/States.tsx` (PR #145, ATS-55)
+- [ ] The shared image field uses the `appearance.logoChosen` and `appearance.logoUndo` keys for the background too; the texts are generic, but the key names say logo — `src/components/settings/ImageField.tsx` (PR #145, ATS-55)
