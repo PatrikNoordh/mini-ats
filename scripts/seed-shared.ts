@@ -250,6 +250,8 @@ export async function seedBranding(
     logo_path: paths.logo,
     background_path: paths.background,
     background_dim: brand.dim,
+    background_floor: brand.floor,
+    surface_opacity: brand.surfaceOpacity,
   });
   if (error) throw error;
 }
