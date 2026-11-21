@@ -39,11 +39,11 @@ function Section({
 }) {
   return (
     <section aria-labelledby={id} className="mt-6 first:mt-0">
-      <div className="surface-on-image mb-3">
-        <h2 id={id} className="text-lg font-bold">
+      <div className="mb-3">
+        <h2 id={id} className="chip-on-image text-lg font-bold">
           {title}
         </h2>
-        {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
+        {hint && <p className="chip-on-image text-sm text-muted-foreground">{hint}</p>}
       </div>
       {children}
     </section>

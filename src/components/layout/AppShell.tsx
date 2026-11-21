@@ -30,6 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <main
             className="relative isolate min-w-0 flex-1 p-4 md:p-6"
             data-background-image={background ? "" : undefined}
+            style={background ? { "--surface-opacity": String(background.chipOpacity) } : undefined}
           >
             {background && <PageBackground background={background} />}
             {children}

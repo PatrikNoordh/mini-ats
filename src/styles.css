@@ -155,19 +155,37 @@
   }
 }
 
-/* A company's background image (ATS-55). The shell marks <main> with data-background-image while
-   one is shown. Nothing readable sits on the image: every element whose text or controls would
-   otherwise lie on the page background has one of these two classes, which give it a solid card
-   surface then, and nothing otherwise, so a page without an image looks as before.
-   - .surface-on-image for a bare wrapper: the card's background, border, corners and padding.
-   - .solid-on-image for a box with its own border and padding: only the card's background.
-   They are outside the layers on purpose, so they win over the element's own background utility.
-   The scrim only sets how much of the image shows, never whether text is readable. */
-[data-background-image] .surface-on-image {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+/* A company's background image (ATS-55, ATS-66). The shell marks <main> with
+   data-background-image while one is shown, and sets --surface-opacity there: how solid the chips
+   are, never below the floor measured from the image (src/lib/theme.ts). Nothing readable sits on
+   the bare image. These rules apply only then, so a page without an image looks as before, and
+   they are outside the layers on purpose, so they win over the element's own utilities.
+   - .chip-on-image for loose text: a small frosted chip that hugs it, the card colour at
+     --surface-opacity over the image, blurred.
+   - Form fields, which are transparent by default, get the card colour.
+   - .solid-on-image for a box with its own border and padding, such as the empty and error
+     states: the card colour, fully solid.
+   The scrim only sets how much of the image shows. */
+[data-background-image] .chip-on-image {
+  --chip-blur: 12px;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.125rem 0.5rem;
+  background-color: color-mix(
+    in srgb,
+    var(--card) calc(var(--surface-opacity, 1) * 100%),
+    transparent
+  );
+  backdrop-filter: blur(var(--chip-blur));
+}
+[data-background-image]
+  :is(
+    input:not([type="radio"], [type="checkbox"], [type="file"], [type="color"], [type="range"]),
+    textarea,
+    button[role="combobox"]
+  ) {
   background-color: var(--card);
-  padding: 0.75rem 1rem;
 }
 [data-background-image] .solid-on-image {
   background-color: var(--card);

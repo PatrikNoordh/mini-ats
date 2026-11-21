@@ -153,5 +153,9 @@ export interface CustomerBranding {
   logo_path: string | null;
   background_path: string | null;
   background_dim: BackgroundDim;
+  /** The lowest chip opacity that keeps text readable over the background, or null (ATS-66). */
+  background_floor: number | null;
+  /** How solid the chips over the background are, 0 to 1, or null for the default (ATS-66). */
+  surface_opacity: number | null;
   updated_at: string;
 }

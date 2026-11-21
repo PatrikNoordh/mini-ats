@@ -5,7 +5,7 @@ import { fromWriteError } from "@/lib/errors";
 import type { BackgroundDim, CustomerBranding } from "@/types";
 
 const BRANDING_COLUMNS =
-  "customer_id, accent_colour, logo_path, background_path, background_dim, updated_at";
+  "customer_id, accent_colour, logo_path, background_path, background_dim, background_floor, surface_opacity, updated_at";
 
 const brandingRowSchema = z.object({
   customer_id: z.string(),
@@ -13,6 +13,8 @@ const brandingRowSchema = z.object({
   logo_path: z.string().nullable(),
   background_path: z.string().nullable(),
   background_dim: z.enum(["light", "medium", "strong"]),
+  background_floor: z.number().nullable(),
+  surface_opacity: z.number().nullable(),
   updated_at: z.string(),
 });
 
@@ -36,6 +38,8 @@ export interface BrandingInput {
   logo_path: string | null;
   background_path: string | null;
   background_dim: BackgroundDim;
+  background_floor: number | null;
+  surface_opacity: number | null;
 }
 
 /**

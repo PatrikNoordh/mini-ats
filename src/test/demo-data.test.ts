@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { demoBrand } from "../../scripts/demo-brand";
+import {
+  BACKGROUND_HEIGHT,
+  BACKGROUND_WIDTH,
+  backgroundPixel,
+  demoBrand,
+} from "../../scripts/demo-brand";
 import { DEMO_ACCOUNTS, DEMO_ADMIN, DEMO_CUSTOMERS } from "../../scripts/demo-data";
 import { brandingPaths } from "../../scripts/seed-shared";
 import { backgroundPath, logoPath } from "@/lib/api/brandingFiles";
@@ -8,8 +13,10 @@ import {
   BRANDING_IMAGE_MIME_TYPES,
   MAX_BRANDING_IMAGE_BYTES,
   STALE_CARD_DAYS,
+  SURFACE_FLOOR_SAMPLE_EDGE_PX,
 } from "@/lib/constants";
-import { isReadableAccent } from "@/lib/theme";
+import { rgb8ToLinear } from "@/lib/contrast";
+import { isReadableAccent, surfaceFloor } from "@/lib/theme";
 import { DEFAULT_STAGE_KEYS } from "@/lib/stages";
 import {
   accountInputSchema,
@@ -95,5 +102,34 @@ describe("the demo's made-up brand", () => {
 
   it("is stored at the paths the app reads", () => {
     expect(brandingPaths("c1")).toEqual({ logo: logoPath("c1"), background: backgroundPath("c1") });
+  });
+});
+
+describe("the demo background's chips", () => {
+  /** The background drawn small, as prepareBackground samples it: each cell averaged. */
+  function sampledAreas() {
+    const cell = Math.ceil(BACKGROUND_WIDTH / SURFACE_FLOOR_SAMPLE_EDGE_PX);
+    const areas = [];
+    for (let top = 0; top < BACKGROUND_HEIGHT; top += cell) {
+      for (let left = 0; left < BACKGROUND_WIDTH; left += cell) {
+        const sum = [0, 0, 0];
+        let count = 0;
+        for (let y = top; y < Math.min(top + cell, BACKGROUND_HEIGHT); y += 1) {
+          for (let x = left; x < Math.min(left + cell, BACKGROUND_WIDTH); x += 1) {
+            backgroundPixel(x, y).forEach((channel, i) => (sum[i]! += channel));
+            count += 1;
+          }
+        }
+        areas.push(rgb8ToLinear(sum[0]! / count, sum[1]! / count, sum[2]! / count));
+      }
+    }
+    return areas;
+  }
+
+  it("has a floor at least what the image measures, and a setting at or above it", () => {
+    const brand = demoBrand();
+    expect(brand.floor).toBeGreaterThanOrEqual(surfaceFloor(sampledAreas()));
+    expect(brand.surfaceOpacity).toBeGreaterThanOrEqual(brand.floor);
+    expect(brand.surfaceOpacity).toBeLessThanOrEqual(1);
   });
 });

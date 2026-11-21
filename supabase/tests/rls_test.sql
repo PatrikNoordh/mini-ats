@@ -2392,4 +2392,55 @@ begin
   raise notice 'OK 68: the branding bucket takes PNG, JPEG and WebP up to 2 MB, and only the company''s active members or an admin reach its folder';
 end $$;
 
+
+-- ---------------------------------------------------------------- chip visibility (ATS-66)
+-- 69. A member saves how see-through the chips are, with the floor measured from the image, both
+-- in the one upsert the settings page sends. Each stays between 0 and 1, the setting never goes
+-- below the floor, and a floor needs an image. Another company's member changes neither.
+reset role;
+select pg_temp.add_customer('00000000-0000-0000-0000-0000000066a1', 'chips-a-66@test.local');
+select pg_temp.add_customer('00000000-0000-0000-0000-0000000066b1', 'chips-b-66@test.local');
+do $$ declare
+  a uuid := '00000000-0000-0000-0000-0000000066a1';
+  b uuid := '00000000-0000-0000-0000-0000000066b1';
+  n integer;
+begin
+  set local role authenticated;
+  perform set_config('request.jwt.claims', format('{"sub":"%s","role":"authenticated"}', pg_temp.first_user(a)), true);
+  insert into public.customer_branding (customer_id, background_path, background_floor, surface_opacity)
+  values (a, a || '/background', 0.4, 0.6)
+  on conflict (customer_id) do update
+    set background_path = excluded.background_path, background_floor = excluded.background_floor,
+        surface_opacity = excluded.surface_opacity;
+  assert (select background_floor = 0.4 and surface_opacity = 0.6 from public.customer_branding where customer_id = a),
+         'a member could not save the chip setting and its floor';
+  assert pg_temp.error_of(format('update public.customer_branding set surface_opacity = 0.3 where customer_id = %L', a))
+         = '23514', 'the setting went below the floor';
+  assert pg_temp.error_of(format('update public.customer_branding set surface_opacity = 1.5 where customer_id = %L', a))
+         = '23514', 'the setting went above 1';
+  assert pg_temp.error_of(format('update public.customer_branding set background_floor = -0.1 where customer_id = %L', a))
+         = '23514', 'the floor went below 0';
+  assert pg_temp.error_of(format('update public.customer_branding set background_path = null where customer_id = %L', a))
+         = '23514', 'a floor stayed without its image';
+  update public.customer_branding set background_path = null, background_floor = null, surface_opacity = null
+  where customer_id = a;
+  get diagnostics n = row_count;
+  assert n = 1, 'a member could not remove the background with its floor and setting';
+  update public.customer_branding set background_path = a || '/background', surface_opacity = 0.2 where customer_id = a;
+  get diagnostics n = row_count;
+  assert n = 1, 'a background without a measured floor (from before ATS-66) took no setting';
+
+  reset role;
+  insert into public.customer_branding (customer_id, background_path, background_floor, surface_opacity)
+  values (b, b || '/background', 0.5, 0.9);
+  set local role authenticated;
+  update public.customer_branding set surface_opacity = 0.5 where customer_id = b;
+  get diagnostics n = row_count;
+  assert n = 0, 'a member changed another company''s chip setting';
+  reset role;
+  assert (select surface_opacity = 0.9 from public.customer_branding where customer_id = b), 'B''s setting changed';
+  assert not has_column_privilege('anon', 'public.customer_branding', 'surface_opacity', 'update'), 'anon may write the setting';
+  raise notice 'OK 69: the chip setting and its floor stay in range, the setting never below the floor, and only for the own company';
+end $$;
+
 rollback;
