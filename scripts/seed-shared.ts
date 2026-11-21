@@ -5,6 +5,7 @@
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { DemoBrand } from "./demo-brand.ts";
 import type { DemoAccount, DemoCustomer } from "./demo-data.ts";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -209,6 +210,48 @@ export async function seedCustomer(
       if (error) throw error;
     }
   }
+}
+
+/** The private bucket for themes, and each image's fixed path, as in src/lib/api/brandingFiles.ts. */
+export const BRANDING_BUCKET = "branding";
+export const brandingPaths = (companyId: string) => ({
+  logo: `${companyId}/logo`,
+  background: `${companyId}/background`,
+});
+
+/**
+ * Gives a demo company its made-up brand, or takes any theme away, so every run leaves the demo
+ * the same (ATS-55). The images go first and the row after, as on the settings page.
+ */
+export async function seedBranding(
+  admin: SupabaseClient,
+  companyId: string,
+  brand: DemoBrand | null,
+): Promise<void> {
+  const paths = brandingPaths(companyId);
+  const bucket = admin.storage.from(BRANDING_BUCKET);
+  if (!brand) {
+    const removed = await bucket.remove([paths.logo, paths.background]);
+    if (removed.error) throw removed.error;
+    const { error } = await admin.from("customer_branding").delete().eq("customer_id", companyId);
+    if (error) throw error;
+    return;
+  }
+  for (const [path, file] of [
+    [paths.logo, brand.logo],
+    [paths.background, brand.background],
+  ] as const) {
+    const uploaded = await bucket.upload(path, file, { contentType: "image/png", upsert: true });
+    if (uploaded.error) throw uploaded.error;
+  }
+  const { error } = await admin.from("customer_branding").upsert({
+    customer_id: companyId,
+    accent_colour: brand.accent,
+    logo_path: paths.logo,
+    background_path: paths.background,
+    background_dim: brand.dim,
+  });
+  if (error) throw error;
 }
 
 /** The error's message only: never the request, which carries the service role key. */

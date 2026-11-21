@@ -7,10 +7,13 @@ import { CompanyName } from "@/components/layout/CompanyName";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { ActingBanner } from "@/components/layout/ActingBanner";
 import { useCustomerTheme } from "@/hooks/useCustomerTheme";
+import { useCompanyBackground } from "@/hooks/useCompanyBackground";
+import { PageBackground } from "@/components/layout/PageBackground";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { role } = useAuth();
   useCustomerTheme();
+  const background = useCompanyBackground();
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -24,7 +27,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </header>
           <ActingBanner />
-          <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
+          <main
+            className="relative isolate min-w-0 flex-1 p-4 md:p-6"
+            data-background-image={background ? "" : undefined}
+          >
+            {background && <PageBackground background={background} />}
+            {children}
+          </main>
         </div>
       </div>
     </SidebarProvider>

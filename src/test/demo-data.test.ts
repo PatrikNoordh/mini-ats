@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import { demoBrand } from "../../scripts/demo-brand";
 import { DEMO_ACCOUNTS, DEMO_ADMIN, DEMO_CUSTOMERS } from "../../scripts/demo-data";
-import { STALE_CARD_DAYS } from "@/lib/constants";
+import { brandingPaths } from "../../scripts/seed-shared";
+import { backgroundPath, logoPath } from "@/lib/api/brandingFiles";
+import {
+  BRANDING_IMAGE_MIME_TYPES,
+  MAX_BRANDING_IMAGE_BYTES,
+  STALE_CARD_DAYS,
+} from "@/lib/constants";
+import { isReadableAccent } from "@/lib/theme";
 import { DEFAULT_STAGE_KEYS } from "@/lib/stages";
 import {
   accountInputSchema,
@@ -65,5 +73,27 @@ describe("demo data", () => {
       }
     }
     expect(applications.every((a) => a.daysInStage >= 0)).toBe(true);
+  });
+});
+
+describe("the demo's made-up brand", () => {
+  const brand = demoBrand();
+
+  it("goes to one demo customer, so the demo shows a theme and the Mini-ATS look", () => {
+    expect(DEMO_CUSTOMERS.filter((c) => c.branded)).toHaveLength(1);
+  });
+
+  it("has a readable accent and images the branding bucket takes", () => {
+    expect(isReadableAccent(brand.accent)).toBe(true);
+    for (const image of [brand.logo, brand.background]) {
+      expect(image.subarray(1, 4).toString("ascii")).toBe("PNG");
+      expect(image.length).toBeGreaterThan(0);
+      expect(image.length).toBeLessThanOrEqual(MAX_BRANDING_IMAGE_BYTES);
+    }
+    expect(BRANDING_IMAGE_MIME_TYPES).toContain("image/png");
+  });
+
+  it("is stored at the paths the app reads", () => {
+    expect(brandingPaths("c1")).toEqual({ logo: logoPath("c1"), background: backgroundPath("c1") });
   });
 });

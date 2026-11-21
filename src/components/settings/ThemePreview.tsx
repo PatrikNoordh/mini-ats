@@ -1,6 +1,8 @@
 import { KanbanSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Logo, type LogoImage } from "@/components/layout/Logo";
+import { PageBackground } from "@/components/layout/PageBackground";
+import type { CompanyBackground } from "@/hooks/useCompanyBackground";
 import { buttonVariants } from "@/components/ui/button";
 import { themeTokens } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -11,7 +13,15 @@ import { cn } from "@/lib/utils";
  * rest of the page keeps the saved theme until the customer saves. It only shows, so it is hidden
  * from screen readers and holds nothing to focus.
  */
-export function ThemePreview({ accent, logo }: { accent: string | null; logo: LogoImage | null }) {
+export function ThemePreview({
+  accent,
+  logo,
+  background,
+}: {
+  accent: string | null;
+  logo: LogoImage | null;
+  background: CompanyBackground | null;
+}) {
   const { t } = useTranslation();
   // The theme's own tokens, or the Mini-ATS ones put back over the saved theme.
   const tokens = themeTokens(accent);
@@ -36,9 +46,15 @@ export function ThemePreview({ accent, logo }: { accent: string | null; logo: Lo
             {t("nav.pipeline")}
           </div>
         </div>
-        <div className="min-w-0 flex-1 space-y-3 p-4">
-          <span className={buttonVariants({ size: "sm" })}>{t("jobs.new")}</span>
-          <p className="text-sm text-primary-text underline">{t("appearance.previewLink")}</p>
+        <div
+          className="relative isolate min-w-0 flex-1 p-4"
+          data-background-image={background ? "" : undefined}
+        >
+          {background && <PageBackground background={background} pinned={false} />}
+          <div className="surface-on-image space-y-3">
+            <span className={buttonVariants({ size: "sm" })}>{t("jobs.new")}</span>
+            <p className="text-sm text-primary-text underline">{t("appearance.previewLink")}</p>
+          </div>
         </div>
       </div>
     </section>

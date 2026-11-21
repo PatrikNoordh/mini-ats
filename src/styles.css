@@ -154,3 +154,33 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+/* A company's background image (ATS-55). The shell marks <main> with data-background-image while
+   one is shown. Nothing readable sits on the image: every element whose text or controls would
+   otherwise lie on the page background has one of these two classes, which give it a solid card
+   surface then, and nothing otherwise, so a page without an image looks as before.
+   - .surface-on-image for a bare wrapper: the card's background, border, corners and padding.
+   - .solid-on-image for a box with its own border and padding: only the card's background.
+   They are outside the layers on purpose, so they win over the element's own background utility.
+   The scrim only sets how much of the image shows, never whether text is readable. */
+[data-background-image] .surface-on-image {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--card);
+  padding: 0.75rem 1rem;
+}
+[data-background-image] .solid-on-image {
+  background-color: var(--card);
+}
+
+@layer components {
+  .background-scrim[data-dim="light"] {
+    background-color: color-mix(in oklab, var(--background) 30%, transparent);
+  }
+  .background-scrim[data-dim="medium"] {
+    background-color: color-mix(in oklab, var(--background) 55%, transparent);
+  }
+  .background-scrim[data-dim="strong"] {
+    background-color: color-mix(in oklab, var(--background) 80%, transparent);
+  }
+}

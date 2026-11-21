@@ -30,7 +30,7 @@ function AccountHistoryPage() {
 
   return (
     <div>
-      <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2">
+      <Button asChild variant="ghost" size="sm" className="solid-on-image mb-3 -ml-2">
         <Link to="/admin/accounts">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {t("history.back")}
@@ -50,8 +50,8 @@ function AccountHistoryPage() {
         <>
           <PageHeader
             title={t("history.accountTitle", { name: account.full_name || account.email })}
+            hint={t("history.accountHint")}
           />
-          <p className="-mt-3 mb-4 text-sm text-muted-foreground">{t("history.accountHint")}</p>
           <div className="rounded-lg border bg-card p-4">
             <AccountHistory accountId={account.id} />
           </div>

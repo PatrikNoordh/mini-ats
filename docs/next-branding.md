@@ -1,6 +1,6 @@
 # Next: a customer's own theme
 
-A design sketch for epic 12. The database part (ATS-52), applying the theme (ATS-53) and the settings page (ATS-54) are built; the background image (ATS-55) is not built yet.
+A design sketch for epic 12, now built: the database part (ATS-52), applying the theme (ATS-53), the settings page (ATS-54) and the background image (ATS-55).
 
 ## The idea
 
@@ -60,11 +60,14 @@ The contrast rule below is checked in the app, not in the database: it needs the
 - **The preview** is a small copy of the menu, a button and a link, with the draft's tokens set on the preview only. The page itself keeps the saved theme until **Save**.
 - **Save** and **Reset to Mini-ATS** are one click each. Reset removes every file in the company's folder first and the row after (`docs/data-safety.md` § 4).
 
-### Background image (ATS-55)
+### Background image (ATS-55, built)
 
-- The image covers the main area behind the content, with a scrim from a theme token at the chosen dim level.
-- Cards, tables, columns and panels keep `bg-card` or `bg-column`, so the image shows only in the gaps.
-- At 390 px the image is static and cropped to the centre. The file is served through a signed URL that is cached for its lifetime.
+- **Nothing readable sits on the image** (decided with the developer while building). A scrim alone cannot promise that: over an all-black image, grey hint text needs about 92% of the page colour on top before it reaches 4.5:1 again. So every element whose text or controls would lie on the page background gets a solid card surface while an image is shown, and the image shows only in the gaps. The dim levels (**Much**, **Some**, **A little** of the image) only change how much of it shows, never whether text is readable.
+- **Where text sat on the page:** the page header (title, count, actions and the history page's hint, now in `PageHeader`), the board's filter row, the column tools, the empty, loading and error states, the settings section, the accounts page's section headings, and the history page's **Back to accounts** link. The board's columns and cards, the tables and the side panel already had solid backgrounds. The pages outside the shell, such as sign-in and not found, never show the image.
+- **How:** the shell marks `<main>` with `data-background-image` while an image is shown. `.surface-on-image` (card background, border, corners and padding) and `.solid-on-image` (card background only) in `src/styles.css` apply only then, so a page without an image looks as before. They sit outside the CSS layers so they win over an element's own background.
+- **Proof:** `e2e/background.spec.ts` sets an all-black and an all-white image and checks every visible text and control in `<main>` for a solid background between it and the image, on the board, the jobs, candidates, settings and accounts pages, as a customer and as an admin acting for one. It also checks the page header, a filter row, an empty state and an error state for the card background.
+- **Fast:** the browser makes the image at most 2,560 px on its longest side and saves it as WebP (or JPEG where WebP cannot be written) before upload, which also drops metadata such as where a photo was taken. The file lives at `<company id>/background`, and its signed link is cached for its lifetime. From md up the image stays put while the page scrolls; on a phone it scrolls with the page and is cropped to the centre.
+- **The demo** gets a made-up brand on Studio Exempel, drawn by `scripts/demo-brand.ts` when the seed runs, so no image file is in the repo.
 
 ## Estimate
 

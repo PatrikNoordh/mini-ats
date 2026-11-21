@@ -135,8 +135,8 @@
     "wrong_current_password": "Det nuvarande lösenordet stämmer inte.",
     "same_password": "Det nya lösenordet måste skilja sig från det nuvarande.",
     "weak_password": "Lösenordet är för svagt. Välj ett längre lösenord.",
-    "branding_image_type": "Logotypen måste vara en PNG-, JPEG- eller WebP-bild.",
-    "branding_image_too_large": "Logotypen får vara högst {{maxBrandingImageMegabytes}} MB."
+    "branding_image_type": "Bilden måste vara en PNG-, JPEG- eller WebP-fil.",
+    "branding_image_too_large": "Bilden får vara högst {{maxBrandingImageMegabytes}} MB."
   },
   "validation": {
     "name_required": "Ange namn.",
@@ -162,9 +162,11 @@
     "accent_format": "Ange en färg som # och sex hexadecimala tecken, till exempel #1d4ed8.",
     "accent_text_contrast": "Text på den här färgen blir svår att läsa. Välj en mörkare eller ljusare färg.",
     "accent_background_contrast": "Färgen ligger för nära sidans bakgrund. Välj en mörkare färg.",
-    "branding_image_type": "Logotypen måste vara en PNG-, JPEG- eller WebP-bild.",
-    "branding_image_too_large": "Logotypen får vara högst {{maxBrandingImageMegabytes}} MB.",
-    "branding_image_empty": "Filen är tom."
+    "branding_image_type": "Bilden måste vara en PNG-, JPEG- eller WebP-fil.",
+    "branding_image_too_large": "Bilden får vara högst {{maxBrandingImageMegabytes}} MB.",
+    "branding_image_empty": "Filen är tom.",
+    "background_source_too_large": "Bilden får vara högst {{maxBackgroundSourceMegabytes}} MB.",
+    "image_unreadable": "Bilden gick inte att läsa. Välj en annan fil."
   },
   "shell": {
     "toggleSidebar": "Visa eller dölj menyn",
@@ -701,6 +703,21 @@
     "logoUndo": "Ångra",
     "logoRemovedOnSave": "Logotypen tas bort när du sparar.",
     "logoLoadFailed": "Kunde inte visa logotypen.",
+    "background": "Bakgrundsbild",
+    "backgroundHint": "PNG, JPEG eller WebP, högst {{maxBackgroundSourceMegabytes}} MB. Den görs mindre innan den laddas upp och visas bakom sidorna. Text ligger alltid på fasta ytor.",
+    "backgroundNone": "Ingen bakgrundsbild.",
+    "backgroundCurrent": "Er bakgrundsbild visas bakom sidorna.",
+    "backgroundChoose": "Ladda upp bild",
+    "backgroundReplace": "Byt bild",
+    "backgroundRemove": "Ta bort bild",
+    "backgroundRemovedOnSave": "Bilden tas bort när du sparar.",
+    "backgroundPreparing": "Gör bilden mindre…",
+    "dim": "Hur mycket av bilden som syns",
+    "dimLevels": {
+      "light": "Mycket",
+      "medium": "En del",
+      "strong": "Lite"
+    },
     "preview": "Förhandsvisning",
     "previewHint": "Så ser appen ut med dina val. Inget ändras förrän du sparar.",
     "previewLink": "En länk",

@@ -113,7 +113,7 @@ export function StageManager({
 
   return (
     <>
-      <div className="mb-3 flex flex-wrap items-start gap-x-4 gap-y-2">
+      <div className="surface-on-image mb-3 flex flex-wrap items-start gap-x-4 gap-y-2">
         <div>
           <Button
             type="button"

@@ -119,6 +119,16 @@ export const ACCENT_TEXT_DARKEN_STEP_PERCENT = 5;
  */
 export const BRANDING_SIGNED_URL_SECONDS = 60 * 60;
 export const BRANDING_SIGNED_URL_MARGIN_SECONDS = 5 * 60;
+/**
+ * A background image is made smaller in the browser before upload (ATS-55): at most this many
+ * pixels on its longest side, enough for a wide screen, and saved as WebP at this quality. That
+ * keeps it well under MAX_BRANDING_IMAGE_BYTES and the page fast, and drops metadata such as where
+ * a photo was taken.
+ */
+export const BACKGROUND_MAX_EDGE_PX = 2560;
+export const BACKGROUND_WEBP_QUALITY = 0.82;
+/** The largest file the settings page takes to make smaller, before it is a background. */
+export const MAX_BACKGROUND_SOURCE_BYTES = 20 * 1024 * 1024;
 /** How long a link to open a CV works. Short, so a copied link soon stops working. */
 export const CV_SIGNED_URL_SECONDS = 5 * 60;
 /** A new link is fetched this long before the old one stops working. */

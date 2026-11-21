@@ -4,6 +4,7 @@ import sv from "@/locales/sv.json";
 import {
   BRANDING_IMAGE_MIME_TYPES,
   CV_MIME_TYPE,
+  MAX_BACKGROUND_SOURCE_BYTES,
   MAX_BRANDING_IMAGE_BYTES,
   MAX_CV_BYTES,
   MAX_EMAIL_LENGTH,
@@ -280,6 +281,26 @@ const brandingImageSchema = z.object({
 /** Why a chosen file cannot be a logo, as a validation key, or null when it can. */
 export function brandingImageError(file: { type: string; size: number }): ValidationKey | null {
   const result = brandingImageSchema.safeParse({ type: file.type, size: file.size });
+  if (result.success) return null;
+  const message = result.error.issues[0]?.message ?? "";
+  return isValidationKey(message) ? message : "branding_image_type";
+}
+
+/**
+ * A file the settings page may make into a background image (ATS-55): the same types as a logo,
+ * and at most MAX_BACKGROUND_SOURCE_BYTES before prepareBackground makes it smaller.
+ */
+const backgroundSourceSchema = z.object({
+  type: z.enum(BRANDING_IMAGE_MIME_TYPES, { message: "branding_image_type" }),
+  size: z
+    .number()
+    .min(1, "branding_image_empty")
+    .max(MAX_BACKGROUND_SOURCE_BYTES, "background_source_too_large"),
+});
+
+/** Why a chosen file cannot become a background, as a validation key, or null when it can. */
+export function backgroundSourceError(file: { type: string; size: number }): ValidationKey | null {
+  const result = backgroundSourceSchema.safeParse({ type: file.type, size: file.size });
   if (result.success) return null;
   const message = result.error.issues[0]?.message ?? "";
   return isValidationKey(message) ? message : "branding_image_type";

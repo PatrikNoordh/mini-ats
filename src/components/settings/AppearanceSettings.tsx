@@ -15,7 +15,7 @@ export function AppearanceSettings({ customerId }: { customerId: string }) {
   const companyName = customer?.name ?? "";
 
   return (
-    <section aria-labelledby="appearance-title" className="space-y-4">
+    <section aria-labelledby="appearance-title" className="surface-on-image space-y-4">
       <div className="space-y-1">
         <h2 id="appearance-title" className="text-lg font-semibold">
           {t("appearance.title")}
