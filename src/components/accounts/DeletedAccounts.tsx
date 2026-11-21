@@ -61,11 +61,11 @@ export function DeletedAccounts({
 
   return (
     <section aria-labelledby="deleted-accounts" className="mt-6">
-      <div className="surface-on-image mb-3">
-        <h2 id="deleted-accounts" className="text-lg font-bold">
+      <div className="mb-3">
+        <h2 id="deleted-accounts" className="chip-on-image text-lg font-bold">
           {t("accounts.deletedTitle")}
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="chip-on-image text-sm text-muted-foreground">
           {t("accounts.deletedHint", { days: ACCOUNT_DELETE_GRACE_DAYS })}
         </p>
       </div>

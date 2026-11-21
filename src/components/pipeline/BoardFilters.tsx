@@ -33,7 +33,7 @@ export function BoardFilters({
   const jobId = useId();
   const searchId = useId();
   return (
-    <div className="surface-on-image mb-4 flex flex-col gap-2 sm:flex-row">
+    <div className="mb-4 flex flex-col gap-2 sm:flex-row">
       <Label htmlFor={jobId} className="sr-only">
         {t("pipeline.filterByJob")}
       </Label>

@@ -61,11 +61,11 @@ export function DeletedCompanies({
 
   return (
     <section aria-labelledby="deleted-companies" className="mt-6">
-      <div className="surface-on-image mb-3">
-        <h2 id="deleted-companies" className="text-lg font-bold">
+      <div className="mb-3">
+        <h2 id="deleted-companies" className="chip-on-image text-lg font-bold">
           {t("accounts.deletedCompaniesTitle")}
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="chip-on-image text-sm text-muted-foreground">
           {t("accounts.deletedCompaniesHint", { days: ACCOUNT_DELETE_GRACE_DAYS })}
         </p>
       </div>
