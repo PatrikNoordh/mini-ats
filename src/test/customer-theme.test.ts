@@ -30,6 +30,8 @@ function theme(customerId: string, accent: string | null): { data: CustomerBrand
       logo_path: null,
       background_path: null,
       background_dim: "medium",
+      background_floor: null,
+      surface_opacity: null,
       updated_at: "2026-11-19T08:00:00Z",
     },
   };

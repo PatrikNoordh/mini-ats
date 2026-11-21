@@ -1,13 +1,28 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { contrastRatio, hexToLinearRgb, isHexColour, oklchToLinearRgb } from "@/lib/contrast";
+import {
+  contrastRatio,
+  hexToLinearRgb,
+  isHexColour,
+  luminance,
+  mix,
+  oklchToLinearRgb,
+} from "@/lib/contrast";
+import {
+  DEFAULT_SURFACE_OPACITY,
+  SURFACE_FLOOR_MARGIN,
+  SURFACE_OPACITY_STEP,
+} from "@/lib/constants";
 import en from "@/locales/en.json";
 import sv from "@/locales/sv.json";
 import {
   accentAsText,
   accentProblem,
+  chipOpacity,
   PRESET_ACCENTS,
+  surfaceFloor,
+  type ChipTheme,
   isReadableAccent,
   textOnAccent,
   THEME_COLOURS,
@@ -215,5 +230,77 @@ describe("why an accent cannot be used", () => {
       expect(sv.validation[problem]).toBeTruthy();
       expect(en.validation[problem]).toBeTruthy();
     }
+  });
+});
+
+describe("the chips' floor over a background image", () => {
+  const solid = (hex: string, count = 4) =>
+    Array.from({ length: count }, () => hexToLinearRgb(hex));
+
+  it("is near fully solid over all black, and close to clear over all white", () => {
+    expect(surfaceFloor(solid("#000000"))).toBeGreaterThanOrEqual(0.95);
+    expect(surfaceFloor(solid("#ffffff"))).toBe(SURFACE_FLOOR_MARGIN);
+  });
+
+  it("is set by the darkest area, however small", () => {
+    const mostlyWhite = [...solid("#ffffff", 99), hexToLinearRgb("#000000")];
+    expect(surfaceFloor(mostlyWhite)).toBe(surfaceFloor(solid("#000000")));
+  });
+
+  it("rises as the image darkens, and never leaves 0 to 1", () => {
+    const floors = ["#ffffff", "#bbbbbb", "#777777", "#333333", "#000000"].map((hex) =>
+      surfaceFloor(solid(hex)),
+    );
+    expect([...floors].sort((a, b) => a - b)).toEqual(floors);
+    for (const floor of floors) {
+      expect(floor).toBeGreaterThanOrEqual(0);
+      expect(floor).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("keeps muted text and an error's red readable on a chip at the floor", () => {
+    const card = oklchToLinearRgb(THEME_COLOURS.card);
+    const texts = [THEME_COLOURS["muted-foreground"], THEME_COLOURS.destructive].map(
+      oklchToLinearRgb,
+    );
+    for (const hex of ["#000000", "#1e3a8a", "#7f1d1d", "#555555", "#14532d", "#bbbbbb"]) {
+      const area = hexToLinearRgb(hex);
+      // Without the margin, unless the floor is capped at fully solid.
+      const floor = surfaceFloor([area]);
+      const at = floor === 1 ? 1 : floor - SURFACE_FLOOR_MARGIN;
+      const chip = mix(card, area, at);
+      for (const text of texts)
+        expect(contrastRatio(text, chip)).toBeGreaterThanOrEqual(4.5 - 1e-6);
+    }
+  });
+
+  it("is a step of the column's precision", () => {
+    const floor = surfaceFloor(solid("#5a6b7c"));
+    expect(Number((floor / SURFACE_OPACITY_STEP).toFixed(6)) % 1).toBe(0);
+  });
+});
+
+describe("how solid the chips are", () => {
+  const theme = (overrides: Partial<ChipTheme>): ChipTheme => ({
+    background_path: "c1/background",
+    background_floor: 0.4,
+    surface_opacity: null,
+    ...overrides,
+  });
+
+  it("is nothing without a background image", () => {
+    expect(chipOpacity(null)).toBeNull();
+    expect(chipOpacity(theme({ background_path: null }))).toBeNull();
+  });
+
+  it("is fully solid for a background from before ATS-66, which has no floor", () => {
+    expect(chipOpacity(theme({ background_floor: null, surface_opacity: 0.2 }))).toBe(1);
+  });
+
+  it("is the company's choice, or the default, and never below the floor", () => {
+    expect(chipOpacity(theme({ surface_opacity: 0.6 }))).toBe(0.6);
+    expect(chipOpacity(theme({}))).toBe(DEFAULT_SURFACE_OPACITY);
+    expect(chipOpacity(theme({ surface_opacity: 0.1 }))).toBe(0.4);
+    expect(chipOpacity(theme({ background_floor: 0.95 }))).toBe(0.95);
   });
 });

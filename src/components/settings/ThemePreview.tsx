@@ -7,6 +7,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { themeTokens } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
+/** The made-up count beside the preview's page title. */
+const PREVIEW_CARD_COUNT = 3;
+
 /**
  * A small copy of the app with the choices not yet saved (ATS-54): the menu with the logo and an
  * active item, a primary button and a link. The draft's tokens are set on this box only, so the
@@ -27,10 +30,10 @@ export function ThemePreview({
   const tokens = themeTokens(accent);
   return (
     <section aria-labelledby="preview-title" className="space-y-2">
-      <h2 id="preview-title" className="text-sm font-medium">
+      <h2 id="preview-title" className="chip-on-image text-sm font-medium">
         {t("appearance.preview")}
       </h2>
-      <p className="text-xs text-muted-foreground">{t("appearance.previewHint")}</p>
+      <p className="chip-on-image text-xs text-muted-foreground">{t("appearance.previewHint")}</p>
       <div
         aria-hidden="true"
         className={cn(
@@ -49,11 +52,20 @@ export function ThemePreview({
         <div
           className="relative isolate min-w-0 flex-1 p-4"
           data-background-image={background ? "" : undefined}
+          style={background ? { "--surface-opacity": String(background.chipOpacity) } : undefined}
         >
           {background && <PageBackground background={background} pinned={false} />}
-          <div className="surface-on-image space-y-3">
+          <div className="space-y-3">
+            <p className="chip-on-image flex items-baseline gap-2">
+              <span className="font-bold">{t("nav.pipeline")}</span>
+              <span className="text-xs text-muted-foreground">
+                {t("pipeline.cardCount", { count: PREVIEW_CARD_COUNT })}
+              </span>
+            </p>
             <span className={buttonVariants({ size: "sm" })}>{t("jobs.new")}</span>
-            <p className="text-sm text-primary-text underline">{t("appearance.previewLink")}</p>
+            <p className="chip-on-image text-sm text-primary-text underline">
+              {t("appearance.previewLink")}
+            </p>
           </div>
         </div>
       </div>

@@ -129,6 +129,17 @@ export const BACKGROUND_MAX_EDGE_PX = 2560;
 export const BACKGROUND_WEBP_QUALITY = 0.82;
 /** The largest file the settings page takes to make smaller, before it is a background. */
 export const MAX_BACKGROUND_SOURCE_BYTES = 20 * 1024 * 1024;
+/**
+ * The chips over a background image (ATS-66). The floor is measured on a copy of the image this
+ * many pixels on its longest side: shrinking averages each area, like the chips' blur does. The
+ * floor is rounded up to SURFACE_OPACITY_STEP, the column's precision, with SURFACE_FLOOR_MARGIN
+ * added for what the sampling cannot see. A company that has not chosen gets the default, never
+ * below its image's floor.
+ */
+export const SURFACE_FLOOR_SAMPLE_EDGE_PX = 48;
+export const SURFACE_OPACITY_STEP = 0.01;
+export const SURFACE_FLOOR_MARGIN = 0.05;
+export const DEFAULT_SURFACE_OPACITY = 0.85;
 /** How long a link to open a CV works. Short, so a copied link soon stops working. */
 export const CV_SIGNED_URL_SECONDS = 5 * 60;
 /** A new link is fetched this long before the old one stops working. */

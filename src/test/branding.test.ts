@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BrandingInput } from "@/lib/api/customerBranding";
-import { resetTheme, saveTheme, type ThemeChange } from "@/lib/branding";
+import { chipSettings, resetTheme, saveTheme, type ThemeChange } from "@/lib/branding";
 import { MAX_BACKGROUND_SOURCE_BYTES, MAX_BRANDING_IMAGE_BYTES } from "@/lib/constants";
 import { fittedSize } from "@/lib/prepare-background";
 import { accentError, backgroundSourceError, brandingImageError } from "@/lib/validation";
@@ -49,6 +49,8 @@ const change = (overrides: Partial<ThemeChange>): ThemeChange => ({
   logo: keep,
   background: keep,
   backgroundDim: "medium",
+  backgroundFloor: null,
+  surfaceOpacity: null,
   ...overrides,
 });
 
@@ -204,5 +206,36 @@ describe("a background image", () => {
     expect(fittedSize(6000, 4000, 2560)).toEqual({ width: 2560, height: 1707 });
     expect(fittedSize(1000, 3000, 2560)).toEqual({ width: 853, height: 2560 });
     expect(fittedSize(800, 600, 2560)).toEqual({ width: 800, height: 600 });
+  });
+});
+
+describe("the chip settings saved with the theme", () => {
+  it("are none without a background", () => {
+    expect(chipSettings(null, { backgroundFloor: 0.4, surfaceOpacity: 0.6 })).toEqual({
+      background_floor: null,
+      surface_opacity: null,
+    });
+  });
+
+  it("keep the floor, and raise a setting below a new image's floor to it", () => {
+    expect(chipSettings("c1/background", { backgroundFloor: 0.4, surfaceOpacity: 0.6 })).toEqual({
+      background_floor: 0.4,
+      surface_opacity: 0.6,
+    });
+    expect(chipSettings("c1/background", { backgroundFloor: 0.7, surfaceOpacity: 0.6 })).toEqual({
+      background_floor: 0.7,
+      surface_opacity: 0.7,
+    });
+  });
+
+  it("leave a company that has not chosen on the default, and an unmeasured image without a floor", () => {
+    expect(chipSettings("c1/background", { backgroundFloor: 0.4, surfaceOpacity: null })).toEqual({
+      background_floor: 0.4,
+      surface_opacity: null,
+    });
+    expect(chipSettings("c1/background", { backgroundFloor: null, surfaceOpacity: 0.3 })).toEqual({
+      background_floor: null,
+      surface_opacity: 0.3,
+    });
   });
 });

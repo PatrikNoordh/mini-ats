@@ -6,11 +6,16 @@ import { AccentPicker, type AccentChoice } from "@/components/settings/AccentPic
 import { BackgroundField } from "@/components/settings/BackgroundField";
 import { LogoField } from "@/components/settings/LogoField";
 import { ThemePreview } from "@/components/settings/ThemePreview";
-import { useBrandingUrl, useResetTheme, useSaveTheme } from "@/hooks/useBranding";
+import {
+  useBrandingUrl,
+  useMeasuredBackgroundFloor,
+  useResetTheme,
+  useSaveTheme,
+} from "@/hooks/useBranding";
 import { useErrorToast } from "@/hooks/useErrorToast";
 import type { ImageChange } from "@/lib/branding";
 import { prepareBackground } from "@/lib/prepare-background";
-import { PRESET_ACCENTS } from "@/lib/theme";
+import { chipOpacity, PRESET_ACCENTS } from "@/lib/theme";
 import {
   accentError,
   backgroundSourceError,
@@ -18,6 +23,9 @@ import {
   type ValidationKey,
 } from "@/lib/validation";
 import type { BackgroundDim, CustomerBranding } from "@/types";
+
+/** A fraction as the whole percent the chips' setting shows. */
+const PERCENT = 100;
 
 /** The choice that shows a saved accent: none, one of the presets, or the customer's own. */
 function choiceFor(accent: string | null): AccentChoice {
@@ -69,6 +77,8 @@ export function AppearanceForm({
   const savedLogo = branding?.logo_path ?? null;
   const savedBackground = branding?.background_path ?? null;
   const savedDim = branding?.background_dim ?? "medium";
+  const savedFloor = branding?.background_floor ?? null;
+  const savedOpacity = branding?.surface_opacity ?? null;
   const [choice, setChoice] = useState<AccentChoice>(() => choiceFor(saved));
   const [customCode, setCustomCode] = useState(() =>
     choiceFor(saved).kind === "custom" ? (saved ?? "") : "",
@@ -79,12 +89,18 @@ export function AppearanceForm({
   const [backgroundError, setBackgroundError] = useState<ValidationKey | null>(null);
   const [dim, setDim] = useState<BackgroundDim>(savedDim);
   const [preparing, setPreparing] = useState(false);
+  // The floor measured from a newly chosen background, and the chips' setting (ATS-66).
+  const [chosenFloor, setChosenFloor] = useState<number | null>(null);
+  const [surfaceOpacity, setSurfaceOpacity] = useState<number | null>(savedOpacity);
   const save = useSaveTheme(customerId);
   const reset = useResetTheme(customerId);
   const savedLogoUrl = useBrandingUrl(customerId, savedLogo);
   const chosenLogoUrl = useObjectUrl(logo.kind === "replace" ? logo.file : null);
   const savedBackgroundUrl = useBrandingUrl(customerId, savedBackground);
   const chosenBackgroundUrl = useObjectUrl(background.kind === "replace" ? background.file : null);
+  // A background from before ATS-66 has no floor; it is measured here, and saved with the form.
+  const unmeasured = background.kind === "keep" && !!savedBackground && savedFloor === null;
+  const measuredFloor = useMeasuredBackgroundFloor(customerId, unmeasured ? savedBackground : null);
 
   const accent =
     choice.kind === "default"
@@ -97,11 +113,23 @@ export function AppearanceForm({
   const shownAccentProblem = customCode.trim() ? accentProblem : null;
   const showsBackground =
     background.kind === "replace" || (background.kind === "keep" && !!savedBackground);
+  const floor =
+    background.kind === "replace"
+      ? chosenFloor
+      : background.kind === "keep" && savedBackground
+        ? (savedFloor ?? measuredFloor.data ?? null)
+        : null;
+  const chips = chipOpacity(
+    showsBackground
+      ? { background_path: "draft", background_floor: floor, surface_opacity: surfaceOpacity }
+      : null,
+  );
   const changed =
     accent !== saved ||
     logo.kind !== "keep" ||
     background.kind !== "keep" ||
-    (showsBackground && dim !== savedDim);
+    (showsBackground &&
+      (dim !== savedDim || surfaceOpacity !== savedOpacity || floor !== savedFloor));
   const busy = save.isPending || reset.isPending || preparing;
 
   const previewLogoUrl = previewUrl(logo, chosenLogoUrl, savedLogoUrl.data ?? null);
@@ -111,7 +139,10 @@ export function AppearanceForm({
     chosenBackgroundUrl,
     savedBackgroundUrl.data ?? null,
   );
-  const previewBackground = previewBackgroundUrl ? { url: previewBackgroundUrl, dim } : null;
+  const previewBackground =
+    previewBackgroundUrl && chips !== null
+      ? { url: previewBackgroundUrl, dim, chipOpacity: chips }
+      : null;
 
   const chooseLogo = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -145,7 +176,8 @@ export function AppearanceForm({
       setBackgroundError(prepared);
       return;
     }
-    setBackground({ kind: "replace", file: prepared });
+    setChosenFloor(prepared.floor);
+    setBackground({ kind: "replace", file: prepared.file });
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -154,7 +186,14 @@ export function AppearanceForm({
     try {
       await save.mutateAsync({
         saved: { logo: savedLogo, background: savedBackground },
-        change: { accent, logo, background, backgroundDim: dim },
+        change: {
+          accent,
+          logo,
+          background,
+          backgroundDim: dim,
+          backgroundFloor: floor,
+          surfaceOpacity,
+        },
       });
       toast.success(t("appearance.saved"));
     } catch (err) {
@@ -204,11 +243,19 @@ export function AppearanceForm({
           onUndo={() => {
             setBackground({ kind: "keep" });
             setBackgroundError(null);
+            setChosenFloor(null);
           }}
           onDim={setDim}
+          chips={{
+            // How much shows through is the opposite of how solid the chips are.
+            value: Math.round((1 - (chips ?? 1)) * PERCENT),
+            max: floor === null ? null : Math.round((1 - floor) * PERCENT),
+            measuring: unmeasured && measuredFloor.isPending,
+            onChange: (value) => setSurfaceOpacity(Number((1 - value / PERCENT).toFixed(2))),
+          }}
         />
         {savedLogoUrl.isError && logo.kind === "keep" && (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="chip-on-image text-sm text-destructive">
             {t("appearance.logoLoadFailed")}{" "}
             <Button
               type="button"
@@ -228,7 +275,9 @@ export function AppearanceForm({
             {t("appearance.reset")}
           </Button>
         </div>
-        {branding && <p className="text-xs text-muted-foreground">{t("appearance.resetHint")}</p>}
+        {branding && (
+          <p className="chip-on-image text-xs text-muted-foreground">{t("appearance.resetHint")}</p>
+        )}
       </div>
       <ThemePreview
         accent={accentProblem ? null : accent}
