@@ -4,6 +4,9 @@
 import {
   ACCENT_TEXT_DARKEN_STEP_PERCENT,
   ACCENT_TINT_PERCENT,
+  DEFAULT_SURFACE_OPACITY,
+  SURFACE_FLOOR_MARGIN,
+  SURFACE_OPACITY_STEP,
   MIN_TEXT_CONTRAST,
   MIN_UI_CONTRAST,
 } from "@/lib/constants";
@@ -12,6 +15,7 @@ import {
   hexToLinearRgb,
   isHexColour,
   linearRgbToHex,
+  luminance,
   mix,
   oklchToLinearRgb,
   type LinearRgb,
@@ -26,6 +30,8 @@ export const THEME_COLOURS = {
   background: { l: 0.975, c: 0.003, h: 220 },
   foreground: { l: 0.22, c: 0.015, h: 230 },
   card: { l: 1, c: 0, h: 0 },
+  "muted-foreground": { l: 0.5, c: 0.015, h: 230 },
+  destructive: { l: 0.56, c: 0.2, h: 27 },
   sidebar: { l: 1, c: 0, h: 0 },
   "mini-ats-primary-foreground": { l: 0.99, c: 0, h: 0 },
 } as const satisfies Record<string, Oklch>;
@@ -163,4 +169,62 @@ export function accentProblem(accent: string): AccentProblem | null {
   if (text < MIN_TEXT_CONTRAST) return "accent_text_contrast";
   if (background < MIN_UI_CONTRAST) return "accent_background_contrast";
   return null;
+}
+
+/**
+ * The luminance of the lightest text the app puts on a chip (ATS-66): muted text, such as hints
+ * and counts, and the destructive red of a field's error, which is lighter still. The rest of the
+ * text on chips is the foreground, far darker. A chip that keeps these readable keeps all of it.
+ */
+function lightestTextLuminance(): number {
+  return Math.max(luminance(colour("muted-foreground")), luminance(colour("destructive")));
+}
+
+/** How solid a chip must be over one area of the image for the lightest text to stay readable. */
+function opacityFor(area: LinearRgb, card: LinearRgb, needed: number): number {
+  if (luminance(area) >= needed) return 0;
+  let [low, high] = [0, 1];
+  // The chip is the card colour over the area; more of it is lighter, so a halving search finds it.
+  for (let i = 0; i < 20; i += 1) {
+    const middle = (low + high) / 2;
+    if (luminance(mix(card, area, middle)) >= needed) high = middle;
+    else low = middle;
+  }
+  return high;
+}
+
+/**
+ * The floor for the chips over a background image (ATS-66): the lowest opacity at which a chip,
+ * the card colour over the image, keeps the lightest text the app puts on it at
+ * MIN_TEXT_CONTRAST over every sampled area. The areas are a shrunken copy of the image, so each
+ * is already averaged like the chips' blur. Rounded up to SURFACE_OPACITY_STEP, with
+ * SURFACE_FLOOR_MARGIN added, and never above 1. The page's scrim is left out: it only lightens.
+ */
+export function surfaceFloor(areas: LinearRgb[]): number {
+  const card = colour("card");
+  const needed = MIN_TEXT_CONTRAST * (lightestTextLuminance() + 0.05) - 0.05;
+  const raw = Math.max(0, ...areas.map((area) => opacityFor(area, card, needed)));
+  const steps = Math.ceil((raw + SURFACE_FLOOR_MARGIN) / SURFACE_OPACITY_STEP);
+  return Math.min(1, Number((steps * SURFACE_OPACITY_STEP).toFixed(2)));
+}
+
+/** What the chips' opacity depends on in a company's theme. */
+export interface ChipTheme {
+  background_path: string | null;
+  background_floor: number | null;
+  surface_opacity: number | null;
+}
+
+/**
+ * How solid the chips over the background image are (ATS-66), from 0 to 1, or null when there is
+ * no image and so no chips. A background uploaded before ATS-66 has no measured floor and keeps
+ * fully solid chips. Otherwise the company's choice, or the default, but never below the floor.
+ */
+export function chipOpacity(theme: ChipTheme | null): number | null {
+  if (!theme?.background_path) return null;
+  if (theme.background_floor === null) return 1;
+  return Math.min(
+    1,
+    Math.max(theme.surface_opacity ?? DEFAULT_SURFACE_OPACITY, theme.background_floor),
+  );
 }

@@ -13,7 +13,9 @@ export interface FieldControlProps {
 
 /**
  * A label, one control, an optional hint and an optional error. The control gets the ids through
- * `children`, so a screen reader reads the hint and the error together with the control.
+ * `children`, so a screen reader reads the hint and the error together with the control. Over a
+ * background image the label, hint and error sit on frosted chips (ATS-66); in a dialog, which is
+ * outside the page, they never do.
  */
 export function Field({
   id,
@@ -34,19 +36,21 @@ export function Field({
   const describedBy = [hint && hintId, error && errorId].filter(Boolean).join(" ");
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className="chip-on-image">
+        {label}
+      </Label>
       {children({
         id,
         "aria-invalid": error ? true : undefined,
         "aria-describedby": describedBy || undefined,
       })}
       {hint && (
-        <p id={hintId} className="text-xs text-muted-foreground">
+        <p id={hintId} className="chip-on-image text-xs text-muted-foreground">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errorId} className="text-xs text-destructive">
+        <p id={errorId} className="chip-on-image text-xs text-destructive">
           {t(`validation.${error}`, { min: MIN_PASSWORD_LENGTH, max: MAX_PASSWORD_BYTES })}
         </p>
       )}

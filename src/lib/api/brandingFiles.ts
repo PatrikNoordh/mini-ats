@@ -58,6 +58,13 @@ export async function listBrandingFiles(customerId: string): Promise<string[]> {
   return data.map((file) => `${customerId}/${file.name}`);
 }
 
+/** The image itself, for measuring a background uploaded before ATS-66 in the browser. */
+export async function downloadBrandingFile(path: string): Promise<Blob> {
+  const { data, error } = await supabase.storage.from(BRANDING_BUCKET).download(path);
+  if (error) throw fromStorageError(error);
+  return data;
+}
+
 /** A link to show the image for BRANDING_SIGNED_URL_SECONDS. The bucket is private. */
 export async function brandingSignedUrl(path: string): Promise<string> {
   const { data, error } = await supabase.storage

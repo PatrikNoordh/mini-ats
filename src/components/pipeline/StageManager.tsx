@@ -113,7 +113,7 @@ export function StageManager({
 
   return (
     <>
-      <div className="surface-on-image mb-3 flex flex-wrap items-start gap-x-4 gap-y-2">
+      <div className="mb-3 flex flex-wrap items-start gap-x-4 gap-y-2">
         <div>
           <Button
             type="button"
@@ -127,7 +127,7 @@ export function StageManager({
             {t("stageEditor.add")}
           </Button>
           {atLimit && (
-            <p id={limitHintId} className="mt-1 text-xs text-muted-foreground">
+            <p id={limitHintId} className="chip-on-image mt-1 text-xs text-muted-foreground">
               {t("stageEditor.limitHint", { max: MAX_PIPELINE_STAGES })}
             </p>
           )}
@@ -137,6 +137,7 @@ export function StageManager({
             type="button"
             variant="ghost"
             size="sm"
+            className="chip-on-image"
             disabled={cannotReset}
             aria-describedby={cannotReset ? resetHintId : undefined}
             onClick={() => setResetting(true)}
@@ -145,7 +146,7 @@ export function StageManager({
             {t("stageEditor.reset")}
           </Button>
           {cannotReset && (
-            <p id={resetHintId} className="mt-1 text-xs text-muted-foreground">
+            <p id={resetHintId} className="chip-on-image mt-1 text-xs text-muted-foreground">
               {t("stageEditor.resetBlocked", {
                 count: blockers.length,
                 stages: format.list(blockers.map(label)),

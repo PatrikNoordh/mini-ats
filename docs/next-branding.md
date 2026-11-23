@@ -1,6 +1,6 @@
 # Next: a customer's own theme
 
-A design sketch for epic 12, now built: the database part (ATS-52), applying the theme (ATS-53), the settings page (ATS-54) and the background image (ATS-55).
+A design sketch for epic 12, now built: the database part (ATS-52), applying the theme (ATS-53), the settings page (ATS-54), the background image (ATS-55) and its frosted chips (ATS-66).
 
 ## The idea
 
@@ -68,6 +68,17 @@ The contrast rule below is checked in the app, not in the database: it needs the
 - **Proof:** `e2e/background.spec.ts` sets an all-black and an all-white image and checks every visible text and control in `<main>` for a solid background between it and the image, on the board, the jobs, candidates, settings and accounts pages, as a customer and as an admin acting for one. It also checks the page header, a filter row, an empty state and an error state for the card background.
 - **Fast:** the browser makes the image at most 2,560 px on its longest side and saves it as WebP (or JPEG where WebP cannot be written) before upload, which also drops metadata such as where a photo was taken. The file lives at `<company id>/background`, and its signed link is cached for its lifetime. From md up the image stays put while the page scrolls; on a phone it scrolls with the page and is cropped to the centre.
 - **The demo** gets a made-up brand on Studio Exempel, drawn by `scripts/demo-brand.ts` when the seed runs, so no image file is in the repo.
+
+### Frosted chips and a visibility setting (ATS-66, built)
+
+ATS-55's full-width solid bars covered much of the image. They are replaced by small chips.
+
+- **Chips, not bars.** With a background image, only loose text gets a chip that hugs it (`.chip-on-image`): the page title and its count, **Reset columns**, the column tools' hints, the history page's back link, the accounts headings and hints, and on **Settings** every label, hint, error and legend (through `Field`). Controls that are solid by themselves need no backing: primary and outline buttons, and the inputs and selects, which get the card colour while an image is shown. The empty, loading and error states stay solid boxes.
+- **Frosted glass.** A chip is the card colour at `--surface-opacity` over the image, mixed in sRGB, with a 12 px backdrop blur. The shell sets `--surface-opacity` on `<main>`.
+- **The setting and its floor.** **Settings → Appearance** has a slider, **How much of the image shows through the labels**, shown only with a background. It is saved per company in `customer_branding.surface_opacity`, from 0 to 1, and the preview shows it. Its lowest value is `background_floor`, measured in the browser when the image is prepared (`prepareBackground`): the image is drawn 48 px on its longest side, which averages each area like the blur, and `surfaceFloor()` finds the lowest opacity at which muted text and a field error's red, the lightest text on chips, keep 4.5:1 over every area. It is rounded up to 0.01 with 0.05 added. An all-black image gets 0.99, an all-white one 0.05. The page's scrim is left out, since it only lightens. The database checks both ranges and that the setting is never below the floor.
+- **A company that has not chosen** gets 0.85, raised to the floor. **A background from before ATS-66** has no floor and keeps fully solid chips; opening **Settings** measures the stored image, and saving stores its floor.
+- **Proof.** `e2e/background.spec.ts` sets an all-black and an all-white image with the slider at the floor, and for every visible text the image shows through to, works out what is behind it as the browser draws it (the image, the scrim and every translucent background, mixed in sRGB) and requires 4.5:1, on the board, the jobs, candidates, settings and accounts pages, as a customer and as an admin acting for one.
+- **The demo** brand's background measures 0.51; the demo sets its floor at 0.55 and its chips at 0.7, and a unit test checks the floor against the drawn image.
 
 ## Estimate
 

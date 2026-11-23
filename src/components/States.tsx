@@ -42,7 +42,8 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
 
 /**
  * A page's title, with an optional count beside it, an action on the right and a hint below. With
- * a background image it is one solid surface (ATS-55), so none of its text sits on the image.
+ * a background image its title and hint sit on frosted chips (ATS-66), so no text is on the bare
+ * image; the action is a solid button of its own.
  */
 export function PageHeader({
   title,
@@ -56,15 +57,15 @@ export function PageHeader({
   hint?: string;
 }) {
   return (
-    <div className="surface-on-image mb-5">
+    <div className="mb-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-baseline gap-3">
+        <div className="chip-on-image flex items-baseline gap-3">
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
           {meta && <span className="text-sm text-muted-foreground">{meta}</span>}
         </div>
         {action}
       </div>
-      {hint && <p className="mt-2 text-sm text-muted-foreground">{hint}</p>}
+      {hint && <p className="chip-on-image mt-2 text-sm text-muted-foreground">{hint}</p>}
     </div>
   );
 }

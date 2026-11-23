@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { brandingSignedUrl } from "@/lib/api/brandingFiles";
+import { brandingSignedUrl, downloadBrandingFile } from "@/lib/api/brandingFiles";
 import { getBranding } from "@/lib/api/customerBranding";
 import { resetTheme, saveTheme, type SavedImages, type ThemeChange } from "@/lib/branding";
 import { BRANDING_SIGNED_URL_MARGIN_SECONDS, BRANDING_SIGNED_URL_SECONDS } from "@/lib/constants";
+import { measureBackgroundFloor } from "@/lib/prepare-background";
 import { queryKeys } from "@/lib/stages";
 
 /** A link refreshed before it stops working, so the logo never breaks on a page left open. */
@@ -27,6 +28,20 @@ export function useBrandingUrl(customerId: string | null, path: string | null) {
     enabled: !!customerId && !!path,
     staleTime: BRANDING_URL_REFRESH_MS,
     refetchInterval: BRANDING_URL_REFRESH_MS,
+  });
+}
+
+/**
+ * The floor of a saved background that has none, measured from the file itself (ATS-66): a
+ * background uploaded before ATS-66. Saving the form stores it. Off when there is nothing to
+ * measure; null when the file cannot be read, which keeps the chips fully solid.
+ */
+export function useMeasuredBackgroundFloor(customerId: string | null, path: string | null) {
+  return useQuery({
+    queryKey: queryKeys.backgroundFloor(customerId, path),
+    queryFn: async () => measureBackgroundFloor(await downloadBrandingFile(path!)),
+    enabled: !!customerId && !!path,
+    staleTime: Infinity,
   });
 }
 

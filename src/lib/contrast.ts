@@ -92,3 +92,8 @@ export function mix(first: LinearRgb, second: LinearRgb, share: number): LinearR
     b: channel(first.b, second.b),
   };
 }
+
+/** An 8-bit sRGB pixel, as a canvas gives it, as linear sRGB. */
+export function rgb8ToLinear(r: number, g: number, b: number): LinearRgb {
+  return { r: toLinear(r / 255), g: toLinear(g / 255), b: toLinear(b / 255) };
+}

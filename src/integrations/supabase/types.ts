@@ -256,25 +256,31 @@ export type Database = {
         Row: {
           accent_colour: string | null;
           background_dim: string;
+          background_floor: number | null;
           background_path: string | null;
           customer_id: string;
           logo_path: string | null;
+          surface_opacity: number | null;
           updated_at: string;
         };
         Insert: {
           accent_colour?: string | null;
           background_dim?: string;
+          background_floor?: number | null;
           background_path?: string | null;
           customer_id: string;
           logo_path?: string | null;
+          surface_opacity?: number | null;
           updated_at?: string;
         };
         Update: {
           accent_colour?: string | null;
           background_dim?: string;
+          background_floor?: number | null;
           background_path?: string | null;
           customer_id?: string;
           logo_path?: string | null;
+          surface_opacity?: number | null;
           updated_at?: string;
         };
         Relationships: [

@@ -30,7 +30,7 @@ function AccountHistoryPage() {
 
   return (
     <div>
-      <Button asChild variant="ghost" size="sm" className="solid-on-image mb-3 -ml-2">
+      <Button asChild variant="ghost" size="sm" className="chip-on-image mb-3 -ml-2">
         <Link to="/admin/accounts">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {t("history.back")}
