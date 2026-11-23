@@ -274,7 +274,9 @@ export const queryKeys = {
   branding: (customerId: string | null) => ["branding", customerId] as const,
   /** Every link to one of the company's branding images, to refresh them all after a change. */
   brandingUrls: (customerId: string | null) => ["brandingUrl", customerId] as const,
-  /** The floor measured from a background uploaded before ATS-66, by its path. */
+  /** Every floor measured from the company's saved background, to drop them after a change. */
+  backgroundFloors: (customerId: string | null) => ["backgroundFloor", customerId] as const,
+  /** The floor measured from the saved background on the settings page (ATS-66), by its path. */
   backgroundFloor: (customerId: string | null, path: string | null) =>
     ["backgroundFloor", customerId, path] as const,
   /** A link to show one branding image, such as the logo (ATS-54). */

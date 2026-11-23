@@ -237,8 +237,10 @@ describe("the chips' floor over a background image", () => {
   const solid = (hex: string, count = 4) =>
     Array.from({ length: count }, () => hexToLinearRgb(hex));
 
-  it("is near fully solid over all black, and close to clear over all white", () => {
-    expect(surfaceFloor(solid("#000000"))).toBeGreaterThanOrEqual(0.95);
+  it("leaves room over all black, and is close to clear over all white", () => {
+    // Dark text needs far less of the card than light grey text did (ATS-66).
+    expect(surfaceFloor(solid("#000000"))).toBeGreaterThan(0.4);
+    expect(surfaceFloor(solid("#000000"))).toBeLessThan(0.7);
     expect(surfaceFloor(solid("#ffffff"))).toBe(SURFACE_FLOOR_MARGIN);
   });
 
@@ -258,11 +260,9 @@ describe("the chips' floor over a background image", () => {
     }
   });
 
-  it("keeps muted text and an error's red readable on a chip at the floor", () => {
+  it("keeps the chips' text, the dark foreground, readable on a chip at the floor", () => {
     const card = oklchToLinearRgb(THEME_COLOURS.card);
-    const texts = [THEME_COLOURS["muted-foreground"], THEME_COLOURS.destructive].map(
-      oklchToLinearRgb,
-    );
+    const texts = [oklchToLinearRgb(THEME_COLOURS.foreground)];
     for (const hex of ["#000000", "#1e3a8a", "#7f1d1d", "#555555", "#14532d", "#bbbbbb"]) {
       const area = hexToLinearRgb(hex);
       // Without the margin, unless the floor is capped at fully solid.

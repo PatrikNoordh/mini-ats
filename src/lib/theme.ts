@@ -30,8 +30,6 @@ export const THEME_COLOURS = {
   background: { l: 0.975, c: 0.003, h: 220 },
   foreground: { l: 0.22, c: 0.015, h: 230 },
   card: { l: 1, c: 0, h: 0 },
-  "muted-foreground": { l: 0.5, c: 0.015, h: 230 },
-  destructive: { l: 0.56, c: 0.2, h: 27 },
   sidebar: { l: 1, c: 0, h: 0 },
   "mini-ats-primary-foreground": { l: 0.99, c: 0, h: 0 },
 } as const satisfies Record<string, Oklch>;
@@ -172,12 +170,12 @@ export function accentProblem(accent: string): AccentProblem | null {
 }
 
 /**
- * The luminance of the lightest text the app puts on a chip (ATS-66): muted text, such as hints
- * and counts, and the destructive red of a field's error, which is lighter still. The rest of the
- * text on chips is the foreground, far darker. A chip that keeps these readable keeps all of it.
+ * The luminance of the text on a chip (ATS-66): the dark foreground. A chip draws all its text in
+ * it, muted text and links included (`.chip-on-image` in src/styles.css), because a chip that had
+ * to keep light grey text readable would have to be almost solid over any dark part of an image.
  */
-function lightestTextLuminance(): number {
-  return Math.max(luminance(colour("muted-foreground")), luminance(colour("destructive")));
+function chipTextLuminance(): number {
+  return luminance(colour("foreground"));
 }
 
 /** How solid a chip must be over one area of the image for the lightest text to stay readable. */
@@ -195,14 +193,14 @@ function opacityFor(area: LinearRgb, card: LinearRgb, needed: number): number {
 
 /**
  * The floor for the chips over a background image (ATS-66): the lowest opacity at which a chip,
- * the card colour over the image, keeps the lightest text the app puts on it at
+ * the card colour over the image, keeps its text, the dark foreground, at
  * MIN_TEXT_CONTRAST over every sampled area. The areas are a shrunken copy of the image, so each
  * is already averaged like the chips' blur. Rounded up to SURFACE_OPACITY_STEP, with
  * SURFACE_FLOOR_MARGIN added, and never above 1. The page's scrim is left out: it only lightens.
  */
 export function surfaceFloor(areas: LinearRgb[]): number {
   const card = colour("card");
-  const needed = MIN_TEXT_CONTRAST * (lightestTextLuminance() + 0.05) - 0.05;
+  const needed = MIN_TEXT_CONTRAST * (chipTextLuminance() + 0.05) - 0.05;
   const raw = Math.max(0, ...areas.map((area) => opacityFor(area, card, needed)));
   const steps = Math.ceil((raw + SURFACE_FLOOR_MARGIN) / SURFACE_OPACITY_STEP);
   return Math.min(1, Number((steps * SURFACE_OPACITY_STEP).toFixed(2)));
