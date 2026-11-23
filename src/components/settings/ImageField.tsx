@@ -74,10 +74,7 @@ export function ImageField({
     <Field id={id} label={text.label} hint={text.hint} error={error ?? undefined}>
       {(control) => (
         <div className="space-y-2 text-sm">
-          <p
-            className="chip-on-image min-w-0 wrap-anywhere text-muted-foreground"
-            aria-live="polite"
-          >
+          <p className="min-w-0 wrap-anywhere text-muted-foreground" aria-live="polite">
             {line}
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -102,24 +99,12 @@ export function ImageField({
               {hasImage ? text.replace : text.choose}
             </label>
             {hasImage && change.kind === "keep" && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="chip-on-image"
-                onClick={onRemove}
-              >
+              <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
                 {text.remove}
               </Button>
             )}
             {change.kind !== "keep" && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="chip-on-image"
-                onClick={undo}
-              >
+              <Button type="button" variant="ghost" size="sm" onClick={undo}>
                 {t("appearance.logoUndo")}
               </Button>
             )}

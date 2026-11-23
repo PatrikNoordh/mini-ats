@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePageHeaderSlot } from "@/contexts/PageHeaderSlotContext";
 
 export function LoadingRows({ rows = 6 }: { rows?: number }) {
   const { t } = useTranslation();
@@ -41,23 +43,27 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
 }
 
 /**
- * A page's title, with an optional count beside it, an action on the right and a hint below. With
- * a background image its title and hint sit on frosted chips (ATS-66), so no text is on the bare
- * image; the action is a solid button of its own.
+ * A page's title, with an optional count beside it, an action on the right and a hint below.
+ * While the company has a background image it moves into the top bar (ATS-66), in the white,
+ * and the image shows in the gap below; `inBar={false}` keeps it in the page, as on Settings.
+ * In the page over an image, the title and hint sit on frosted chips.
  */
 export function PageHeader({
   title,
   meta,
   action,
   hint,
+  inBar = true,
 }: {
   title: string;
   meta?: ReactNode;
   action?: ReactNode;
   hint?: string;
+  inBar?: boolean;
 }) {
-  return (
-    <div className="mb-5">
+  const slot = usePageHeaderSlot();
+  const header = (
+    <div className={slot && inBar ? "py-3" : "mb-5"}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="chip-on-image flex items-baseline gap-3">
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
@@ -68,4 +74,5 @@ export function PageHeader({
       {hint && <p className="chip-on-image mt-2 text-sm text-muted-foreground">{hint}</p>}
     </div>
   );
+  return slot && inBar ? createPortal(header, slot) : header;
 }

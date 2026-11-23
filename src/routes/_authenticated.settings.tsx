@@ -15,7 +15,7 @@ function Settings({ customerId }: { customerId: string }) {
   const { t } = useTranslation();
   return (
     <div>
-      <PageHeader title={t("settings.title")} />
+      <PageHeader title={t("settings.title")} inBar={false} />
       <AppearanceSettings customerId={customerId} />
     </div>
   );
