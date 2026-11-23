@@ -55,9 +55,9 @@ function background(): Buffer {
   return png(BACKGROUND_WIDTH, BACKGROUND_HEIGHT, backgroundPixel);
 }
 
-/** The background's floor, rounded up from what it measures, and the chips a little above it. */
-const DEMO_FLOOR = 0.55;
-const DEMO_SURFACE_OPACITY = 0.7;
+/** The background's floor, as it measures, and chips clearly frosted, well above it. */
+const DEMO_FLOOR = 0.05;
+const DEMO_SURFACE_OPACITY = 0.5;
 
 /** The brand Studio Exempel gets in the demo. */
 export function demoBrand(): DemoBrand {
