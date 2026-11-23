@@ -721,6 +721,10 @@ Tracked in #95.
 
 Tracked in #146.
 
+### ATS-67 · feat · Refine the background layout: a solid settings panel, a floor with room, a centred column and the title in the top bar
+
+Tracked in #148.
+
 ---
 
 ## Found while building
