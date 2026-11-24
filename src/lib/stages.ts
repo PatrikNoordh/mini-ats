@@ -276,7 +276,7 @@ export const queryKeys = {
   brandingUrls: (customerId: string | null) => ["brandingUrl", customerId] as const,
   /** Every floor measured from the company's saved background, to drop them after a change. */
   backgroundFloors: (customerId: string | null) => ["backgroundFloor", customerId] as const,
-  /** The floor measured from the saved background on the settings page (ATS-66), by its path. */
+  /** The floor measured from the saved background on the settings page (ATS-67), by its path. */
   backgroundFloor: (customerId: string | null, path: string | null) =>
     ["backgroundFloor", customerId, path] as const,
   /** A link to show one branding image, such as the logo (ATS-54). */

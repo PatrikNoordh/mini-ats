@@ -185,7 +185,7 @@
   --muted-foreground: var(--foreground);
   --primary-text: var(--foreground);
 }
-/* With an image, the page's content is one centred column (ATS-66), so the image frames it on a
+/* With an image, the page's content is one centred column (ATS-67), so the image frames it on a
    wide screen. As wide as the board's six default columns with their gaps; a narrower screen
    sees no change, and a page without an image keeps the full width. The page's header moves
    into the top bar's second row (.bar-on-image), in the same column. */

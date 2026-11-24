@@ -44,7 +44,7 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
 
 /**
  * A page's title, with an optional count beside it, an action on the right and a hint below.
- * While the company has a background image it moves into the top bar (ATS-66), in the white,
+ * While the company has a background image it moves into the top bar (ATS-67), in the white,
  * and the image shows in the gap below; `inBar={false}` keeps it in the page, as on Settings.
  * In the page over an image, the title and hint sit on frosted chips.
  */
