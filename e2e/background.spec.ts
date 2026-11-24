@@ -156,9 +156,9 @@ async function chipsOf(companyId: string) {
   return data;
 }
 
-// The floor each image should measure: near fully solid over black, near clear over white.
+// The floor each image should measure: about half over black, near clear over white.
 for (const [name, colour, lowest, highest] of [
-  ["black", BLACK, 0.95, 1],
+  ["black", BLACK, 0.4, 0.7],
   ["white", WHITE, 0, 0.1],
 ] as const) {
   test(`on an all-${name} background at its floor every text stays readable`, async ({
@@ -182,9 +182,15 @@ for (const [name, colour, lowest, highest] of [
     expect(shown).toBe(chips.background_floor);
 
     await page.getByRole("link", { name: sv.nav.pipeline }).click();
-    // The title hugs a frosted chip; the filters and the empty state are solid by themselves.
-    const title = page.getByRole("heading", { level: 1, name: sv.nav.pipeline }).locator("..");
-    await expect(title).toHaveCSS("backdrop-filter", /blur/);
+    // The title sits in the white top bar; loose text below it hugs a frosted chip; the filters
+    // and the empty state are solid by themselves.
+    await expect(
+      page.getByRole("banner").getByRole("heading", { level: 1, name: sv.nav.pipeline }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: sv.stageEditor.reset })).toHaveCSS(
+      "backdrop-filter",
+      /blur/,
+    );
     const card = await page.evaluate(() => {
       const probe = document.createElement("span");
       probe.style.backgroundColor = "var(--card)";
@@ -280,10 +286,12 @@ test("a background from before the chip setting keeps solid chips until the sett
   if (row.error) throw row.error;
 
   await signIn(page, customer.email);
-  const title = page.getByRole("heading", { level: 1 }).locator("..");
   await expect(page.locator("main[data-background-image]")).toHaveCount(1);
   await expect(page.locator("main")).toHaveCSS("--surface-opacity", "1");
-  await expect(title).toHaveCSS("backdrop-filter", /blur/);
+  await expect(page.getByRole("button", { name: sv.stageEditor.reset })).toHaveCSS(
+    "backdrop-filter",
+    /blur/,
+  );
   await expectReadable(page, BLACK);
 
   // The settings page measures the stored image; saving keeps its floor.
@@ -291,5 +299,96 @@ test("a background from before the chip setting keeps solid chips until the sett
   await expect(page.getByLabel(sv.appearance.surface, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: sv.common.save }).click();
   await expect(page.getByText(sv.appearance.saved)).toBeVisible();
-  expect((await chipsOf(customer.id)).background_floor).toBeGreaterThanOrEqual(0.95);
+  expect((await chipsOf(customer.id)).background_floor).toBeGreaterThan(0.4);
+});
+
+test("a floor saved under the old rule is measured again on the settings page, so the slider gets room", async ({
+  page,
+  makeCustomer,
+}) => {
+  // As ATS-66 first saved it: light grey text set the floor, so a dark image got 0.99.
+  const customer = await makeCustomer("Kund");
+  const admin = serviceClient();
+  const path = `${customer.id}/background`;
+  const upload = await admin.storage
+    .from("branding")
+    .upload(path, solidPng(64, 40, BLACK), { contentType: "image/png", upsert: true });
+  if (upload.error) throw upload.error;
+  const row = await admin.from("customer_branding").insert({
+    customer_id: customer.id,
+    background_path: path,
+    background_floor: 0.99,
+    surface_opacity: 0.99,
+  });
+  if (row.error) throw row.error;
+
+  await signIn(page, customer.email);
+  await page.getByRole("link", { name: sv.nav.settings }).click();
+  const slider = page.getByLabel(sv.appearance.surface, { exact: true });
+  await expect(slider).toHaveAttribute("max", /^(3\d|4\d|5\d)$/);
+  await slider.focus();
+  await slider.press("End");
+  await page.getByRole("button", { name: sv.common.save }).click();
+  await expect(page.getByText(sv.appearance.saved)).toBeVisible();
+  const chips = await chipsOf(customer.id);
+  expect(chips.background_floor).toBeLessThan(0.7);
+  expect(chips.surface_opacity).toBe(chips.background_floor);
+  await page.getByRole("link", { name: sv.nav.pipeline }).click();
+  await expectReadable(page, BLACK);
+});
+
+test("on a wide screen the content is a centred column with an image, and full width without one", async ({
+  page,
+  makeCustomer,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  const customer = await makeCustomer("Kund");
+  await signIn(page, customer.email);
+  const content = page.locator("main > .content-on-image");
+  const gaps = () =>
+    content.evaluate((element) => {
+      const main = element.parentElement!.getBoundingClientRect();
+      const box = element.getBoundingClientRect();
+      return { left: box.left - main.left, right: main.right - box.right, width: box.width };
+    });
+  // Without an image: the main area's full width, less its padding, as before.
+  const plain = await gaps();
+  expect(plain.width).toBeGreaterThan(1440);
+
+  await setBackground(page, WHITE);
+  await page.getByRole("link", { name: sv.nav.pipeline }).click();
+  await expect(page.locator("main[data-background-image]")).toHaveCount(1);
+  const framed = await gaps();
+  expect(framed.width).toBeLessThanOrEqual(1440);
+  expect(Math.abs(framed.left - framed.right)).toBeLessThan(2);
+  expect(framed.left).toBeGreaterThan(plain.left);
+});
+
+test("with an image the page's title moves into the top bar, except on Settings, and without one it stays in the page", async ({
+  page,
+  makeCustomer,
+}) => {
+  const customer = await makeCustomer("Kund");
+  await signIn(page, customer.email);
+  const bar = page.getByRole("banner");
+  const main = page.getByRole("main");
+  // Without an image: in the page, as before.
+  await expect(main.getByRole("heading", { level: 1, name: sv.nav.pipeline })).toBeVisible();
+  await expect(bar.getByRole("heading", { level: 1 })).toHaveCount(0);
+
+  await setBackground(page, WHITE);
+  for (const [link, title, action] of [
+    [sv.nav.pipeline, sv.nav.pipeline, sv.pipeline.newCandidate],
+    [sv.nav.jobs, sv.jobs.title, sv.jobs.new],
+    [sv.nav.candidates, sv.candidates.title, sv.candidates.new],
+  ] as const) {
+    await page.getByRole("link", { name: link }).click();
+    await expect(bar.getByRole("heading", { level: 1, name: title })).toBeVisible();
+    await expect(bar.getByRole("button", { name: action })).toBeVisible();
+    await expect(main.getByRole("heading", { level: 1 })).toHaveCount(0);
+  }
+  // Settings keeps its title in the page, on its solid panel's side.
+  await page.getByRole("link", { name: sv.nav.settings }).click();
+  await expect(main.getByRole("heading", { level: 1, name: sv.settings.title })).toBeVisible();
+  await expect(bar.getByRole("heading", { level: 1 })).toHaveCount(0);
 });

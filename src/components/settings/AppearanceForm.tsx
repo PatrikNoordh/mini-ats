@@ -98,9 +98,13 @@ export function AppearanceForm({
   const chosenLogoUrl = useObjectUrl(logo.kind === "replace" ? logo.file : null);
   const savedBackgroundUrl = useBrandingUrl(customerId, savedBackground);
   const chosenBackgroundUrl = useObjectUrl(background.kind === "replace" ? background.file : null);
-  // A background from before ATS-66 has no floor; it is measured here, and saved with the form.
-  const unmeasured = background.kind === "keep" && !!savedBackground && savedFloor === null;
-  const measuredFloor = useMeasuredBackgroundFloor(customerId, unmeasured ? savedBackground : null);
+  // The saved background is measured again whenever the form opens, and the floor saved with it:
+  // one from before ATS-66 has none, and one measured under older rules may be too high.
+  const keepsBackground = background.kind === "keep" && !!savedBackground;
+  const measuredFloor = useMeasuredBackgroundFloor(
+    customerId,
+    keepsBackground ? savedBackground : null,
+  );
 
   const accent =
     choice.kind === "default"
@@ -117,7 +121,7 @@ export function AppearanceForm({
     background.kind === "replace"
       ? chosenFloor
       : background.kind === "keep" && savedBackground
-        ? (savedFloor ?? measuredFloor.data ?? null)
+        ? (measuredFloor.data ?? savedFloor)
         : null;
   const chips = chipOpacity(
     showsBackground
@@ -250,12 +254,12 @@ export function AppearanceForm({
             // How much shows through is the opposite of how solid the chips are.
             value: Math.round((1 - (chips ?? 1)) * PERCENT),
             max: floor === null ? null : Math.round((1 - floor) * PERCENT),
-            measuring: unmeasured && measuredFloor.isPending,
+            measuring: keepsBackground && savedFloor === null && measuredFloor.isPending,
             onChange: (value) => setSurfaceOpacity(Number((1 - value / PERCENT).toFixed(2))),
           }}
         />
         {savedLogoUrl.isError && logo.kind === "keep" && (
-          <p role="alert" className="chip-on-image text-sm text-destructive">
+          <p role="alert" className="text-sm text-destructive">
             {t("appearance.logoLoadFailed")}{" "}
             <Button
               type="button"
@@ -275,9 +279,7 @@ export function AppearanceForm({
             {t("appearance.reset")}
           </Button>
         </div>
-        {branding && (
-          <p className="chip-on-image text-xs text-muted-foreground">{t("appearance.resetHint")}</p>
-        )}
+        {branding && <p className="text-xs text-muted-foreground">{t("appearance.resetHint")}</p>}
       </div>
       <ThemePreview
         accent={accentProblem ? null : accent}

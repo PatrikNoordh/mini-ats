@@ -66,8 +66,8 @@ export function AccentPicker({
 
   return (
     <fieldset className="space-y-3">
-      <legend className="chip-on-image text-sm font-medium">{t("appearance.colour")}</legend>
-      <p className="chip-on-image text-xs text-muted-foreground">{t("appearance.colourHint")}</p>
+      <legend className="text-sm font-medium">{t("appearance.colour")}</legend>
+      <p className="text-xs text-muted-foreground">{t("appearance.colourHint")}</p>
       <div className="flex flex-wrap gap-2">
         {option("default", t("appearance.default"), null, choice.kind === "default", () =>
           onChoose({ kind: "default" }),

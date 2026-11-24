@@ -15,12 +15,12 @@ export function AppearanceSettings({ customerId }: { customerId: string }) {
   const companyName = customer?.name ?? "";
 
   return (
-    <section aria-labelledby="appearance-title" className="space-y-4">
+    <section aria-labelledby="appearance-title" className="panel-on-image space-y-4">
       <div className="space-y-1">
-        <h2 id="appearance-title" className="chip-on-image text-lg font-semibold">
+        <h2 id="appearance-title" className="text-lg font-semibold">
           {t("appearance.title")}
         </h2>
-        <p className="chip-on-image text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {t("appearance.hint", { company: companyName })}
         </p>
       </div>

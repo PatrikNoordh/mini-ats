@@ -161,7 +161,10 @@
    the bare image. These rules apply only then, so a page without an image looks as before, and
    they are outside the layers on purpose, so they win over the element's own utilities.
    - .chip-on-image for loose text: a small frosted chip that hugs it, the card colour at
-     --surface-opacity over the image, blurred.
+     --surface-opacity over the image, blurred. Its text is the dark foreground, muted text and
+     links included, so a chip stays readable at the floor (surfaceFloor in src/lib/theme.ts).
+   - .panel-on-image for a whole page part full of text, such as the settings form: one solid
+     card panel, so its labels and hints need no chips of their own.
    - Form fields, which are transparent by default, get the card colour.
    - .solid-on-image for a box with its own border and padding, such as the empty and error
      states: the card colour, fully solid.
@@ -178,6 +181,25 @@
     transparent
   );
   backdrop-filter: blur(var(--chip-blur));
+  color: var(--foreground);
+  --muted-foreground: var(--foreground);
+  --primary-text: var(--foreground);
+}
+/* With an image, the page's content is one centred column (ATS-67), so the image frames it on a
+   wide screen. As wide as the board's six default columns with their gaps; a narrower screen
+   sees no change, and a page without an image keeps the full width. The page's header moves
+   into the top bar's second row (.bar-on-image), in the same column. */
+main[data-background-image] > .content-on-image,
+.bar-on-image {
+  --content-max-width-on-image: 90rem;
+  max-width: var(--content-max-width-on-image);
+  margin-inline: auto;
+}
+[data-background-image] .panel-on-image {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--card);
+  padding: 1rem;
 }
 [data-background-image]
   :is(

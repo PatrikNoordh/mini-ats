@@ -78,7 +78,7 @@ export function BackgroundField({
       />
       {showsBackground && (
         <fieldset className="space-y-2">
-          <legend className="chip-on-image text-sm font-medium">{t("appearance.dim")}</legend>
+          <legend className="text-sm font-medium">{t("appearance.dim")}</legend>
           <div className="flex flex-wrap gap-2">
             {DIM_LEVELS.map((level) => (
               <label
@@ -104,17 +104,13 @@ export function BackgroundField({
       )}
       {showsBackground && (
         <div className="space-y-1.5">
-          <Label htmlFor="chip-visibility" className="chip-on-image">
-            {t("appearance.surface")}
-          </Label>
+          <Label htmlFor="chip-visibility">{t("appearance.surface")}</Label>
           {chips.measuring ? (
-            <p className="chip-on-image text-xs text-muted-foreground" aria-live="polite">
+            <p className="text-xs text-muted-foreground" aria-live="polite">
               {t("appearance.surfaceMeasuring")}
             </p>
           ) : chips.max === null ? (
-            <p className="chip-on-image text-xs text-muted-foreground">
-              {t("appearance.surfaceUnmeasured")}
-            </p>
+            <p className="text-xs text-muted-foreground">{t("appearance.surfaceUnmeasured")}</p>
           ) : (
             <>
               <div className="flex items-center gap-3">
@@ -132,11 +128,11 @@ export function BackgroundField({
                   className="w-full max-w-xs cursor-pointer accent-primary"
                   onChange={(e) => chips.onChange(Number(e.target.value))}
                 />
-                <span className="chip-on-image shrink-0 text-sm tabular-nums">
+                <span className="shrink-0 text-sm tabular-nums">
                   {t("appearance.surfaceValue", { value: format.number(chips.value) })}
                 </span>
               </div>
-              <p id="chip-visibility-hint" className="chip-on-image text-xs text-muted-foreground">
+              <p id="chip-visibility-hint" className="text-xs text-muted-foreground">
                 {t("appearance.surfaceHint", { max: format.number(chips.max) })}
               </p>
             </>

@@ -721,6 +721,10 @@ Tracked in #95.
 
 Tracked in #146.
 
+### ATS-67 · feat · Refine the background layout: a solid settings panel, a floor with room, a centred column and the title in the top bar
+
+Tracked in #148.
+
 ---
 
 ## Found while building
@@ -745,3 +749,5 @@ Format: `- [ ] <What could be better> — <file> (PR #<n>, ATS-<N>)`
 - [ ] The shared image field uses the `appearance.logoChosen` and `appearance.logoUndo` keys for the background too; the texts are generic, but the key names say logo — `src/components/settings/ImageField.tsx` (PR #145, ATS-55)
 - [ ] The chips' floor samples the image at 48 px to stand in for the 12 px blur. On a very wide screen each sample covers about 70 display px while the blur averages 30–40, so a small dark detail can sit under a chip a little darker than the floor assumed; the 0.05 margin covers most of it. Sampling at 64–96 px would close the gap (and move the demo brand's floor) — `SURFACE_FLOOR_SAMPLE_EDGE_PX` in `src/lib/constants.ts` (PR #147, ATS-66)
 - [ ] Between the ATS-66 migration and its merge, a floor saved from the preview (same project) makes `main`'s background removal fail with 23514, since `main` does not send `background_floor`. Gone after the merge; worth a line in the migration rules about previews sharing the project — `supabase/migrations/20261121120000_branding_surface_opacity.sql` (PR #147, ATS-66)
+- [ ] The e2e test for where the title goes with a background image covers **Pipeline**, **Jobs** and **Candidates** as a customer, but not **Accounts** or the history page, which AC5 also names; add them as an admin acting for a customer — `e2e/background.spec.ts` (PR #149, ATS-67)
+- [ ] With a background image, the page's title, count, main button and hint join the sticky top bar, so at 390 px the bar stays on screen while scrolling and is noticeably taller than 56 px. Consider letting the title row scroll away on small screens — `src/components/layout/AppShell.tsx` (PR #149, ATS-67)

@@ -32,9 +32,12 @@ export function useBrandingUrl(customerId: string | null, path: string | null) {
 }
 
 /**
- * The floor of a saved background that has none, measured from the file itself (ATS-66): a
- * background uploaded before ATS-66. Saving the form stores it. Off when there is nothing to
- * measure; null when the file cannot be read, which keeps the chips fully solid.
+ * The floor measured from the saved background itself (ATS-66, ATS-67), each time the settings
+ * page opens: a background from before ATS-66 has none, and a floor measured under older rules may
+ * be too high. Saving the form stores it. Off when there is nothing to measure; null when the file
+ * cannot be read, which keeps the chips fully solid. The measurement is dropped once the page
+ * closes: a colleague may replace the image under the same path, and an old measurement would
+ * then win over the floor they saved.
  */
 export function useMeasuredBackgroundFloor(customerId: string | null, path: string | null) {
   return useQuery({
@@ -42,6 +45,7 @@ export function useMeasuredBackgroundFloor(customerId: string | null, path: stri
     queryFn: async () => measureBackgroundFloor(await downloadBrandingFile(path!)),
     enabled: !!customerId && !!path,
     staleTime: Infinity,
+    gcTime: 0,
   });
 }
 
@@ -55,6 +59,8 @@ function useInvalidateBranding(customerId: string | null) {
   return () => {
     qc.invalidateQueries({ queryKey: queryKeys.branding(customerId) });
     qc.invalidateQueries({ queryKey: queryKeys.brandingUrls(customerId) });
+    // A new background keeps its path, so a floor measured from the old file must go.
+    qc.removeQueries({ queryKey: queryKeys.backgroundFloors(customerId) });
   };
 }
 

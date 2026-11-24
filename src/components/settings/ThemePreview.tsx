@@ -30,10 +30,10 @@ export function ThemePreview({
   const tokens = themeTokens(accent);
   return (
     <section aria-labelledby="preview-title" className="space-y-2">
-      <h2 id="preview-title" className="chip-on-image text-sm font-medium">
+      <h2 id="preview-title" className="text-sm font-medium">
         {t("appearance.preview")}
       </h2>
-      <p className="chip-on-image text-xs text-muted-foreground">{t("appearance.previewHint")}</p>
+      <p className="text-xs text-muted-foreground">{t("appearance.previewHint")}</p>
       <div
         aria-hidden="true"
         className={cn(
